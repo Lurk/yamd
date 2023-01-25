@@ -4,6 +4,7 @@ use crate::h::H;
 use crate::i::I;
 use crate::inline_code::InlineCode;
 use crate::s::S;
+use crate::text::Text;
 use crate::tree::{ToTree, TreeContent};
 
 pub trait ToParagraph {
@@ -17,6 +18,7 @@ pub enum ParagraphContent {
     H(H),
     I(I),
     S(S),
+    Text(Text),
     InlineCode(InlineCode),
 }
 
