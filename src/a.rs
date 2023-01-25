@@ -1,5 +1,6 @@
 use crate::p::{ParagraphContent, ToParagraph};
 
+#[derive(Debug)]
 pub struct A {
     text: Option<String>,
     url: String,

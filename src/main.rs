@@ -3,6 +3,7 @@ mod b;
 mod h;
 mod p;
 mod tree;
+
 use a::A;
 use h::H;
 use p::P;
@@ -14,5 +15,5 @@ fn main() {
         Some("http://foo.bar//".to_string()),
     ));
     let t = Tree::new().push(p);
-    println!("Hello, world!");
+    println!("{:?}", t);
 }

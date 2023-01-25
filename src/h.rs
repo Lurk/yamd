@@ -1,5 +1,6 @@
 use crate::p::{ParagraphContent, ToParagraph};
 
+#[derive(Debug)]
 pub struct H {
     level: u8,
     text: String,

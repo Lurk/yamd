@@ -7,12 +7,14 @@ pub trait ToParagraph {
     fn to_paragraph(self) -> ParagraphContent;
 }
 
+#[derive(Debug)]
 pub enum ParagraphContent {
     A(A),
     B(B),
     H(H),
 }
 
+#[derive(Debug)]
 pub struct P {
     data: Vec<ParagraphContent>,
 }
