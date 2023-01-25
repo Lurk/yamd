@@ -4,6 +4,7 @@ mod h;
 mod i;
 mod inline_code;
 mod p;
+mod s;
 mod tree;
 
 use a::A;
