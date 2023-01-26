@@ -14,13 +14,13 @@ impl A {
     }
 }
 
-impl Into<String> for A {
-    fn into(self) -> String {
-        let text = match self.text {
+impl From<A> for String {
+    fn from(value: A) -> String {
+        let text = match value.text {
             Some(text) => text,
-            None => self.url.clone(),
+            None => value.url.clone(),
         };
-        format!("[{}]({})", text, self.url)
+        format!("[{}]({})", text, value.url)
     }
 }
 
