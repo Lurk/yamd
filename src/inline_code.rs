@@ -8,3 +8,20 @@ impl InlineCode {
         InlineCode { text: text.into() }
     }
 }
+
+impl From<InlineCode> for String {
+    fn from(value: InlineCode) -> Self {
+        format!("`{}`", value.text)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::InlineCode;
+
+    #[test]
+    fn to_string() {
+        let inline_code: String = InlineCode::new("const bar = 'baz'").into();
+        assert_eq!(inline_code, "`const bar = 'baz'`".to_string())
+    }
+}

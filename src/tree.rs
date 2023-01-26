@@ -1,13 +1,20 @@
-use crate::p::P;
+use crate::{h::H, p::P};
 
 #[derive(Debug)]
 pub enum TreeContent {
     P(P),
+    H(H),
 }
 
 impl From<P> for TreeContent {
     fn from(value: P) -> Self {
         TreeContent::P(value)
+    }
+}
+
+impl From<H> for TreeContent {
+    fn from(value: H) -> Self {
+        TreeContent::H(value)
     }
 }
 

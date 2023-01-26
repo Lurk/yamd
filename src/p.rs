@@ -1,6 +1,5 @@
 use crate::a::A;
 use crate::b::B;
-use crate::h::H;
 use crate::i::I;
 use crate::inline_code::InlineCode;
 use crate::s::S;
@@ -10,7 +9,6 @@ use crate::text::Text;
 pub enum ParagraphContent {
     A(A),
     B(B),
-    H(H),
     I(I),
     S(S),
     Text(Text),
@@ -26,12 +24,6 @@ impl From<A> for ParagraphContent {
 impl From<B> for ParagraphContent {
     fn from(value: B) -> Self {
         ParagraphContent::B(value)
-    }
-}
-
-impl From<H> for ParagraphContent {
-    fn from(value: H) -> Self {
-        ParagraphContent::H(value)
     }
 }
 
@@ -72,5 +64,28 @@ impl P {
     pub fn push<TP: Into<ParagraphContent>>(mut self, element: TP) -> Self {
         self.data.push(element.into());
         self
+    }
+}
+
+impl From<P> for String {
+    fn from(value: P) -> Self {
+        format!(
+            "**{}**",
+            value
+                .data
+                .into_iter()
+                .map(|element| {
+                    match element {
+                        ParagraphContent::A(v) => v.into(),
+                        ParagraphContent::B(v) => v.into(),
+                        ParagraphContent::I(v) => v.into(),
+                        ParagraphContent::S(v) => v.into(),
+                        ParagraphContent::Text(v) => v.into(),
+                        ParagraphContent::InlineCode(v) => v.into(),
+                    }
+                })
+                .collect::<Vec<String>>()
+                .concat()
+        )
     }
 }

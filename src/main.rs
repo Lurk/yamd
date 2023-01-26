@@ -14,10 +14,10 @@ use p::P;
 use tree::Tree;
 
 fn main() {
-    let p = P::new().push(H::new("foo", 1)).push(A::new(
+    let p = P::new().push(A::new(
         "http://foo.bar/",
         Some("http://foo.bar/".to_string()),
     ));
-    let t = Tree::new().push(p);
+    let t = Tree::new().push(H::new("foo", 1)).push(p);
     println!("{:?}", t);
 }
