@@ -12,7 +12,7 @@ impl I {
 
 impl From<I> for String {
     fn from(value: I) -> Self {
-        value.text
+        format!("*{}*", value.text)
     }
 }
 
@@ -29,6 +29,6 @@ mod tests {
     #[test]
     fn to_string() {
         let i: String = I::new("italic").into();
-        assert_eq!(i, "italic".to_string());
+        assert_eq!(i, "*italic*".to_string());
     }
 }
