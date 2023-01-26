@@ -15,8 +15,8 @@ use tree::Tree;
 
 fn main() {
     let p = P::new().push(H::new("foo", 1)).push(A::new(
-        "http://foo.bar//",
-        Some("http://foo.bar//".to_string()),
+        "http://foo.bar/",
+        Some("http://foo.bar/".to_string()),
     ));
     let t = Tree::new().push(p);
     println!("{:?}", t);
