@@ -5,11 +5,7 @@ use crate::i::I;
 use crate::inline_code::InlineCode;
 use crate::s::S;
 use crate::text::Text;
-use crate::tree::{ToTree, TreeContent};
-
-pub trait ToParagraph {
-    fn to_paragraph(self) -> ParagraphContent;
-}
+use crate::tree::TreeContent;
 
 #[derive(Debug)]
 pub enum ParagraphContent {
@@ -27,8 +23,8 @@ pub struct P {
     data: Vec<ParagraphContent>,
 }
 
-impl ToTree for P {
-    fn to_tree(self) -> TreeContent {
+impl Into<TreeContent> for P {
+    fn into(self) -> TreeContent {
         TreeContent::P(self)
     }
 }
@@ -38,8 +34,8 @@ impl P {
         P { data: vec![] }
     }
 
-    pub fn push<TP: ToParagraph>(mut self, element: TP) -> Self {
-        self.data.push(element.to_paragraph());
+    pub fn push<TP: Into<ParagraphContent>>(mut self, element: TP) -> Self {
+        self.data.push(element.into());
         self
     }
 }

@@ -1,4 +1,4 @@
-use crate::p::{ParagraphContent, ToParagraph};
+use crate::p::ParagraphContent;
 
 #[derive(Debug)]
 pub struct A {
@@ -6,8 +6,8 @@ pub struct A {
     url: String,
 }
 
-impl ToParagraph for A {
-    fn to_paragraph(self) -> ParagraphContent {
+impl Into<ParagraphContent> for A {
+    fn into(self) -> ParagraphContent {
         ParagraphContent::A(self)
     }
 }

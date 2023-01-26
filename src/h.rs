@@ -1,4 +1,4 @@
-use crate::p::{ParagraphContent, ToParagraph};
+use crate::p::ParagraphContent;
 
 #[derive(Debug)]
 pub struct H {
@@ -6,8 +6,8 @@ pub struct H {
     text: String,
 }
 
-impl ToParagraph for H {
-    fn to_paragraph(self) -> ParagraphContent {
+impl Into<ParagraphContent> for H {
+    fn into(self) -> ParagraphContent {
         ParagraphContent::H(self)
     }
 }
