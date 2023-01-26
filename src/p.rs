@@ -5,7 +5,6 @@ use crate::i::I;
 use crate::inline_code::InlineCode;
 use crate::s::S;
 use crate::text::Text;
-use crate::tree::TreeContent;
 
 #[derive(Debug)]
 pub enum ParagraphContent {
@@ -18,15 +17,51 @@ pub enum ParagraphContent {
     InlineCode(InlineCode),
 }
 
+impl From<A> for ParagraphContent {
+    fn from(value: A) -> Self {
+        ParagraphContent::A(value)
+    }
+}
+
+impl From<B> for ParagraphContent {
+    fn from(value: B) -> Self {
+        ParagraphContent::B(value)
+    }
+}
+
+impl From<H> for ParagraphContent {
+    fn from(value: H) -> Self {
+        ParagraphContent::H(value)
+    }
+}
+
+impl From<I> for ParagraphContent {
+    fn from(value: I) -> Self {
+        ParagraphContent::I(value)
+    }
+}
+
+impl From<S> for ParagraphContent {
+    fn from(value: S) -> Self {
+        ParagraphContent::S(value)
+    }
+}
+
+impl From<Text> for ParagraphContent {
+    fn from(value: Text) -> Self {
+        ParagraphContent::Text(value)
+    }
+}
+
+impl From<InlineCode> for ParagraphContent {
+    fn from(value: InlineCode) -> Self {
+        ParagraphContent::InlineCode(value)
+    }
+}
+
 #[derive(Debug)]
 pub struct P {
     data: Vec<ParagraphContent>,
-}
-
-impl Into<TreeContent> for P {
-    fn into(self) -> TreeContent {
-        TreeContent::P(self)
-    }
 }
 
 impl P {

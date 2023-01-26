@@ -5,6 +5,12 @@ pub enum TreeContent {
     P(P),
 }
 
+impl From<P> for TreeContent {
+    fn from(value: P) -> Self {
+        TreeContent::P(value)
+    }
+}
+
 #[derive(Debug)]
 pub struct Tree {
     data: Vec<TreeContent>,

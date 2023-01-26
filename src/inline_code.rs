@@ -1,14 +1,6 @@
-use crate::p::ParagraphContent;
-
 #[derive(Debug)]
 pub struct InlineCode {
     text: String,
-}
-
-impl Into<ParagraphContent> for InlineCode {
-    fn into(self) -> ParagraphContent {
-        ParagraphContent::InlineCode(self)
-    }
 }
 
 impl InlineCode {
