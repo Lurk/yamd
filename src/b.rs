@@ -55,6 +55,10 @@ impl B {
         B { data: vec![] }
     }
 
+    pub fn from_vec(data: Vec<BContent>) -> Self {
+        B { data }
+    }
+
     fn push<BC: Into<BContent>>(mut self, element: BC) -> Self {
         self.data.push(element.into());
         self
@@ -78,6 +82,17 @@ mod tests {
             .push(I::new("Italic"))
             .push(S::new("Strikethrough"))
             .into();
+        assert_eq!(b, "**B as bold *Italic*~~Strikethrough~~**".to_string());
+    }
+
+    #[test]
+    fn from_vec() {
+        let b: String = B::from_vec(vec![
+            Text::new("B as bold ").into(),
+            I::new("Italic").into(),
+            S::new("Strikethrough").into(),
+        ])
+        .into();
         assert_eq!(b, "**B as bold *Italic*~~Strikethrough~~**".to_string());
     }
 }
