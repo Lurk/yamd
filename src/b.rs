@@ -65,6 +65,12 @@ impl B {
     }
 }
 
+impl Default for B {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{b::B, i::I, s::S, text::Text};
@@ -90,7 +96,7 @@ mod tests {
         let b: String = B::from_vec(vec![
             Text::new("B as bold ").into(),
             I::new("Italic").into(),
-            S::new("Strikethrough").into(),
+            S::new("Strikethrough"),
         ])
         .into();
         assert_eq!(b, "**B as bold *Italic*~~Strikethrough~~**".to_string());

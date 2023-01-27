@@ -89,3 +89,9 @@ impl From<P> for String {
         )
     }
 }
+
+impl Default for P {
+    fn default() -> Self {
+        Self::new()
+    }
+}
