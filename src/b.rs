@@ -52,14 +52,14 @@ impl From<B> for String {
 
 impl B {
     pub fn new() -> Self {
-        B { data: vec![] }
+        Self { data: vec![] }
     }
 
     pub fn from_vec(data: Vec<BContent>) -> Self {
-        B { data }
+        Self { data }
     }
 
-    fn push<BC: Into<BContent>>(mut self, element: BC) -> Self {
+    pub fn push<BC: Into<BContent>>(mut self, element: BC) -> Self {
         self.data.push(element.into());
         self
     }
