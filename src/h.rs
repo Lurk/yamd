@@ -47,6 +47,8 @@ mod tests {
     fn level_gt_six() {
         let h: String = H::new("Header", 7).into();
         assert_eq!(h, "###### Header");
+        let h: String = H::new("Header", 34).into();
+        assert_eq!(h, "###### Header");
     }
 
     #[test]
