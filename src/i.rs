@@ -1,3 +1,5 @@
+use crate::{b::BContent, p::ParagraphContent};
+
 /// Representation of an Italic text
 #[derive(Debug)]
 pub struct I {
@@ -13,6 +15,18 @@ impl I {
 impl From<I> for String {
     fn from(value: I) -> Self {
         format!("*{}*", value.text)
+    }
+}
+
+impl From<I> for BContent {
+    fn from(value: I) -> Self {
+        BContent::I(value)
+    }
+}
+
+impl From<I> for ParagraphContent {
+    fn from(value: I) -> Self {
+        ParagraphContent::I(value)
     }
 }
 

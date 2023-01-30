@@ -1,3 +1,5 @@
+use crate::p::ParagraphContent;
+
 /// Representation of an anchor
 #[derive(Debug)]
 pub struct A {
@@ -21,6 +23,12 @@ impl From<A> for String {
             None => value.url.clone(),
         };
         format!("[{}]({})", text, value.url)
+    }
+}
+
+impl From<A> for ParagraphContent {
+    fn from(value: A) -> Self {
+        ParagraphContent::A(value)
     }
 }
 

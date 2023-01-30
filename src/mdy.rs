@@ -1,58 +1,46 @@
 use crate::{h::H, p::P};
 
 #[derive(Debug)]
-pub enum TreeContent {
+pub enum MdyContent {
     P(P),
     H(H),
 }
 
-impl From<P> for TreeContent {
-    fn from(value: P) -> Self {
-        TreeContent::P(value)
-    }
-}
-
-impl From<H> for TreeContent {
-    fn from(value: H) -> Self {
-        TreeContent::H(value)
-    }
-}
-
 #[derive(Debug)]
-pub struct Tree {
-    data: Vec<TreeContent>,
+pub struct Mdy {
+    data: Vec<MdyContent>,
 }
 
-impl Tree {
+impl Mdy {
     pub fn new() -> Self {
         Self { data: vec![] }
     }
 
-    pub fn from_vec(data: Vec<TreeContent>) -> Self {
+    pub fn from_vec(data: Vec<MdyContent>) -> Self {
         Self { data }
     }
 
-    pub fn push<TC: Into<TreeContent>>(mut self, element: TC) -> Self {
+    pub fn push<TC: Into<MdyContent>>(mut self, element: TC) -> Self {
         self.data.push(element.into());
         self
     }
 }
 
-impl From<Tree> for String {
-    fn from(value: Tree) -> Self {
+impl From<Mdy> for String {
+    fn from(value: Mdy) -> Self {
         value
             .data
             .into_iter()
             .map(|element| match element {
-                TreeContent::P(v) => v.into(),
-                TreeContent::H(v) => v.into(),
+                MdyContent::P(v) => v.into(),
+                MdyContent::H(v) => v.into(),
             })
             .collect::<Vec<String>>()
             .join("\n\n")
     }
 }
 
-impl Default for Tree {
+impl Default for Mdy {
     fn default() -> Self {
         Self::new()
     }
@@ -62,11 +50,11 @@ impl Default for Tree {
 mod tests {
     use crate::{h::H, p::P, text::Text};
 
-    use super::Tree;
+    use super::Mdy;
 
     #[test]
     fn push() {
-        let t: String = Tree::new()
+        let t: String = Mdy::new()
             .push(H::new("header", 1))
             .push(P::new().push(Text::new("text")))
             .into();
@@ -76,7 +64,7 @@ mod tests {
 
     #[test]
     fn from_vec() {
-        let t: String = Tree::from_vec(vec![
+        let t: String = Mdy::from_vec(vec![
             H::new("header", 1).into(),
             P::new().push(Text::new("text")).into(),
         ])

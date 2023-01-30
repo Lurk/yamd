@@ -1,3 +1,5 @@
+use crate::p::ParagraphContent;
+
 #[derive(Debug)]
 pub struct InlineCode {
     text: String,
@@ -12,6 +14,12 @@ impl InlineCode {
 impl From<InlineCode> for String {
     fn from(value: InlineCode) -> Self {
         format!("`{}`", value.text)
+    }
+}
+
+impl From<InlineCode> for ParagraphContent {
+    fn from(value: InlineCode) -> Self {
+        ParagraphContent::InlineCode(value)
     }
 }
 

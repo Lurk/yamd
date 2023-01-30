@@ -1,3 +1,5 @@
+use crate::{b::BContent, p::ParagraphContent};
+
 /// Representation of strikethrough
 #[derive(Debug)]
 pub struct S {
@@ -13,6 +15,18 @@ impl S {
 impl From<S> for String {
     fn from(value: S) -> Self {
         format!("~~{}~~", value.text)
+    }
+}
+
+impl From<S> for BContent {
+    fn from(value: S) -> Self {
+        BContent::S(value)
+    }
+}
+
+impl From<S> for ParagraphContent {
+    fn from(value: S) -> Self {
+        ParagraphContent::S(value)
     }
 }
 

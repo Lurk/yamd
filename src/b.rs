@@ -1,4 +1,4 @@
-use crate::{i::I, s::S, text::Text};
+use crate::{i::I, p::ParagraphContent, s::S, text::Text};
 
 #[derive(Debug)]
 pub enum BContent {
@@ -7,27 +7,15 @@ pub enum BContent {
     S(S),
 }
 
-impl From<Text> for BContent {
-    fn from(value: Text) -> Self {
-        BContent::Text(value)
-    }
-}
-
-impl From<I> for BContent {
-    fn from(value: I) -> Self {
-        BContent::I(value)
-    }
-}
-
-impl From<S> for BContent {
-    fn from(value: S) -> Self {
-        BContent::S(value)
-    }
-}
-
 #[derive(Debug)]
 pub struct B {
     data: Vec<BContent>,
+}
+
+impl From<B> for ParagraphContent {
+    fn from(value: B) -> Self {
+        ParagraphContent::B(value)
+    }
 }
 
 impl From<B> for String {

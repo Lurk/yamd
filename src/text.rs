@@ -1,3 +1,5 @@
+use crate::{b::BContent, p::ParagraphContent};
+
 /// Representation of a regular text
 #[derive(Debug)]
 pub struct Text {
@@ -13,6 +15,18 @@ impl Text {
 impl From<Text> for String {
     fn from(value: Text) -> Self {
         value.text
+    }
+}
+
+impl From<Text> for BContent {
+    fn from(value: Text) -> Self {
+        BContent::Text(value)
+    }
+}
+
+impl From<Text> for ParagraphContent {
+    fn from(value: Text) -> Self {
+        ParagraphContent::Text(value)
     }
 }
 
