@@ -8,9 +8,14 @@ pub struct H {
 
 impl H {
     pub fn new<S: Into<String>>(text: S, level: u8) -> Self {
+        let normalized_level = match level {
+            0 => 1,
+            7.. => 6,
+            l => l,
+        };
         H {
             text: text.into(),
-            level,
+            level: normalized_level,
         }
     }
 }
@@ -36,5 +41,23 @@ mod tests {
     fn level_one() {
         let h: String = H::new("Header", 1).into();
         assert_eq!(h, "# Header");
+    }
+
+    #[test]
+    fn level_gt_six() {
+        let h: String = H::new("Header", 7).into();
+        assert_eq!(h, "###### Header");
+    }
+
+    #[test]
+    fn level_eq_zero() {
+        let h: String = H::new("Header", 0).into();
+        assert_eq!(h, "# Header");
+    }
+
+    #[test]
+    fn level_eq_four() {
+        let h: String = H::new("Header", 4).into();
+        assert_eq!(h, "#### Header");
     }
 }
