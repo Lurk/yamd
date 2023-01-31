@@ -1,6 +1,6 @@
-use crate::mdy::MdyTags;
+use crate::{mdy::MdyTags, parser::Parser};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct H {
     level: u8,
     text: String,
@@ -20,6 +20,28 @@ impl H {
     }
 }
 
+impl Parser for H {
+    fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
+        if input.chars().nth(start_position) == Some('#') {
+            let stop_position = match input[start_position..].find("\n\n") {
+                Some(position) => position + start_position + 2,
+                None => input.len(),
+            };
+            if let Some(stop) = input[start_position..stop_position].find(" ") {
+                let mut level: String = input[start_position..stop_position].into();
+                let text = level.split_off(stop);
+                if level.chars().all(|char| char == '#') {
+                    return Some((
+                        Self::new(text.trim(), level.len().try_into().unwrap_or(0)),
+                        stop_position,
+                    ));
+                }
+            }
+        }
+        None
+    }
+}
+
 impl From<H> for String {
     fn from(value: H) -> Self {
         let key = String::from('#').repeat(value.level as usize);
@@ -35,6 +57,8 @@ impl From<H> for MdyTags {
 
 #[cfg(test)]
 mod tests {
+    use crate::parser::Parser;
+
     use super::H;
 
     #[test]
@@ -61,5 +85,19 @@ mod tests {
     fn level_eq_four() {
         let h: String = H::new("Header", 4).into();
         assert_eq!(h, "#### Header");
+    }
+
+    #[test]
+    fn from_string() {
+        assert_eq!(H::parse("## Header", 0), Some((H::new("Header", 2), 9)));
+        assert_eq!(H::parse("### Head", 0), Some((H::new("Head", 3), 8)));
+        assert_eq!(H::parse("not ### Head", 4), Some((H::new("Head", 3), 12)));
+        assert_eq!(
+            H::parse("not ### Head\n\nsome other thing", 4),
+            Some((H::new("Head", 3), 14))
+        );
+        assert_eq!(H::parse("not a header", 0), None);
+        assert_eq!(H::parse("######", 0), None);
+        assert_eq!(H::parse("######also not a header", 0), None);
     }
 }
