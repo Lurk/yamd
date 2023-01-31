@@ -20,5 +20,5 @@ fn main() {
         Some("http://foo.bar/".to_string()),
     ));
     let t = Mdy::new().push(H::new("foo", 1)).push(p);
-    println!("{:?}", t);
+    println!("{t:?}");
 }

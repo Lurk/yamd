@@ -27,7 +27,7 @@ impl Parser for H {
                 Some(position) => position + start_position + 2,
                 None => input.len(),
             };
-            if let Some(stop) = input[start_position..stop_position].find(" ") {
+            if let Some(stop) = input[start_position..stop_position].find(' ') {
                 let mut level: String = input[start_position..stop_position].into();
                 let text = level.split_off(stop);
                 if level.chars().all(|char| char == '#') {
