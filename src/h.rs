@@ -1,4 +1,4 @@
-use crate::mdy::MdyContent;
+use crate::mdy::MdyTags;
 
 #[derive(Debug)]
 pub struct H {
@@ -27,9 +27,9 @@ impl From<H> for String {
     }
 }
 
-impl From<H> for MdyContent {
+impl From<H> for MdyTags {
     fn from(value: H) -> Self {
-        MdyContent::H(value)
+        MdyTags::H(value)
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::{b::BContent, p::ParagraphContent};
+use crate::{b::BContent, p::ParagraphTags};
 
 /// Representation of a regular text
 #[derive(Debug)]
@@ -24,9 +24,9 @@ impl From<Text> for BContent {
     }
 }
 
-impl From<Text> for ParagraphContent {
+impl From<Text> for ParagraphTags {
     fn from(value: Text) -> Self {
-        ParagraphContent::Text(value)
+        ParagraphTags::Text(value)
     }
 }
 

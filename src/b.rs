@@ -1,4 +1,4 @@
-use crate::{i::I, p::ParagraphContent, s::S, text::Text};
+use crate::{i::I, p::ParagraphTags, s::S, text::Text};
 
 #[derive(Debug)]
 pub enum BContent {
@@ -12,9 +12,9 @@ pub struct B {
     data: Vec<BContent>,
 }
 
-impl From<B> for ParagraphContent {
+impl From<B> for ParagraphTags {
     fn from(value: B) -> Self {
-        ParagraphContent::B(value)
+        ParagraphTags::B(value)
     }
 }
 

@@ -2,12 +2,12 @@ use crate::a::A;
 use crate::b::B;
 use crate::i::I;
 use crate::inline_code::InlineCode;
-use crate::mdy::MdyContent;
+use crate::mdy::MdyTags;
 use crate::s::S;
 use crate::text::Text;
 
 #[derive(Debug)]
-pub enum ParagraphContent {
+pub enum ParagraphTags {
     A(A),
     B(B),
     I(I),
@@ -18,7 +18,7 @@ pub enum ParagraphContent {
 
 #[derive(Debug)]
 pub struct P {
-    data: Vec<ParagraphContent>,
+    data: Vec<ParagraphTags>,
 }
 
 impl P {
@@ -26,11 +26,11 @@ impl P {
         Self { data: vec![] }
     }
 
-    pub fn from_vec(data: Vec<ParagraphContent>) -> Self {
+    pub fn from_vec(data: Vec<ParagraphTags>) -> Self {
         Self { data }
     }
 
-    pub fn push<TP: Into<ParagraphContent>>(mut self, element: TP) -> Self {
+    pub fn push<TP: Into<ParagraphTags>>(mut self, element: TP) -> Self {
         self.data.push(element.into());
         self
     }
@@ -42,12 +42,12 @@ impl From<P> for String {
             .data
             .into_iter()
             .map(|element| match element {
-                ParagraphContent::A(v) => v.into(),
-                ParagraphContent::B(v) => v.into(),
-                ParagraphContent::I(v) => v.into(),
-                ParagraphContent::S(v) => v.into(),
-                ParagraphContent::Text(v) => v.into(),
-                ParagraphContent::InlineCode(v) => v.into(),
+                ParagraphTags::A(v) => v.into(),
+                ParagraphTags::B(v) => v.into(),
+                ParagraphTags::I(v) => v.into(),
+                ParagraphTags::S(v) => v.into(),
+                ParagraphTags::Text(v) => v.into(),
+                ParagraphTags::InlineCode(v) => v.into(),
             })
             .collect::<Vec<String>>()
             .concat()
@@ -60,9 +60,9 @@ impl Default for P {
     }
 }
 
-impl From<P> for MdyContent {
+impl From<P> for MdyTags {
     fn from(value: P) -> Self {
-        MdyContent::P(value)
+        MdyTags::P(value)
     }
 }
 

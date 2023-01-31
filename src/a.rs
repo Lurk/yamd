@@ -1,4 +1,4 @@
-use crate::p::ParagraphContent;
+use crate::p::ParagraphTags;
 
 /// Representation of an anchor
 #[derive(Debug)]
@@ -26,9 +26,9 @@ impl From<A> for String {
     }
 }
 
-impl From<A> for ParagraphContent {
+impl From<A> for ParagraphTags {
     fn from(value: A) -> Self {
-        ParagraphContent::A(value)
+        ParagraphTags::A(value)
     }
 }
 

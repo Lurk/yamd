@@ -1,4 +1,4 @@
-use crate::p::ParagraphContent;
+use crate::p::ParagraphTags;
 
 #[derive(Debug)]
 pub struct InlineCode {
@@ -17,9 +17,9 @@ impl From<InlineCode> for String {
     }
 }
 
-impl From<InlineCode> for ParagraphContent {
+impl From<InlineCode> for ParagraphTags {
     fn from(value: InlineCode) -> Self {
-        ParagraphContent::InlineCode(value)
+        ParagraphTags::InlineCode(value)
     }
 }
 

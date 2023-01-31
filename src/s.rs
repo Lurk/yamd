@@ -1,4 +1,4 @@
-use crate::{b::BContent, p::ParagraphContent};
+use crate::{b::BContent, p::ParagraphTags};
 
 /// Representation of strikethrough
 #[derive(Debug)]
@@ -24,9 +24,9 @@ impl From<S> for BContent {
     }
 }
 
-impl From<S> for ParagraphContent {
+impl From<S> for ParagraphTags {
     fn from(value: S) -> Self {
-        ParagraphContent::S(value)
+        ParagraphTags::S(value)
     }
 }
 

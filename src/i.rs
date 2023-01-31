@@ -1,4 +1,4 @@
-use crate::{b::BContent, p::ParagraphContent};
+use crate::{b::BContent, p::ParagraphTags};
 
 /// Representation of an Italic text
 #[derive(Debug)]
@@ -24,9 +24,9 @@ impl From<I> for BContent {
     }
 }
 
-impl From<I> for ParagraphContent {
+impl From<I> for ParagraphTags {
     fn from(value: I) -> Self {
-        ParagraphContent::I(value)
+        ParagraphTags::I(value)
     }
 }
 

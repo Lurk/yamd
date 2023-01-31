@@ -1,14 +1,14 @@
 use crate::{h::H, p::P};
 
 #[derive(Debug)]
-pub enum MdyContent {
+pub enum MdyTags {
     P(P),
     H(H),
 }
 
 #[derive(Debug)]
 pub struct Mdy {
-    data: Vec<MdyContent>,
+    data: Vec<MdyTags>,
 }
 
 impl Mdy {
@@ -16,11 +16,11 @@ impl Mdy {
         Self { data: vec![] }
     }
 
-    pub fn from_vec(data: Vec<MdyContent>) -> Self {
+    pub fn from_vec(data: Vec<MdyTags>) -> Self {
         Self { data }
     }
 
-    pub fn push<TC: Into<MdyContent>>(mut self, element: TC) -> Self {
+    pub fn push<TC: Into<MdyTags>>(mut self, element: TC) -> Self {
         self.data.push(element.into());
         self
     }
@@ -32,8 +32,8 @@ impl From<Mdy> for String {
             .data
             .into_iter()
             .map(|element| match element {
-                MdyContent::P(v) => v.into(),
-                MdyContent::H(v) => v.into(),
+                MdyTags::P(v) => v.into(),
+                MdyTags::H(v) => v.into(),
             })
             .collect::<Vec<String>>()
             .join("\n\n")
