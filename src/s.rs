@@ -1,7 +1,11 @@
-use crate::{b::BContent, p::ParagraphTags};
+use crate::{
+    b::BContent,
+    p::ParagraphTags,
+    parser::{Parser, ParserPart},
+};
 
 /// Representation of strikethrough
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct S {
     text: String,
 }
@@ -30,8 +34,31 @@ impl From<S> for ParagraphTags {
     }
 }
 
+impl Parser for S {
+    fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
+        let mut chars = input.chars().enumerate();
+        if start_position != 0 {
+            chars.nth(start_position - 1);
+        }
+
+        if let Some(end_position) = chars.parse_part(vec!['~', '~'], vec!['~', '~']) {
+            return Some((
+                S::new(
+                    input[start_position + 2..end_position - 1]
+                        .to_string()
+                        .replace('\n', ""),
+                ),
+                end_position,
+            ));
+        }
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::parser::Parser;
+
     use super::S;
 
     #[test]
@@ -44,5 +71,14 @@ mod tests {
     fn to_string() {
         let s: String = S::new("2+2=5").into();
         assert_eq!(s, "~~2+2=5~~".to_string());
+    }
+
+    #[test]
+    fn parse() {
+        assert_eq!(S::parse("~~2+2=5~~", 0), Some((S::new("2+2=5"), 8)));
+        assert_eq!(S::parse("not ~~is~~not", 4), Some((S::new("is"), 9)));
+        assert_eq!(S::parse("~~not", 0), None);
+        assert_eq!(S::parse("~~i\n\ns~~", 0), None);
+        assert_eq!(S::parse("~~i\ns~~", 0), Some((S::new("is"), 6)));
     }
 }

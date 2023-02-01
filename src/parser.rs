@@ -55,7 +55,6 @@ impl<'a> ParserPart for Enumerate<Chars<'a>> {
                 if end_matcher.is_match(&char) && end_matcher.is_done() {
                     return Some(index);
                 } else if hard_stop_matcher.is_match(&char) && hard_stop_matcher.is_done() {
-                    println!("hard stop");
                     return None;
                 }
             }
