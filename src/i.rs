@@ -1,4 +1,8 @@
-use crate::{b::BContent, p::ParagraphTags, parser::Parser};
+use crate::{
+    b::BContent,
+    p::ParagraphTags,
+    parser::{Parser, ParserPart},
+};
 
 /// Representation of an Italic text
 #[derive(Debug, PartialEq)]
@@ -32,39 +36,18 @@ impl From<I> for ParagraphTags {
 
 impl Parser for I {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        let mut chars = input.chars();
-        if chars.nth(start_position) == Some('*') {
-            let mut end_postion = start_position + 1;
-            let mut already_seen = false;
-            loop {
-                if let Some(char) = chars.next() {
-                    end_postion += 1;
-
-                    match char {
-                        '*' => {
-                            break;
-                        }
-                        '\n' => {
-                            if already_seen {
-                                return None;
-                            }
-                            already_seen = true;
-                        }
-                        _ => {
-                            already_seen = false;
-                        }
-                    }
-                } else {
-                    return None;
-                }
-            }
+        let mut chars = input.chars().enumerate();
+        if start_position != 0 {
+            chars.nth(start_position - 1);
+        }
+        if let Some(end_postion) = chars.parse_part('*', '*') {
             return Some((
                 I::new(
-                    input[start_position + 1..end_postion - 1]
+                    input[start_position + 1..end_postion]
                         .to_string()
                         .replace('\n', ""),
                 ),
-                end_postion,
+                end_postion + 1,
             ));
         }
 
