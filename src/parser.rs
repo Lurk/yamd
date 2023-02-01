@@ -30,7 +30,7 @@ impl Matcher {
     }
 
     fn is_done(&self) -> bool {
-        return self.index == self.needle.len();
+        self.index == self.needle.len()
     }
 }
 
