@@ -41,8 +41,8 @@ impl Parser for A {
         if start_position != 0 {
             chars.nth(start_position - 1);
         }
-        if let Some(first_part) = chars.parse_part('[', ']') {
-            if let Some(second_part) = chars.parse_part('(', ')') {
+        if let Some(first_part) = chars.parse_part(vec!['['], vec![']']) {
+            if let Some(second_part) = chars.parse_part(vec!['('], vec![')']) {
                 return Some((
                     A::new(
                         input[first_part + 2..second_part].to_string(),

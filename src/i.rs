@@ -40,7 +40,7 @@ impl Parser for I {
         if start_position != 0 {
             chars.nth(start_position - 1);
         }
-        if let Some(end_postion) = chars.parse_part('*', '*') {
+        if let Some(end_postion) = chars.parse_part(vec!['*'], vec!['*']) {
             return Some((
                 I::new(
                     input[start_position + 1..end_postion]
