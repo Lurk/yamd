@@ -80,7 +80,7 @@ impl Parser<BContent> for B {
         let mut chars = Self::get_iterator(input, start_position);
         if let Some(end_position) = chars.parse_part(vec!['*', '*'], vec!['*', '*']) {
             let chunk = &input[start_position + 2..end_position - 1];
-            let result = Self::parse_node(chunk);
+            let result = Self::parse_branch(chunk);
             return Some((result, end_position + 1));
         }
         None

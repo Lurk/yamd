@@ -25,7 +25,7 @@ pub trait Parser<Tags> {
         None
     }
 
-    fn parse_node(chunk: &str) -> Self
+    fn parse_branch(chunk: &str) -> Self
     where
         Self: Sized + Branch<Tags>,
     {
