@@ -13,9 +13,19 @@ pub enum BTags {
     S(S),
 }
 
+impl From<BTags> for String {
+    fn from(value: BTags) -> Self {
+        match value {
+            BTags::Text(v) => v.into(),
+            BTags::I(v) => v.into(),
+            BTags::S(v) => v.into(),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct B {
-    data: Vec<BTags>,
+    nodes: Vec<BTags>,
 }
 
 impl From<B> for ParagraphTags {
@@ -29,15 +39,9 @@ impl From<B> for String {
         format!(
             "**{}**",
             value
-                .data
+                .nodes
                 .into_iter()
-                .map(|element| {
-                    match element {
-                        BTags::Text(v) => v.into(),
-                        BTags::I(v) => v.into(),
-                        BTags::S(v) => v.into(),
-                    }
-                })
+                .map(|element| { element.into() })
                 .collect::<Vec<String>>()
                 .concat()
         )
@@ -46,15 +50,15 @@ impl From<B> for String {
 
 impl Branch<BTags> for B {
     fn new() -> Self {
-        Self { data: vec![] }
+        Self { nodes: vec![] }
     }
 
     fn from_vec(data: Vec<BTags>) -> Self {
-        Self { data }
+        Self { nodes: data }
     }
 
     fn push<BC: Into<BTags>>(&mut self, element: BC) {
-        self.data.push(element.into());
+        self.nodes.push(element.into());
     }
 
     fn get_parsers() -> Vec<ParserToTags<BTags>> {
