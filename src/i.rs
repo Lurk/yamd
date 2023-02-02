@@ -1,3 +1,5 @@
+use std::io::Empty;
+
 use crate::{
     b::BContent,
     p::ParagraphTags,
@@ -18,7 +20,7 @@ impl I {
 
 impl From<I> for String {
     fn from(value: I) -> Self {
-        format!("*{}*", value.text)
+        format!("_{}_", value.text)
     }
 }
 
@@ -34,10 +36,10 @@ impl From<I> for ParagraphTags {
     }
 }
 
-impl Parser for I {
+impl Parser<Empty> for I {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
         let mut chars = Self::get_iterator(input, start_position);
-        if let Some(end_postion) = chars.parse_part(vec!['*'], vec!['*']) {
+        if let Some(end_postion) = chars.parse_part(vec!['_'], vec!['_']) {
             return Some((
                 I::new(
                     input[start_position + 1..end_postion]
@@ -67,20 +69,20 @@ mod tests {
     #[test]
     fn to_string() {
         let i: String = I::new("italic").into();
-        assert_eq!(i, "*italic*".to_string());
+        assert_eq!(i, "_italic_".to_string());
     }
 
     #[test]
     fn from_string() {
-        assert_eq!(I::parse("*italic*", 0), Some((I::new("italic"), 8)));
-        assert_eq!(I::parse("not*italic*not", 3), Some((I::new("italic"), 11)));
+        assert_eq!(I::parse("_italic_", 0), Some((I::new("italic"), 8)));
+        assert_eq!(I::parse("not_italic_not", 3), Some((I::new("italic"), 11)));
         assert_eq!(
-            I::parse("not*it alic*not", 3),
+            I::parse("not_it alic_not", 3),
             Some((I::new("it alic"), 12))
         );
-        assert_eq!(I::parse("not italic*not", 3), None);
+        assert_eq!(I::parse("not italic_not", 3), None);
         assert_eq!(I::parse("*italic not", 0), None);
-        assert_eq!(I::parse("*ita\nlic*", 0), Some((I::new("italic"), 9)));
-        assert_eq!(I::parse("*ita\n\nlic*", 0), None);
+        assert_eq!(I::parse("_ita\nlic_", 0), Some((I::new("italic"), 9)));
+        assert_eq!(I::parse("_ita\n\nlic_", 0), None);
     }
 }

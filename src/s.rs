@@ -1,3 +1,5 @@
+use std::io::Empty;
+
 use crate::{
     b::BContent,
     p::ParagraphTags,
@@ -34,7 +36,7 @@ impl From<S> for ParagraphTags {
     }
 }
 
-impl Parser for S {
+impl Parser<Empty> for S {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
         let mut chars = Self::get_iterator(input, start_position);
         if let Some(end_position) = chars.parse_part(vec!['~', '~'], vec!['~', '~']) {
@@ -44,7 +46,7 @@ impl Parser for S {
                         .to_string()
                         .replace('\n', ""),
                 ),
-                end_position,
+                end_position + 1,
             ));
         }
         None
@@ -71,10 +73,10 @@ mod tests {
 
     #[test]
     fn parse() {
-        assert_eq!(S::parse("~~2+2=5~~", 0), Some((S::new("2+2=5"), 8)));
-        assert_eq!(S::parse("not ~~is~~not", 4), Some((S::new("is"), 9)));
+        assert_eq!(S::parse("~~2+2=5~~", 0), Some((S::new("2+2=5"), 9)));
+        assert_eq!(S::parse("not ~~is~~not", 4), Some((S::new("is"), 10)));
         assert_eq!(S::parse("~~not", 0), None);
         assert_eq!(S::parse("~~i\n\ns~~", 0), None);
-        assert_eq!(S::parse("~~i\ns~~", 0), Some((S::new("is"), 6)));
+        assert_eq!(S::parse("~~i\ns~~", 0), Some((S::new("is"), 7)));
     }
 }

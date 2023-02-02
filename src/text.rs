@@ -1,3 +1,5 @@
+use std::io::Empty;
+
 use crate::{b::BContent, p::ParagraphTags, parser::Parser};
 
 /// Representation of a regular text
@@ -30,7 +32,7 @@ impl From<Text> for ParagraphTags {
     }
 }
 
-impl Parser for Text {
+impl Parser<Empty> for Text {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
         Some((Text::new(input[start_position..].to_string()), input.len()))
     }

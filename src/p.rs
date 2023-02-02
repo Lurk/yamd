@@ -68,7 +68,7 @@ impl From<P> for MdyTags {
 
 #[cfg(test)]
 mod tests {
-    use crate::{b::B, inline_code::InlineCode, text::Text};
+    use crate::{b::B, inline_code::InlineCode, parser::Branch, text::Text};
 
     use super::P;
 
@@ -76,7 +76,7 @@ mod tests {
     fn push() {
         let p: String = P::new()
             .push(Text::new("simple text "))
-            .push(B::new().push(Text::new("bold text")))
+            .push(B::from_vec(vec![Text::new("bold text").into()]))
             .push(InlineCode::new("let foo='bar';"))
             .into();
 
@@ -87,7 +87,7 @@ mod tests {
     fn from_vec() {
         let p: String = P::from_vec(vec![
             Text::new("simple text ").into(),
-            B::new().push(Text::new("bold text")).into(),
+            B::from_vec(vec![Text::new("bold text").into()]).into(),
             InlineCode::new("let foo='bar';").into(),
         ])
         .into();

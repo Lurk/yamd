@@ -1,9 +1,59 @@
 use std::{iter::Enumerate, str::Chars};
 
-pub trait Parser {
+pub trait Branch<Tags> {
+    fn new() -> Self;
+    fn push<Node: Into<Tags>>(&mut self, node: Node);
+    fn from_vec(nodes: Vec<Tags>) -> Self;
+}
+
+type ParserToTags<Tags> = Box<dyn Fn(&str, usize) -> Option<(Tags, usize)>>;
+
+pub trait Parser<Tags> {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)>
     where
         Self: Sized;
+
+    fn parse_to_tag<T>(input: &str, start_position: usize) -> Option<(T, usize)>
+    where
+        Self: Sized + Into<T>,
+    {
+        if let Some((node, pos)) = Self::parse(input, start_position) {
+            return Some((node.into(), pos));
+        }
+        None
+    }
+
+    fn parse_node<Node: Into<Tags>>(
+        chunk: &str,
+        parsers: &[ParserToTags<Tags>; 2],
+        fallback: Box<dyn Fn(&str) -> Node>,
+    ) -> Self
+    where
+        Self: Sized + Branch<Tags>,
+    {
+        let mut result = Self::new();
+        let mut chunk_position = 0;
+        let mut text_start = 0;
+        while chunk_position < chunk.len() {
+            chunk_position += 1;
+
+            for parser in parsers {
+                if let Some((node, pos)) = parser(chunk, chunk_position - 1) {
+                    if chunk_position - 1 != text_start {
+                        result.push(fallback(&chunk[text_start..chunk_position - 1]));
+                        text_start = pos;
+                    }
+                    chunk_position = pos;
+                    result.push(node);
+                }
+            }
+        }
+        if text_start != chunk_position {
+            result.push(fallback(&chunk[text_start..chunk_position]));
+        }
+
+        result
+    }
 
     fn get_iterator(input: &str, start_position: usize) -> Enumerate<Chars> {
         let mut chars = input.chars().enumerate();

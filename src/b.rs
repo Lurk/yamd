@@ -1,13 +1,19 @@
-use crate::{i::I, p::ParagraphTags, s::S, text::Text};
+use crate::{
+    i::I,
+    p::ParagraphTags,
+    parser::{Branch, Parser, ParserPart},
+    s::S,
+    text::Text,
+};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BContent {
     Text(Text),
     I(I),
     S(S),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct B {
     data: Vec<BContent>,
 }
@@ -38,18 +44,17 @@ impl From<B> for String {
     }
 }
 
-impl B {
-    pub fn new() -> Self {
+impl Branch<BContent> for B {
+    fn new() -> Self {
         Self { data: vec![] }
     }
 
-    pub fn from_vec(data: Vec<BContent>) -> Self {
+    fn from_vec(data: Vec<BContent>) -> Self {
         Self { data }
     }
 
-    pub fn push<BC: Into<BContent>>(mut self, element: BC) -> Self {
+    fn push<BC: Into<BContent>>(&mut self, element: BC) {
         self.data.push(element.into());
-        self
     }
 }
 
@@ -59,24 +64,41 @@ impl Default for B {
     }
 }
 
+impl Parser<BContent> for B {
+    fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
+        let mut chars = Self::get_iterator(input, start_position);
+        if let Some(end_position) = chars.parse_part(vec!['*', '*'], vec!['*', '*']) {
+            let chunk = &input[start_position + 2..end_position - 1];
+            let result = Self::parse_node::<BContent>(
+                chunk,
+                &[
+                    Box::new(|str, pos| I::parse_to_tag(str, pos)),
+                    Box::new(|str, pos| S::parse_to_tag(str, pos)),
+                ],
+                Box::new(|str| Text::new(str).into()),
+            );
+            return Some((result, end_position + 1));
+        }
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::{b::B, i::I, s::S, text::Text};
+    use crate::{
+        b::B,
+        i::I,
+        parser::{Branch, Parser},
+        s::S,
+        text::Text,
+    };
 
     #[test]
     fn only_text() {
-        let b: String = B::new().push(Text::new("B as bold")).into();
-        assert_eq!(b, "**B as bold**".to_string());
-    }
-
-    #[test]
-    fn multilpe_entries() {
-        let b: String = B::new()
-            .push(Text::new("B as bold "))
-            .push(I::new("Italic"))
-            .push(S::new("Strikethrough"))
-            .into();
-        assert_eq!(b, "**B as bold *Italic*~~Strikethrough~~**".to_string());
+        let mut b = B::new();
+        b.push(Text::new("B as bold"));
+        let str: String = b.into();
+        assert_eq!(str, "**B as bold**".to_string());
     }
 
     #[test]
@@ -87,6 +109,27 @@ mod tests {
             S::new("Strikethrough").into(),
         ])
         .into();
-        assert_eq!(b, "**B as bold *Italic*~~Strikethrough~~**".to_string());
+        assert_eq!(b, "**B as bold _Italic_~~Strikethrough~~**".to_string());
+    }
+
+    #[test]
+    fn from_string() {
+        assert_eq!(
+            B::parse("**b**", 0),
+            Some((B::from_vec(vec![Text::new("b").into()]), 5))
+        );
+
+        assert_eq!(
+            B::parse("**b ~~st~~ _i t_**", 0),
+            Some((
+                B::from_vec(vec![
+                    Text::new("b ").into(),
+                    S::new("st").into(),
+                    Text::new(" ").into(),
+                    I::new("i t").into()
+                ]),
+                18
+            ))
+        );
     }
 }

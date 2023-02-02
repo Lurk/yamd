@@ -1,3 +1,5 @@
+use std::io::Empty;
+
 use crate::{
     p::ParagraphTags,
     parser::{Parser, ParserPart},
@@ -35,7 +37,7 @@ impl From<A> for ParagraphTags {
     }
 }
 
-impl Parser for A {
+impl Parser<Empty> for A {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
         let mut chars = Self::get_iterator(input, start_position);
         if let Some(first_part) = chars.parse_part(vec!['['], vec![']']) {
