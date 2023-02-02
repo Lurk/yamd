@@ -4,6 +4,14 @@ pub trait Parser {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)>
     where
         Self: Sized;
+
+    fn get_iterator(input: &str, start_position: usize) -> Enumerate<Chars> {
+        let mut chars = input.chars().enumerate();
+        if start_position != 0 {
+            chars.nth(start_position - 1);
+        }
+        chars
+    }
 }
 
 pub trait ParserPart {
