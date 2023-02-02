@@ -1,8 +1,6 @@
-use std::io::Empty;
-
 use crate::{
     p::ParagraphTags,
-    parser::{Parser, ParserPart},
+    parser::{get_iterator, Leaf, Parser, ParserPart},
 };
 
 /// Representation of an anchor
@@ -37,11 +35,13 @@ impl From<A> for ParagraphTags {
     }
 }
 
-impl Parser<Empty> for A {
+impl Leaf for A {}
+
+impl Parser for A {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        let mut chars = Self::get_iterator(input, start_position);
-        if let Some(first_part) = chars.parse_part(vec!['['], vec![']']) {
-            if let Some(second_part) = chars.parse_part(vec!['('], vec![')']) {
+        let mut chars = get_iterator(input, start_position);
+        if let Some(first_part) = chars.get_token_end_position(vec!['['], vec![']']) {
+            if let Some(second_part) = chars.get_token_end_position(vec!['('], vec![')']) {
                 return Some((
                     A::new(
                         input[first_part + 2..second_part].to_string(),

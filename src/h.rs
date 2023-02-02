@@ -1,5 +1,3 @@
-use std::io::Empty;
-
 use crate::{mdy::MdyTags, parser::Parser};
 
 #[derive(Debug, PartialEq)]
@@ -22,7 +20,7 @@ impl H {
     }
 }
 
-impl Parser<Empty> for H {
+impl Parser for H {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
         let split_position =
             if input.len() > 6 && &input[start_position..start_position + 7] == "###### " {

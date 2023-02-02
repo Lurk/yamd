@@ -1,9 +1,7 @@
-use std::io::Empty;
-
 use crate::{
-    b::BContent,
+    b::BTags,
     p::ParagraphTags,
-    parser::{Parser, ParserPart},
+    parser::{get_iterator, Leaf, Parser, ParserPart},
 };
 
 /// Representation of an Italic text
@@ -24,9 +22,9 @@ impl From<I> for String {
     }
 }
 
-impl From<I> for BContent {
+impl From<I> for BTags {
     fn from(value: I) -> Self {
-        BContent::I(value)
+        BTags::I(value)
     }
 }
 
@@ -36,10 +34,12 @@ impl From<I> for ParagraphTags {
     }
 }
 
-impl Parser<Empty> for I {
+impl Leaf for I {}
+
+impl Parser for I {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        let mut chars = Self::get_iterator(input, start_position);
-        if let Some(end_postion) = chars.parse_part(vec!['_'], vec!['_']) {
+        let mut chars = get_iterator(input, start_position);
+        if let Some(end_postion) = chars.get_token_end_position(vec!['_'], vec!['_']) {
             return Some((
                 I::new(
                     input[start_position + 1..end_postion]

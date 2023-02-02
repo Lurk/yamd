@@ -1,13 +1,13 @@
 use crate::{
     i::I,
     p::ParagraphTags,
-    parser::{Branch, Parser, ParserPart, ParserToTags},
+    parser::{get_iterator, Branch, Leaf, Parser, ParserPart, ParserToTags},
     s::S,
     text::Text,
 };
 
 #[derive(Debug, PartialEq)]
-pub enum BContent {
+pub enum BTags {
     Text(Text),
     I(I),
     S(S),
@@ -15,7 +15,7 @@ pub enum BContent {
 
 #[derive(Debug, PartialEq)]
 pub struct B {
-    data: Vec<BContent>,
+    data: Vec<BTags>,
 }
 
 impl From<B> for ParagraphTags {
@@ -33,9 +33,9 @@ impl From<B> for String {
                 .into_iter()
                 .map(|element| {
                     match element {
-                        BContent::Text(v) => v.into(),
-                        BContent::I(v) => v.into(),
-                        BContent::S(v) => v.into(),
+                        BTags::Text(v) => v.into(),
+                        BTags::I(v) => v.into(),
+                        BTags::S(v) => v.into(),
                     }
                 })
                 .collect::<Vec<String>>()
@@ -44,27 +44,27 @@ impl From<B> for String {
     }
 }
 
-impl Branch<BContent> for B {
+impl Branch<BTags> for B {
     fn new() -> Self {
         Self { data: vec![] }
     }
 
-    fn from_vec(data: Vec<BContent>) -> Self {
+    fn from_vec(data: Vec<BTags>) -> Self {
         Self { data }
     }
 
-    fn push<BC: Into<BContent>>(&mut self, element: BC) {
+    fn push<BC: Into<BTags>>(&mut self, element: BC) {
         self.data.push(element.into());
     }
 
-    fn get_parsers() -> Vec<ParserToTags<BContent>> {
+    fn get_parsers() -> Vec<ParserToTags<BTags>> {
         vec![
-            Box::new(|str, pos| I::parse_to_tag(str, pos)),
+            Box::new(|str, pos| I::parse_to_tag::<BTags>(str, pos)),
             Box::new(|str, pos| S::parse_to_tag(str, pos)),
         ]
     }
 
-    fn get_fallback() -> Box<dyn Fn(&str) -> BContent> {
+    fn get_fallback() -> Box<dyn Fn(&str) -> BTags> {
         Box::new(|str| Text::new(str).into())
     }
 }
@@ -75,10 +75,10 @@ impl Default for B {
     }
 }
 
-impl Parser<BContent> for B {
+impl Parser for B {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        let mut chars = Self::get_iterator(input, start_position);
-        if let Some(end_position) = chars.parse_part(vec!['*', '*'], vec!['*', '*']) {
+        let mut chars = get_iterator(input, start_position);
+        if let Some(end_position) = chars.get_token_end_position(vec!['*', '*'], vec!['*', '*']) {
             let chunk = &input[start_position + 2..end_position - 1];
             let result = Self::parse_branch(chunk);
             return Some((result, end_position + 1));

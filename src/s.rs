@@ -1,9 +1,7 @@
-use std::io::Empty;
-
 use crate::{
-    b::BContent,
+    b::BTags,
     p::ParagraphTags,
-    parser::{Parser, ParserPart},
+    parser::{get_iterator, Leaf, Parser, ParserPart},
 };
 
 /// Representation of strikethrough
@@ -24,9 +22,9 @@ impl From<S> for String {
     }
 }
 
-impl From<S> for BContent {
+impl From<S> for BTags {
     fn from(value: S) -> Self {
-        BContent::S(value)
+        BTags::S(value)
     }
 }
 
@@ -36,10 +34,12 @@ impl From<S> for ParagraphTags {
     }
 }
 
-impl Parser<Empty> for S {
+impl Leaf for S {}
+
+impl Parser for S {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        let mut chars = Self::get_iterator(input, start_position);
-        if let Some(end_position) = chars.parse_part(vec!['~', '~'], vec!['~', '~']) {
+        let mut chars = get_iterator(input, start_position);
+        if let Some(end_position) = chars.get_token_end_position(vec!['~', '~'], vec!['~', '~']) {
             return Some((
                 S::new(
                     input[start_position + 2..end_position - 1]

@@ -6,28 +6,10 @@ pub trait Branch<Tags> {
     fn from_vec(nodes: Vec<Tags>) -> Self;
     fn get_parsers() -> Vec<ParserToTags<Tags>>;
     fn get_fallback() -> Box<dyn Fn(&str) -> Tags>;
-}
-
-pub type ParserToTags<Tags> = Box<dyn Fn(&str, usize) -> Option<(Tags, usize)>>;
-
-pub trait Parser<Tags> {
-    fn parse(input: &str, start_position: usize) -> Option<(Self, usize)>
-    where
-        Self: Sized;
-
-    fn parse_to_tag<T>(input: &str, start_position: usize) -> Option<(T, usize)>
-    where
-        Self: Sized + Into<T>,
-    {
-        if let Some((node, pos)) = Self::parse(input, start_position) {
-            return Some((node.into(), pos));
-        }
-        None
-    }
 
     fn parse_branch(chunk: &str) -> Self
     where
-        Self: Sized + Branch<Tags>,
+        Self: Sized + Parser,
     {
         let mut result = Self::new();
         let mut chunk_position = 0;
@@ -53,18 +35,38 @@ pub trait Parser<Tags> {
 
         result
     }
+}
 
-    fn get_iterator(input: &str, start_position: usize) -> Enumerate<Chars> {
-        let mut chars = input.chars().enumerate();
-        if start_position != 0 {
-            chars.nth(start_position - 1);
+pub type ParserToTags<Tags> = Box<dyn Fn(&str, usize) -> Option<(Tags, usize)>>;
+
+pub trait Leaf {
+    fn parse_to_tag<Tags>(input: &str, start_position: usize) -> Option<(Tags, usize)>
+    where
+        Self: Sized + Parser + Into<Tags>,
+    {
+        if let Some((node, pos)) = Self::parse(input, start_position) {
+            return Some((node.into(), pos));
         }
-        chars
+        None
     }
 }
 
+pub fn get_iterator(input: &str, start_position: usize) -> Enumerate<Chars> {
+    let mut chars = input.chars().enumerate();
+    if start_position != 0 {
+        chars.nth(start_position - 1);
+    }
+    chars
+}
+
+pub trait Parser {
+    fn parse(input: &str, start_position: usize) -> Option<(Self, usize)>
+    where
+        Self: Sized;
+}
+
 pub trait ParserPart {
-    fn parse_part(&mut self, start: Vec<char>, end: Vec<char>) -> Option<usize>;
+    fn get_token_end_position(&mut self, start: Vec<char>, end: Vec<char>) -> Option<usize>;
 }
 
 struct Matcher {
@@ -92,7 +94,7 @@ impl Matcher {
 }
 
 impl<'a> ParserPart for Enumerate<Chars<'a>> {
-    fn parse_part(&mut self, start: Vec<char>, end: Vec<char>) -> Option<usize> {
+    fn get_token_end_position(&mut self, start: Vec<char>, end: Vec<char>) -> Option<usize> {
         let mut start_matcher = Matcher::new(start);
         let mut start_matched = false;
 
@@ -131,8 +133,8 @@ mod tests {
     fn parse_part() {
         let mut c = "test of *italic**one more* statement".chars().enumerate();
         c.nth(7);
-        assert_eq!(c.parse_part(vec!['*'], vec!['*']), Some(15));
-        assert_eq!(c.parse_part(vec!['*'], vec!['*']), Some(25));
+        assert_eq!(c.get_token_end_position(vec!['*'], vec!['*']), Some(15));
+        assert_eq!(c.get_token_end_position(vec!['*'], vec!['*']), Some(25));
     }
 
     #[test]

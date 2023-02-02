@@ -1,8 +1,6 @@
-use std::io::Empty;
-
 use crate::{
     p::ParagraphTags,
-    parser::{Parser, ParserPart},
+    parser::{get_iterator, Leaf, Parser, ParserPart},
 };
 
 #[derive(Debug, PartialEq)]
@@ -28,10 +26,12 @@ impl From<InlineCode> for ParagraphTags {
     }
 }
 
-impl Parser<Empty> for InlineCode {
+impl Leaf for InlineCode {}
+
+impl Parser for InlineCode {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        let mut chars = Self::get_iterator(input, start_position);
-        if let Some(end_position) = chars.parse_part(vec!['`'], vec!['`']) {
+        let mut chars = get_iterator(input, start_position);
+        if let Some(end_position) = chars.get_token_end_position(vec!['`'], vec!['`']) {
             return Some((
                 InlineCode::new(
                     input[start_position + 1..end_position]

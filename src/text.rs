@@ -1,6 +1,8 @@
-use std::io::Empty;
-
-use crate::{b::BContent, p::ParagraphTags, parser::Parser};
+use crate::{
+    b::BTags,
+    p::ParagraphTags,
+    parser::{Leaf, Parser},
+};
 
 /// Representation of a regular text
 #[derive(Debug, PartialEq)]
@@ -20,9 +22,9 @@ impl From<Text> for String {
     }
 }
 
-impl From<Text> for BContent {
+impl From<Text> for BTags {
     fn from(value: Text) -> Self {
-        BContent::Text(value)
+        BTags::Text(value)
     }
 }
 
@@ -32,11 +34,13 @@ impl From<Text> for ParagraphTags {
     }
 }
 
-impl Parser<Empty> for Text {
+impl Parser for Text {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
         Some((Text::new(input[start_position..].to_string()), input.len()))
     }
 }
+
+impl Leaf for Text {}
 
 #[cfg(test)]
 mod tests {
