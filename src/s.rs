@@ -36,11 +36,7 @@ impl From<S> for ParagraphTags {
 
 impl Parser for S {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        let mut chars = input.chars().enumerate();
-        if start_position != 0 {
-            chars.nth(start_position - 1);
-        }
-
+        let mut chars = Self::get_iterator(input, start_position);
         if let Some(end_position) = chars.parse_part(vec!['~', '~'], vec!['~', '~']) {
             return Some((
                 S::new(

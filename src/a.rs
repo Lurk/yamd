@@ -37,10 +37,7 @@ impl From<A> for ParagraphTags {
 
 impl Parser for A {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        let mut chars = input.chars().enumerate();
-        if start_position != 0 {
-            chars.nth(start_position - 1);
-        }
+        let mut chars = Self::get_iterator(input, start_position);
         if let Some(first_part) = chars.parse_part(vec!['['], vec![']']) {
             if let Some(second_part) = chars.parse_part(vec!['('], vec![')']) {
                 return Some((
