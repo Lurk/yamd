@@ -5,6 +5,7 @@ pub trait Branch<Tags> {
     fn push<Node: Into<Tags>>(&mut self, node: Node);
     fn from_vec(nodes: Vec<Tags>) -> Self;
     fn get_parsers() -> Vec<ParserToTags<Tags>>;
+    fn get_fallback() -> Box<dyn Fn(&str) -> Tags>;
 }
 
 pub type ParserToTags<Tags> = Box<dyn Fn(&str, usize) -> Option<(Tags, usize)>>;
@@ -24,13 +25,14 @@ pub trait Parser<Tags> {
         None
     }
 
-    fn parse_node<Node: Into<Tags>>(chunk: &str, fallback: Box<dyn Fn(&str) -> Node>) -> Self
+    fn parse_node(chunk: &str) -> Self
     where
         Self: Sized + Branch<Tags>,
     {
         let mut result = Self::new();
         let mut chunk_position = 0;
         let mut text_start = 0;
+        let fallback = Self::get_fallback();
         while chunk_position < chunk.len() {
             chunk_position += 1;
 

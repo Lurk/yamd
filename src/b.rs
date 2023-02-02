@@ -63,6 +63,10 @@ impl Branch<BContent> for B {
             Box::new(|str, pos| S::parse_to_tag(str, pos)),
         ]
     }
+
+    fn get_fallback() -> Box<dyn Fn(&str) -> BContent> {
+        Box::new(|str| Text::new(str).into())
+    }
 }
 
 impl Default for B {
@@ -76,7 +80,7 @@ impl Parser<BContent> for B {
         let mut chars = Self::get_iterator(input, start_position);
         if let Some(end_position) = chars.parse_part(vec!['*', '*'], vec!['*', '*']) {
             let chunk = &input[start_position + 2..end_position - 1];
-            let result = Self::parse_node::<BContent>(chunk, Box::new(|str| Text::new(str).into()));
+            let result = Self::parse_node(chunk);
             return Some((result, end_position + 1));
         }
         None
