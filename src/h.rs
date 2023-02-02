@@ -22,21 +22,34 @@ impl H {
 
 impl Parser for H {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        if input.chars().nth(start_position) == Some('#') {
+        let split_position =
+            if input.len() > 6 && &input[start_position..start_position + 7] == "###### " {
+                Some(7)
+            } else if input.len() > 5 && &input[start_position..start_position + 6] == "##### " {
+                Some(6)
+            } else if input.len() > 4 && &input[start_position..start_position + 5] == "#### " {
+                Some(5)
+            } else if input.len() > 3 && &input[start_position..start_position + 4] == "### " {
+                Some(4)
+            } else if input.len() > 2 && &input[start_position..start_position + 3] == "## " {
+                Some(3)
+            } else if input.len() > 1 && &input[start_position..start_position + 2] == "# " {
+                Some(2)
+            } else {
+                None
+            };
+
+        if let Some(split_position) = split_position {
             let stop_position = match input[start_position..].find("\n\n") {
                 Some(position) => position + start_position + 2,
                 None => input.len(),
             };
-            if let Some(stop) = input[start_position..stop_position].find(' ') {
-                let mut level: String = input[start_position..stop_position].into();
-                let text = level.split_off(stop);
-                if level.chars().all(|char| char == '#') {
-                    return Some((
-                        Self::new(text.trim(), level.len().try_into().unwrap_or(0)),
-                        stop_position,
-                    ));
-                }
-            }
+            let mut level: String = input[start_position..stop_position].into();
+            let text = level.split_off(split_position);
+            return Some((
+                Self::new(text.trim(), level.len().try_into().unwrap_or(0) - 1),
+                stop_position,
+            ));
         }
         None
     }
@@ -44,8 +57,8 @@ impl Parser for H {
 
 impl From<H> for String {
     fn from(value: H) -> Self {
-        let key = String::from('#').repeat(value.level as usize);
-        format!("{} {}", key, value.text)
+        let level = String::from('#').repeat(value.level as usize);
+        format!("{} {}", level, value.text)
     }
 }
 
