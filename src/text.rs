@@ -1,7 +1,7 @@
-use crate::{b::BContent, p::ParagraphTags};
+use crate::{b::BContent, p::ParagraphTags, parser::Parser};
 
 /// Representation of a regular text
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Text {
     text: String,
 }
@@ -30,8 +30,16 @@ impl From<Text> for ParagraphTags {
     }
 }
 
+impl Parser for Text {
+    fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
+        Some((Text::new(input[start_position..].to_string()), input.len()))
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::parser::Parser;
+
     use super::Text;
 
     #[test]
@@ -44,5 +52,10 @@ mod tests {
     fn to_string() {
         let text: String = Text::new("shiny text").into();
         assert_eq!(text, "shiny text".to_string());
+    }
+
+    #[test]
+    fn from_string() {
+        assert_eq!(Text::parse("t", 0), Some((Text::new("t"), 1)));
     }
 }
