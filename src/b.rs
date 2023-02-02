@@ -1,7 +1,7 @@
 use crate::{
     i::I,
     p::ParagraphTags,
-    parser::{Branch, Parser, ParserPart},
+    parser::{Branch, Parser, ParserPart, ParserToTags},
     s::S,
     text::Text,
 };
@@ -56,6 +56,13 @@ impl Branch<BContent> for B {
     fn push<BC: Into<BContent>>(&mut self, element: BC) {
         self.data.push(element.into());
     }
+
+    fn get_parsers() -> Vec<ParserToTags<BContent>> {
+        vec![
+            Box::new(|str, pos| I::parse_to_tag(str, pos)),
+            Box::new(|str, pos| S::parse_to_tag(str, pos)),
+        ]
+    }
 }
 
 impl Default for B {
@@ -69,14 +76,7 @@ impl Parser<BContent> for B {
         let mut chars = Self::get_iterator(input, start_position);
         if let Some(end_position) = chars.parse_part(vec!['*', '*'], vec!['*', '*']) {
             let chunk = &input[start_position + 2..end_position - 1];
-            let result = Self::parse_node::<BContent>(
-                chunk,
-                &[
-                    Box::new(|str, pos| I::parse_to_tag(str, pos)),
-                    Box::new(|str, pos| S::parse_to_tag(str, pos)),
-                ],
-                Box::new(|str| Text::new(str).into()),
-            );
+            let result = Self::parse_node::<BContent>(chunk, Box::new(|str| Text::new(str).into()));
             return Some((result, end_position + 1));
         }
         None

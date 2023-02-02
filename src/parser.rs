@@ -4,9 +4,10 @@ pub trait Branch<Tags> {
     fn new() -> Self;
     fn push<Node: Into<Tags>>(&mut self, node: Node);
     fn from_vec(nodes: Vec<Tags>) -> Self;
+    fn get_parsers() -> Vec<ParserToTags<Tags>>;
 }
 
-type ParserToTags<Tags> = Box<dyn Fn(&str, usize) -> Option<(Tags, usize)>>;
+pub type ParserToTags<Tags> = Box<dyn Fn(&str, usize) -> Option<(Tags, usize)>>;
 
 pub trait Parser<Tags> {
     fn parse(input: &str, start_position: usize) -> Option<(Self, usize)>
@@ -23,11 +24,7 @@ pub trait Parser<Tags> {
         None
     }
 
-    fn parse_node<Node: Into<Tags>>(
-        chunk: &str,
-        parsers: &[ParserToTags<Tags>; 2],
-        fallback: Box<dyn Fn(&str) -> Node>,
-    ) -> Self
+    fn parse_node<Node: Into<Tags>>(chunk: &str, fallback: Box<dyn Fn(&str) -> Node>) -> Self
     where
         Self: Sized + Branch<Tags>,
     {
@@ -37,7 +34,7 @@ pub trait Parser<Tags> {
         while chunk_position < chunk.len() {
             chunk_position += 1;
 
-            for parser in parsers {
+            for parser in Self::get_parsers() {
                 if let Some((node, pos)) = parser(chunk, chunk_position - 1) {
                     if chunk_position - 1 != text_start {
                         result.push(fallback(&chunk[text_start..chunk_position - 1]));
