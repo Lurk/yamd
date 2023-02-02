@@ -59,7 +59,7 @@ impl Branch<BTags> for B {
 
     fn get_parsers() -> Vec<ParserToTags<BTags>> {
         vec![
-            Box::new(|str, pos| I::parse_to_tag::<BTags>(str, pos)),
+            Box::new(|str, pos| I::parse_to_tag(str, pos)),
             Box::new(|str, pos| S::parse_to_tag(str, pos)),
         ]
     }
