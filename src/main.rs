@@ -1,11 +1,11 @@
 mod a;
 mod b;
+mod deserializer;
 mod h;
 mod i;
 mod inline_code;
 mod mdy;
 mod p;
-mod parser;
 mod s;
 mod text;
 

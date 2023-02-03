@@ -68,7 +68,7 @@ impl From<P> for MdyTags {
 
 #[cfg(test)]
 mod tests {
-    use crate::{b::B, inline_code::InlineCode, parser::Branch, text::Text};
+    use crate::{b::B, deserializer::Branch, inline_code::InlineCode, text::Text};
 
     use super::P;
 

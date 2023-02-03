@@ -1,7 +1,7 @@
 use crate::{
     b::BTags,
+    deserializer::{Deserializer, Leaf, Tokenizer},
     p::ParagraphTags,
-    parser::{Deserializer, Leaf, Tokenizer},
 };
 
 /// Representation of an Italic text
@@ -52,7 +52,7 @@ impl Deserializer for I {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::Deserializer;
+    use crate::deserializer::Deserializer;
 
     use super::I;
 

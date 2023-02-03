@@ -1,6 +1,6 @@
 use crate::{
+    deserializer::{Deserializer, Leaf, Tokenizer},
     p::ParagraphTags,
-    parser::{Deserializer, Leaf, Tokenizer},
 };
 
 #[derive(Debug, PartialEq)]
@@ -43,7 +43,7 @@ impl Deserializer for InlineCode {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::Deserializer;
+    use crate::deserializer::Deserializer;
 
     use super::InlineCode;
 

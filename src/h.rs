@@ -1,4 +1,4 @@
-use crate::{mdy::MdyTags, parser::Deserializer};
+use crate::{deserializer::Deserializer, mdy::MdyTags};
 
 #[derive(Debug, PartialEq)]
 pub struct H {
@@ -70,7 +70,7 @@ impl From<H> for MdyTags {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::Deserializer;
+    use crate::deserializer::Deserializer;
 
     use super::H;
 

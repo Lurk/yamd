@@ -1,7 +1,7 @@
 use crate::{
     b::BTags,
+    deserializer::{Deserializer, Leaf},
     p::ParagraphTags,
-    parser::{Deserializer, Leaf},
 };
 
 /// Representation of a regular text
@@ -44,7 +44,7 @@ impl Leaf for Text {}
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::Deserializer;
+    use crate::deserializer::Deserializer;
 
     use super::Text;
 

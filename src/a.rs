@@ -1,6 +1,6 @@
 use crate::{
+    deserializer::{Deserializer, Leaf, Tokenizer},
     p::ParagraphTags,
-    parser::{Deserializer, Leaf, Tokenizer},
 };
 
 /// Representation of an anchor
@@ -51,7 +51,7 @@ impl Deserializer for A {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::Deserializer;
+    use crate::deserializer::Deserializer;
 
     use super::A;
 

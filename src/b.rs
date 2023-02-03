@@ -1,7 +1,7 @@
 use crate::{
+    deserializer::{Branch, Deserializer, Leaf, ParserToTags, Tokenizer},
     i::I,
     p::ParagraphTags,
-    parser::{Branch, Deserializer, Leaf, ParserToTags, Tokenizer},
     s::S,
     text::Text,
 };
@@ -94,8 +94,8 @@ impl Deserializer for B {
 mod tests {
     use crate::{
         b::B,
+        deserializer::{Branch, Deserializer},
         i::I,
-        parser::{Branch, Deserializer},
         s::S,
         text::Text,
     };

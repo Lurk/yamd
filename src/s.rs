@@ -1,7 +1,7 @@
 use crate::{
     b::BTags,
+    deserializer::{Deserializer, Leaf, Tokenizer},
     p::ParagraphTags,
-    parser::{Deserializer, Leaf, Tokenizer},
 };
 
 /// Representation of strikethrough
@@ -51,7 +51,7 @@ impl Deserializer for S {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::Deserializer;
+    use crate::deserializer::Deserializer;
 
     use super::S;
 
