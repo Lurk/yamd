@@ -1,7 +1,7 @@
 use crate::{
     b::BTags,
     p::ParagraphTags,
-    parser::{get_iterator, Leaf, Parser, ParserPart},
+    parser::{get_iterator, Deserializer, Leaf, ParserPart},
 };
 
 /// Representation of strikethrough
@@ -36,8 +36,8 @@ impl From<S> for ParagraphTags {
 
 impl Leaf for S {}
 
-impl Parser for S {
-    fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
+impl Deserializer for S {
+    fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
         let mut chars = get_iterator(input, start_position);
         if let Some(end_position) = chars.get_token_end_position(vec!['~', '~'], vec!['~', '~']) {
             return Some((
@@ -55,7 +55,7 @@ impl Parser for S {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::Parser;
+    use crate::parser::Deserializer;
 
     use super::S;
 
@@ -73,10 +73,10 @@ mod tests {
 
     #[test]
     fn parse() {
-        assert_eq!(S::parse("~~2+2=5~~", 0), Some((S::new("2+2=5"), 9)));
-        assert_eq!(S::parse("not ~~is~~not", 4), Some((S::new("is"), 10)));
-        assert_eq!(S::parse("~~not", 0), None);
-        assert_eq!(S::parse("~~i\n\ns~~", 0), None);
-        assert_eq!(S::parse("~~i\ns~~", 0), Some((S::new("is"), 7)));
+        assert_eq!(S::deserialize("~~2+2=5~~", 0), Some((S::new("2+2=5"), 9)));
+        assert_eq!(S::deserialize("not ~~is~~not", 4), Some((S::new("is"), 10)));
+        assert_eq!(S::deserialize("~~not", 0), None);
+        assert_eq!(S::deserialize("~~i\n\ns~~", 0), None);
+        assert_eq!(S::deserialize("~~i\ns~~", 0), Some((S::new("is"), 7)));
     }
 }

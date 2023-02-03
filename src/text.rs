@@ -1,7 +1,7 @@
 use crate::{
     b::BTags,
     p::ParagraphTags,
-    parser::{Leaf, Parser},
+    parser::{Deserializer, Leaf},
 };
 
 /// Representation of a regular text
@@ -34,8 +34,8 @@ impl From<Text> for ParagraphTags {
     }
 }
 
-impl Parser for Text {
-    fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
+impl Deserializer for Text {
+    fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
         Some((Text::new(input[start_position..].to_string()), input.len()))
     }
 }
@@ -44,7 +44,7 @@ impl Leaf for Text {}
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::Parser;
+    use crate::parser::Deserializer;
 
     use super::Text;
 
@@ -62,6 +62,6 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(Text::parse("t", 0), Some((Text::new("t"), 1)));
+        assert_eq!(Text::deserialize("t", 0), Some((Text::new("t"), 1)));
     }
 }

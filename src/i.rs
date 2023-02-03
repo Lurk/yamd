@@ -1,7 +1,7 @@
 use crate::{
     b::BTags,
     p::ParagraphTags,
-    parser::{get_iterator, Leaf, Parser, ParserPart},
+    parser::{get_iterator, Deserializer, Leaf, ParserPart},
 };
 
 /// Representation of an Italic text
@@ -36,8 +36,8 @@ impl From<I> for ParagraphTags {
 
 impl Leaf for I {}
 
-impl Parser for I {
-    fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
+impl Deserializer for I {
+    fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
         let mut chars = get_iterator(input, start_position);
         if let Some(end_postion) = chars.get_token_end_position(vec!['_'], vec!['_']) {
             return Some((
@@ -56,7 +56,7 @@ impl Parser for I {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::Parser;
+    use crate::parser::Deserializer;
 
     use super::I;
 
@@ -74,15 +74,18 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(I::parse("_italic_", 0), Some((I::new("italic"), 8)));
-        assert_eq!(I::parse("not_italic_not", 3), Some((I::new("italic"), 11)));
+        assert_eq!(I::deserialize("_italic_", 0), Some((I::new("italic"), 8)));
         assert_eq!(
-            I::parse("not_it alic_not", 3),
+            I::deserialize("not_italic_not", 3),
+            Some((I::new("italic"), 11))
+        );
+        assert_eq!(
+            I::deserialize("not_it alic_not", 3),
             Some((I::new("it alic"), 12))
         );
-        assert_eq!(I::parse("not italic_not", 3), None);
-        assert_eq!(I::parse("*italic not", 0), None);
-        assert_eq!(I::parse("_ita\nlic_", 0), Some((I::new("italic"), 9)));
-        assert_eq!(I::parse("_ita\n\nlic_", 0), None);
+        assert_eq!(I::deserialize("not italic_not", 3), None);
+        assert_eq!(I::deserialize("*italic not", 0), None);
+        assert_eq!(I::deserialize("_ita\nlic_", 0), Some((I::new("italic"), 9)));
+        assert_eq!(I::deserialize("_ita\n\nlic_", 0), None);
     }
 }

@@ -1,7 +1,7 @@
 use crate::{
     i::I,
     p::ParagraphTags,
-    parser::{get_iterator, Branch, Leaf, Parser, ParserPart, ParserToTags},
+    parser::{get_iterator, Branch, Deserializer, Leaf, ParserPart, ParserToTags},
     s::S,
     text::Text,
 };
@@ -79,8 +79,8 @@ impl Default for B {
     }
 }
 
-impl Parser for B {
-    fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
+impl Deserializer for B {
+    fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
         let mut chars = get_iterator(input, start_position);
         if let Some(end_position) = chars.get_token_end_position(vec!['*', '*'], vec!['*', '*']) {
             let chunk = &input[start_position + 2..end_position - 1];
@@ -96,7 +96,7 @@ mod tests {
     use crate::{
         b::B,
         i::I,
-        parser::{Branch, Parser},
+        parser::{Branch, Deserializer},
         s::S,
         text::Text,
     };
@@ -123,12 +123,12 @@ mod tests {
     #[test]
     fn from_string() {
         assert_eq!(
-            B::parse("**b**", 0),
+            B::deserialize("**b**", 0),
             Some((B::from_vec(vec![Text::new("b").into()]), 5))
         );
 
         assert_eq!(
-            B::parse("**b ~~st~~ _i t_**", 0),
+            B::deserialize("**b ~~st~~ _i t_**", 0),
             Some((
                 B::from_vec(vec![
                     Text::new("b ").into(),

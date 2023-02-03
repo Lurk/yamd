@@ -1,4 +1,4 @@
-use crate::{mdy::MdyTags, parser::Parser};
+use crate::{mdy::MdyTags, parser::Deserializer};
 
 #[derive(Debug, PartialEq)]
 pub struct H {
@@ -20,8 +20,8 @@ impl H {
     }
 }
 
-impl Parser for H {
-    fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
+impl Deserializer for H {
+    fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
         let split_position =
             if input.len() > 6 && &input[start_position..start_position + 7] == "###### " {
                 Some(7)
@@ -70,7 +70,7 @@ impl From<H> for MdyTags {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::Parser;
+    use crate::parser::Deserializer;
 
     use super::H;
 
@@ -102,15 +102,21 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(H::parse("## Header", 0), Some((H::new("Header", 2), 9)));
-        assert_eq!(H::parse("### Head", 0), Some((H::new("Head", 3), 8)));
-        assert_eq!(H::parse("not ### Head", 4), Some((H::new("Head", 3), 12)));
         assert_eq!(
-            H::parse("not ### Head\n\nsome other thing", 4),
+            H::deserialize("## Header", 0),
+            Some((H::new("Header", 2), 9))
+        );
+        assert_eq!(H::deserialize("### Head", 0), Some((H::new("Head", 3), 8)));
+        assert_eq!(
+            H::deserialize("not ### Head", 4),
+            Some((H::new("Head", 3), 12))
+        );
+        assert_eq!(
+            H::deserialize("not ### Head\n\nsome other thing", 4),
             Some((H::new("Head", 3), 14))
         );
-        assert_eq!(H::parse("not a header", 0), None);
-        assert_eq!(H::parse("######", 0), None);
-        assert_eq!(H::parse("######also not a header", 0), None);
+        assert_eq!(H::deserialize("not a header", 0), None);
+        assert_eq!(H::deserialize("######", 0), None);
+        assert_eq!(H::deserialize("######also not a header", 0), None);
     }
 }

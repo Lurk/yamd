@@ -9,7 +9,7 @@ pub trait Branch<Tags> {
 
     fn parse_branch(chunk: &str) -> Self
     where
-        Self: Sized + Parser,
+        Self: Sized + Deserializer,
     {
         let mut result = Self::new();
         let mut chunk_position = 0;
@@ -42,9 +42,9 @@ pub type ParserToTags<Tags> = Box<dyn Fn(&str, usize) -> Option<(Tags, usize)>>;
 pub trait Leaf {
     fn parse_to_tag<Tags>(input: &str, start_position: usize) -> Option<(Tags, usize)>
     where
-        Self: Sized + Parser + Into<Tags>,
+        Self: Sized + Deserializer + Into<Tags>,
     {
-        if let Some((node, pos)) = Self::parse(input, start_position) {
+        if let Some((node, pos)) = Self::deserialize(input, start_position) {
             return Some((node.into(), pos));
         }
         None
@@ -59,8 +59,8 @@ pub fn get_iterator(input: &str, start_position: usize) -> Enumerate<Chars> {
     chars
 }
 
-pub trait Parser {
-    fn parse(input: &str, start_position: usize) -> Option<(Self, usize)>
+pub trait Deserializer {
+    fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)>
     where
         Self: Sized;
 }

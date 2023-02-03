@@ -1,6 +1,6 @@
 use crate::{
     p::ParagraphTags,
-    parser::{get_iterator, Leaf, Parser, ParserPart},
+    parser::{get_iterator, Deserializer, Leaf, ParserPart},
 };
 
 #[derive(Debug, PartialEq)]
@@ -28,8 +28,8 @@ impl From<InlineCode> for ParagraphTags {
 
 impl Leaf for InlineCode {}
 
-impl Parser for InlineCode {
-    fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
+impl Deserializer for InlineCode {
+    fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
         let mut chars = get_iterator(input, start_position);
         if let Some(end_position) = chars.get_token_end_position(vec!['`'], vec!['`']) {
             return Some((
@@ -47,7 +47,7 @@ impl Parser for InlineCode {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::Parser;
+    use crate::parser::Deserializer;
 
     use super::InlineCode;
 
@@ -59,16 +59,19 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(InlineCode::parse("`1`", 0), Some((InlineCode::new('1'), 2)));
         assert_eq!(
-            InlineCode::parse("not`1`", 3),
+            InlineCode::deserialize("`1`", 0),
+            Some((InlineCode::new('1'), 2))
+        );
+        assert_eq!(
+            InlineCode::deserialize("not`1`", 3),
             Some((InlineCode::new('1'), 5))
         );
         assert_eq!(
-            InlineCode::parse("`const \nfoo='bar'`", 0),
+            InlineCode::deserialize("`const \nfoo='bar'`", 0),
             Some((InlineCode::new("const foo='bar'"), 17))
         );
-        assert_eq!(InlineCode::parse("not`a", 3), None);
-        assert_eq!(InlineCode::parse("`const \n\nfoo='bar'`", 0), None);
+        assert_eq!(InlineCode::deserialize("not`a", 3), None);
+        assert_eq!(InlineCode::deserialize("`const \n\nfoo='bar'`", 0), None);
     }
 }

@@ -1,6 +1,6 @@
 use crate::{
     p::ParagraphTags,
-    parser::{get_iterator, Leaf, Parser, ParserPart},
+    parser::{get_iterator, Deserializer, Leaf, ParserPart},
 };
 
 /// Representation of an anchor
@@ -37,8 +37,8 @@ impl From<A> for ParagraphTags {
 
 impl Leaf for A {}
 
-impl Parser for A {
-    fn parse(input: &str, start_position: usize) -> Option<(Self, usize)> {
+impl Deserializer for A {
+    fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
         let mut chars = get_iterator(input, start_position);
         if let Some(first_part) = chars.get_token_end_position(vec!['['], vec![']']) {
             if let Some(second_part) = chars.get_token_end_position(vec!['('], vec![')']) {
@@ -57,7 +57,7 @@ impl Parser for A {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::Parser;
+    use crate::parser::Deserializer;
 
     use super::A;
 
@@ -83,7 +83,7 @@ mod tests {
     #[test]
     fn from_string() {
         assert_eq!(
-            A::parse("[1](2)", 0),
+            A::deserialize("[1](2)", 0),
             Some((A::new("2", Some("1".to_string())), 6))
         )
     }
