@@ -1,7 +1,7 @@
 use crate::{
-    b::BNodes,
+    b::BNode,
     deserializer::{Deserializer, Leaf},
-    p::ParagraphNodes,
+    p::ParagraphNode,
     serializer::Serializer,
 };
 
@@ -23,15 +23,15 @@ impl Serializer for Text {
     }
 }
 
-impl From<Text> for BNodes {
+impl From<Text> for BNode {
     fn from(value: Text) -> Self {
-        BNodes::Text(value)
+        BNode::Text(value)
     }
 }
 
-impl From<Text> for ParagraphNodes {
+impl From<Text> for ParagraphNode {
     fn from(value: Text) -> Self {
-        ParagraphNodes::Text(value)
+        ParagraphNode::Text(value)
     }
 }
 

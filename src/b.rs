@@ -1,37 +1,37 @@
 use crate::{
     deserializer::{Branch, Deserializer, Leaf, ParserToTags, Tokenizer},
     i::I,
-    p::ParagraphNodes,
+    p::ParagraphNode,
     s::S,
     serializer::Serializer,
     text::Text,
 };
 
 #[derive(Debug, PartialEq)]
-pub enum BNodes {
+pub enum BNode {
     Text(Text),
     I(I),
     S(S),
 }
 
-impl Serializer for BNodes {
+impl Serializer for BNode {
     fn serialize(&self) -> String {
         match self {
-            BNodes::Text(v) => v.serialize(),
-            BNodes::I(v) => v.serialize(),
-            BNodes::S(v) => v.serialize(),
+            BNode::Text(v) => v.serialize(),
+            BNode::I(v) => v.serialize(),
+            BNode::S(v) => v.serialize(),
         }
     }
 }
 
 #[derive(Debug, PartialEq)]
 pub struct B {
-    nodes: Vec<BNodes>,
+    nodes: Vec<BNode>,
 }
 
-impl From<B> for ParagraphNodes {
+impl From<B> for ParagraphNode {
     fn from(value: B) -> Self {
-        ParagraphNodes::B(value)
+        ParagraphNode::B(value)
     }
 }
 
@@ -48,27 +48,27 @@ impl Serializer for B {
     }
 }
 
-impl Branch<BNodes> for B {
+impl Branch<BNode> for B {
     fn new() -> Self {
         Self { nodes: vec![] }
     }
 
-    fn from_vec(data: Vec<BNodes>) -> Self {
+    fn from_vec(data: Vec<BNode>) -> Self {
         Self { nodes: data }
     }
 
-    fn push<BC: Into<BNodes>>(&mut self, element: BC) {
+    fn push<BC: Into<BNode>>(&mut self, element: BC) {
         self.nodes.push(element.into());
     }
 
-    fn get_parsers() -> Vec<ParserToTags<BNodes>> {
+    fn get_parsers() -> Vec<ParserToTags<BNode>> {
         vec![
             Box::new(|str, pos| I::parse_to_tag(str, pos)),
             Box::new(|str, pos| S::parse_to_tag(str, pos)),
         ]
     }
 
-    fn get_fallback() -> Box<dyn Fn(&str) -> BNodes> {
+    fn get_fallback() -> Box<dyn Fn(&str) -> BNode> {
         Box::new(|str| Text::new(str).into())
     }
 }

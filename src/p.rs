@@ -8,7 +8,7 @@ use crate::serializer::Serializer;
 use crate::text::Text;
 
 #[derive(Debug)]
-pub enum ParagraphNodes {
+pub enum ParagraphNode {
     A(A),
     B(B),
     I(I),
@@ -17,22 +17,22 @@ pub enum ParagraphNodes {
     InlineCode(InlineCode),
 }
 
-impl Serializer for ParagraphNodes {
+impl Serializer for ParagraphNode {
     fn serialize(&self) -> String {
         match self {
-            ParagraphNodes::A(v) => v.serialize(),
-            ParagraphNodes::B(v) => v.serialize(),
-            ParagraphNodes::I(v) => v.serialize(),
-            ParagraphNodes::S(v) => v.serialize(),
-            ParagraphNodes::Text(v) => v.serialize(),
-            ParagraphNodes::InlineCode(v) => v.serialize(),
+            ParagraphNode::A(v) => v.serialize(),
+            ParagraphNode::B(v) => v.serialize(),
+            ParagraphNode::I(v) => v.serialize(),
+            ParagraphNode::S(v) => v.serialize(),
+            ParagraphNode::Text(v) => v.serialize(),
+            ParagraphNode::InlineCode(v) => v.serialize(),
         }
     }
 }
 
 #[derive(Debug)]
 pub struct P {
-    data: Vec<ParagraphNodes>,
+    data: Vec<ParagraphNode>,
 }
 
 impl P {
@@ -40,11 +40,11 @@ impl P {
         Self { data: vec![] }
     }
 
-    pub fn from_vec(data: Vec<ParagraphNodes>) -> Self {
+    pub fn from_vec(data: Vec<ParagraphNode>) -> Self {
         Self { data }
     }
 
-    pub fn push<TP: Into<ParagraphNodes>>(mut self, element: TP) -> Self {
+    pub fn push<TP: Into<ParagraphNode>>(mut self, element: TP) -> Self {
         self.data.push(element.into());
         self
     }
