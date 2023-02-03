@@ -3,7 +3,7 @@ use crate::b::B;
 use crate::deserializer::{Branch, Deserializer, Node};
 use crate::i::I;
 use crate::inline_code::InlineCode;
-use crate::mdy::MdyNodes;
+use crate::mdy::YamdNodes;
 use crate::s::S;
 use crate::serializer::Serializer;
 use crate::text::Text;
@@ -94,9 +94,9 @@ impl Default for P {
     }
 }
 
-impl From<P> for MdyNodes {
+impl From<P> for YamdNodes {
     fn from(value: P) -> Self {
-        MdyNodes::P(value)
+        YamdNodes::P(value)
     }
 }
 

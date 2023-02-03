@@ -1,4 +1,4 @@
-use crate::{deserializer::Deserializer, mdy::MdyNodes, serializer::Serializer};
+use crate::{deserializer::Deserializer, mdy::YamdNodes, serializer::Serializer};
 
 #[derive(Debug, PartialEq)]
 pub struct H {
@@ -62,9 +62,9 @@ impl Serializer for H {
     }
 }
 
-impl From<H> for MdyNodes {
+impl From<H> for YamdNodes {
     fn from(value: H) -> Self {
-        MdyNodes::H(value)
+        YamdNodes::H(value)
     }
 }
 

@@ -1,41 +1,41 @@
 use crate::{h::H, p::P, serializer::Serializer};
 
 #[derive(Debug)]
-pub enum MdyNodes {
+pub enum YamdNodes {
     P(P),
     H(H),
 }
 
-impl Serializer for MdyNodes {
+impl Serializer for YamdNodes {
     fn serialize(&self) -> String {
         match self {
-            MdyNodes::P(v) => v.serialize(),
-            MdyNodes::H(v) => v.serialize(),
+            YamdNodes::P(v) => v.serialize(),
+            YamdNodes::H(v) => v.serialize(),
         }
     }
 }
 
 #[derive(Debug)]
-pub struct Mdy {
-    nodes: Vec<MdyNodes>,
+pub struct Yamd {
+    nodes: Vec<YamdNodes>,
 }
 
-impl Mdy {
+impl Yamd {
     pub fn new() -> Self {
         Self { nodes: vec![] }
     }
 
-    pub fn from_vec(data: Vec<MdyNodes>) -> Self {
+    pub fn from_vec(data: Vec<YamdNodes>) -> Self {
         Self { nodes: data }
     }
 
-    pub fn push<TC: Into<MdyNodes>>(mut self, element: TC) -> Self {
+    pub fn push<TC: Into<YamdNodes>>(mut self, element: TC) -> Self {
         self.nodes.push(element.into());
         self
     }
 }
 
-impl Serializer for Mdy {
+impl Serializer for Yamd {
     fn serialize(&self) -> String {
         self.nodes
             .iter()
@@ -45,7 +45,7 @@ impl Serializer for Mdy {
     }
 }
 
-impl Default for Mdy {
+impl Default for Yamd {
     fn default() -> Self {
         Self::new()
     }
@@ -55,11 +55,11 @@ impl Default for Mdy {
 mod tests {
     use crate::{deserializer::Branch, h::H, p::P, serializer::Serializer, text::Text};
 
-    use super::Mdy;
+    use super::Yamd;
 
     #[test]
     fn push() {
-        let t: String = Mdy::new()
+        let t: String = Yamd::new()
             .push(H::new("header", 1))
             .push(P::from_vec(vec![Text::new("text").into()]))
             .serialize();
@@ -69,7 +69,7 @@ mod tests {
 
     #[test]
     fn from_vec() {
-        let t: String = Mdy::from_vec(vec![
+        let t: String = Yamd::from_vec(vec![
             H::new("header", 1).into(),
             P::from_vec(vec![Text::new("text").into()]).into(),
         ])
