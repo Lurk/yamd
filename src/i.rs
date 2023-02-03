@@ -1,5 +1,5 @@
 use crate::{
-    b::BTags,
+    b::BNodes,
     deserializer::{Deserializer, Leaf, Tokenizer},
     p::ParagraphTags,
     serializer::Serializer,
@@ -23,9 +23,9 @@ impl Serializer for I {
     }
 }
 
-impl From<I> for BTags {
+impl From<I> for BNodes {
     fn from(value: I) -> Self {
-        BTags::I(value)
+        BNodes::I(value)
     }
 }
 

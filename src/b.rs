@@ -8,25 +8,25 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq)]
-pub enum BTags {
+pub enum BNodes {
     Text(Text),
     I(I),
     S(S),
 }
 
-impl Serializer for BTags {
+impl Serializer for BNodes {
     fn serialize(&self) -> String {
         match self {
-            BTags::Text(v) => v.serialize(),
-            BTags::I(v) => v.serialize(),
-            BTags::S(v) => v.serialize(),
+            BNodes::Text(v) => v.serialize(),
+            BNodes::I(v) => v.serialize(),
+            BNodes::S(v) => v.serialize(),
         }
     }
 }
 
 #[derive(Debug, PartialEq)]
 pub struct B {
-    nodes: Vec<BTags>,
+    nodes: Vec<BNodes>,
 }
 
 impl From<B> for ParagraphTags {
@@ -48,27 +48,27 @@ impl Serializer for B {
     }
 }
 
-impl Branch<BTags> for B {
+impl Branch<BNodes> for B {
     fn new() -> Self {
         Self { nodes: vec![] }
     }
 
-    fn from_vec(data: Vec<BTags>) -> Self {
+    fn from_vec(data: Vec<BNodes>) -> Self {
         Self { nodes: data }
     }
 
-    fn push<BC: Into<BTags>>(&mut self, element: BC) {
+    fn push<BC: Into<BNodes>>(&mut self, element: BC) {
         self.nodes.push(element.into());
     }
 
-    fn get_parsers() -> Vec<ParserToTags<BTags>> {
+    fn get_parsers() -> Vec<ParserToTags<BNodes>> {
         vec![
             Box::new(|str, pos| I::parse_to_tag(str, pos)),
             Box::new(|str, pos| S::parse_to_tag(str, pos)),
         ]
     }
 
-    fn get_fallback() -> Box<dyn Fn(&str) -> BTags> {
+    fn get_fallback() -> Box<dyn Fn(&str) -> BNodes> {
         Box::new(|str| Text::new(str).into())
     }
 }
