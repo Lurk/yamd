@@ -15,10 +15,7 @@ use mdy::Mdy;
 use p::P;
 
 fn main() {
-    let p = P::new().push(A::new(
-        "http://foo.bar/",
-        Some("http://foo.bar/".to_string()),
-    ));
+    let p = P::new().push(A::new("http://foo.bar/", "http://foo.bar/"));
     let t = Mdy::new().push(H::new("foo", 1)).push(p);
     println!("{t:?}");
 }

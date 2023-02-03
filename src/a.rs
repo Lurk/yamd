@@ -6,14 +6,14 @@ use crate::{
 /// Representation of an anchor
 #[derive(Debug, PartialEq)]
 pub struct A {
-    text: Option<String>,
+    text: String,
     url: String,
 }
 
 impl A {
-    pub fn new<S: Into<String>>(url: S, text: Option<String>) -> Self {
+    pub fn new<S: Into<String>>(url: S, text: S) -> Self {
         A {
-            text,
+            text: text.into(),
             url: url.into(),
         }
     }
@@ -21,11 +21,7 @@ impl A {
 
 impl From<A> for String {
     fn from(value: A) -> String {
-        let text = match value.text {
-            Some(text) => text,
-            None => value.url.clone(),
-        };
-        format!("[{}]({})", text, value.url)
+        format!("[{}]({})", value.text, value.url)
     }
 }
 
@@ -44,8 +40,8 @@ impl Deserializer for A {
             if let Some(second_part) = chars.get_token_end_position(vec!['('], vec![')']) {
                 return Some((
                     A::new(
-                        input[first_part + 2..second_part].to_string(),
-                        Some(input[start_position + 1..first_part].to_string()),
+                        &input[first_part + 2..second_part],
+                        &input[start_position + 1..first_part],
                     ),
                     second_part + 1,
                 ));
@@ -63,28 +59,19 @@ mod tests {
 
     #[test]
     fn happy_path() {
-        let a = A::new("https://test.io", Some("nice link".to_string()));
-        assert_eq!(a.text, Some("nice link".to_string()));
+        let a = A::new("https://test.io", "nice link");
+        assert_eq!(a.text, "nice link");
         assert_eq!(a.url, "https://test.io");
     }
 
     #[test]
     fn to_string_with_text() {
-        let a: String = A::new("https://test.io", Some("nice link".to_string())).into();
+        let a: String = A::new("https://test.io", "nice link").into();
         assert_eq!(a, "[nice link](https://test.io)".to_string());
     }
 
     #[test]
-    fn to_string_without_text() {
-        let a: String = A::new("https://test.io", None).into();
-        assert_eq!(a, "[https://test.io](https://test.io)".to_string());
-    }
-
-    #[test]
     fn from_string() {
-        assert_eq!(
-            A::deserialize("[1](2)", 0),
-            Some((A::new("2", Some("1".to_string())), 6))
-        )
+        assert_eq!(A::deserialize("[1](2)", 0), Some((A::new("2", "1"), 6)))
     }
 }
