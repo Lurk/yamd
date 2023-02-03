@@ -4,16 +4,16 @@ mod deserializer;
 mod h;
 mod i;
 mod inline_code;
-mod mdy;
 mod p;
 mod s;
 mod serializer;
 mod text;
+mod yamd;
 
 use a::A;
 use h::H;
-use mdy::Yamd;
 use p::P;
+use yamd::Yamd;
 
 use crate::deserializer::Branch;
 

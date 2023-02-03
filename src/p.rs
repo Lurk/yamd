@@ -3,10 +3,10 @@ use crate::b::B;
 use crate::deserializer::{Branch, Deserializer, Node};
 use crate::i::I;
 use crate::inline_code::InlineCode;
-use crate::mdy::YamdNodes;
 use crate::s::S;
 use crate::serializer::Serializer;
 use crate::text::Text;
+use crate::yamd::YamdNodes;
 
 #[derive(Debug, PartialEq)]
 pub enum ParagraphNode {
