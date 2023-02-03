@@ -32,27 +32,27 @@ impl Serializer for ParagraphNode {
 
 #[derive(Debug)]
 pub struct P {
-    data: Vec<ParagraphNode>,
+    nodes: Vec<ParagraphNode>,
 }
 
 impl P {
     pub fn new() -> Self {
-        Self { data: vec![] }
+        Self { nodes: vec![] }
     }
 
     pub fn from_vec(data: Vec<ParagraphNode>) -> Self {
-        Self { data }
+        Self { nodes: data }
     }
 
     pub fn push<TP: Into<ParagraphNode>>(mut self, element: TP) -> Self {
-        self.data.push(element.into());
+        self.nodes.push(element.into());
         self
     }
 }
 
 impl Serializer for P {
     fn serialize(&self) -> String {
-        self.data
+        self.nodes
             .iter()
             .map(|node| node.serialize())
             .collect::<Vec<String>>()

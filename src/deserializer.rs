@@ -7,7 +7,7 @@ pub trait Branch<Tags> {
     fn new() -> Self;
     fn push<Node: Into<Tags>>(&mut self, node: Node);
     fn from_vec(nodes: Vec<Tags>) -> Self;
-    fn get_parsers() -> Vec<ParserToTags<Tags>>;
+    fn get_parsers() -> Vec<MaybeNode<Tags>>;
     fn get_fallback() -> Box<dyn Fn(&str) -> Tags>;
 
     fn parse_branch(chunk: &str) -> Self
@@ -40,15 +40,15 @@ pub trait Branch<Tags> {
     }
 }
 
-pub type ParserToTags<Tags> = Box<dyn Fn(&str, usize) -> Option<(Tags, usize)>>;
+pub type MaybeNode<Node> = Box<dyn Fn(&str, usize) -> Option<(Node, usize)>>;
 
 pub trait Leaf {
-    fn parse_to_tag<Tags>(input: &str, start_position: usize) -> Option<(Tags, usize)>
+    fn maybe_node<Node>(input: &str, start_position: usize) -> Option<(Node, usize)>
     where
-        Self: Sized + Deserializer + Into<Tags>,
+        Self: Sized + Deserializer + Into<Node>,
     {
-        if let Some((node, pos)) = Self::deserialize(input, start_position) {
-            return Some((node.into(), pos));
+        if let Some((token, pos)) = Self::deserialize(input, start_position) {
+            return Some((token.into(), pos));
         }
         None
     }

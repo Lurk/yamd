@@ -1,5 +1,5 @@
 use crate::{
-    deserializer::{Branch, Deserializer, Leaf, ParserToTags, Tokenizer},
+    deserializer::{Branch, Deserializer, Leaf, MaybeNode, Tokenizer},
     i::I,
     p::ParagraphNode,
     s::S,
@@ -61,10 +61,10 @@ impl Branch<BNode> for B {
         self.nodes.push(element.into());
     }
 
-    fn get_parsers() -> Vec<ParserToTags<BNode>> {
+    fn get_parsers() -> Vec<MaybeNode<BNode>> {
         vec![
-            Box::new(|str, pos| I::parse_to_tag(str, pos)),
-            Box::new(|str, pos| S::parse_to_tag(str, pos)),
+            Box::new(|str, pos| I::maybe_node(str, pos)),
+            Box::new(|str, pos| S::maybe_node(str, pos)),
         ]
     }
 
