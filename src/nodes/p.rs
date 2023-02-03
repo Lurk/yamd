@@ -1,12 +1,8 @@
-use crate::a::A;
-use crate::b::B;
-use crate::deserializer::{Branch, Deserializer, Node};
-use crate::i::I;
-use crate::inline_code::InlineCode;
-use crate::s::S;
-use crate::serializer::Serializer;
-use crate::text::Text;
-use crate::yamd::YamdNodes;
+use crate::nodes::{a::A, b::B, i::I, inline_code::InlineCode, s::S, text::Text, yamd::YamdNodes};
+use crate::sd::{
+    deserializer::{Branch, Deserializer, MaybeNode, Node},
+    serializer::Serializer,
+};
 
 #[derive(Debug, PartialEq)]
 pub enum ParagraphNode {
@@ -49,7 +45,7 @@ impl Branch<ParagraphNode> for P {
         self.nodes.push(element.into());
     }
 
-    fn get_parsers() -> Vec<crate::deserializer::MaybeNode<ParagraphNode>> {
+    fn get_parsers() -> Vec<MaybeNode<ParagraphNode>> {
         vec![
             Box::new(|str, pos| A::maybe_node(str, pos)),
             Box::new(|str, pos| B::maybe_node(str, pos)),
@@ -103,11 +99,11 @@ impl From<P> for YamdNodes {
 #[cfg(test)]
 mod tests {
     use crate::{
-        b::B,
-        deserializer::{Branch, Deserializer},
-        inline_code::InlineCode,
-        serializer::Serializer,
-        text::Text,
+        nodes::b::B,
+        nodes::inline_code::InlineCode,
+        nodes::text::Text,
+        sd::deserializer::{Branch, Deserializer},
+        sd::serializer::Serializer,
     };
 
     use super::P;

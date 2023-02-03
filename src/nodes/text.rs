@@ -1,8 +1,8 @@
 use crate::{
-    b::BNode,
-    deserializer::{Deserializer, Node},
-    p::ParagraphNode,
-    serializer::Serializer,
+    nodes::b::BNode,
+    nodes::p::ParagraphNode,
+    sd::deserializer::{Deserializer, Node},
+    sd::serializer::Serializer,
 };
 
 /// Representation of a regular text
@@ -45,7 +45,7 @@ impl Node for Text {}
 
 #[cfg(test)]
 mod tests {
-    use crate::{deserializer::Deserializer, serializer::Serializer};
+    use crate::sd::{deserializer::Deserializer, serializer::Serializer};
 
     use super::Text;
 

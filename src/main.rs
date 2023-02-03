@@ -1,21 +1,12 @@
-mod a;
-mod b;
-mod deserializer;
-mod h;
-mod i;
-mod inline_code;
-mod p;
-mod s;
-mod serializer;
-mod text;
-mod yamd;
+mod nodes;
+mod sd;
 
-use a::A;
-use h::H;
-use p::P;
-use yamd::Yamd;
+use nodes::a::A;
+use nodes::h::H;
+use nodes::p::P;
+use nodes::yamd::Yamd;
 
-use crate::deserializer::Branch;
+use sd::deserializer::Branch;
 
 fn main() {
     let mut p = P::new();

@@ -1,4 +1,7 @@
-use crate::{deserializer::Deserializer, serializer::Serializer, yamd::YamdNodes};
+use crate::{
+    nodes::yamd::YamdNodes,
+    sd::{deserializer::Deserializer, serializer::Serializer},
+};
 
 #[derive(Debug, PartialEq)]
 pub struct H {
@@ -70,7 +73,7 @@ impl From<H> for YamdNodes {
 
 #[cfg(test)]
 mod tests {
-    use crate::{deserializer::Deserializer, serializer::Serializer};
+    use crate::sd::{deserializer::Deserializer, serializer::Serializer};
 
     use super::H;
 

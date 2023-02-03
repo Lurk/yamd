@@ -1,4 +1,4 @@
-use crate::{h::H, p::P, serializer::Serializer};
+use crate::{nodes::h::H, nodes::p::P, sd::serializer::Serializer};
 
 #[derive(Debug)]
 pub enum YamdNodes {
@@ -53,7 +53,10 @@ impl Default for Yamd {
 
 #[cfg(test)]
 mod tests {
-    use crate::{deserializer::Branch, h::H, p::P, serializer::Serializer, text::Text};
+    use crate::{
+        nodes::h::H, nodes::p::P, nodes::text::Text, sd::deserializer::Branch,
+        sd::serializer::Serializer,
+    };
 
     use super::Yamd;
 

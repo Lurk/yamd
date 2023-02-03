@@ -1,10 +1,10 @@
 use crate::{
-    deserializer::{Branch, Deserializer, MaybeNode, Node, Tokenizer},
-    i::I,
-    p::ParagraphNode,
-    s::S,
-    serializer::Serializer,
-    text::Text,
+    nodes::i::I,
+    nodes::p::ParagraphNode,
+    nodes::s::S,
+    nodes::text::Text,
+    sd::deserializer::{Branch, Deserializer, MaybeNode, Node, Tokenizer},
+    sd::serializer::Serializer,
 };
 
 #[derive(Debug, PartialEq)]
@@ -95,12 +95,12 @@ impl Deserializer for B {
 #[cfg(test)]
 mod tests {
     use crate::{
-        b::B,
-        deserializer::{Branch, Deserializer},
-        i::I,
-        s::S,
-        serializer::Serializer,
-        text::Text,
+        nodes::b::B,
+        nodes::i::I,
+        nodes::s::S,
+        nodes::text::Text,
+        sd::deserializer::{Branch, Deserializer},
+        sd::serializer::Serializer,
     };
 
     #[test]

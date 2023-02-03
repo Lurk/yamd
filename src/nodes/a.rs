@@ -1,7 +1,7 @@
 use crate::{
-    deserializer::{Deserializer, Node, Tokenizer},
-    p::ParagraphNode,
-    serializer::Serializer,
+    nodes::p::ParagraphNode,
+    sd::deserializer::{Deserializer, Node, Tokenizer},
+    sd::serializer::Serializer,
 };
 
 /// Representation of an anchor
@@ -52,7 +52,7 @@ impl Deserializer for A {
 
 #[cfg(test)]
 mod tests {
-    use crate::{deserializer::Deserializer, serializer::Serializer};
+    use crate::sd::{deserializer::Deserializer, serializer::Serializer};
 
     use super::A;
 

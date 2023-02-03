@@ -141,7 +141,7 @@ impl<'a> Tokenizer<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::deserializer::{Matcher, Tokenizer};
+    use crate::sd::deserializer::{Matcher, Tokenizer};
 
     #[test]
     fn parse_part() {

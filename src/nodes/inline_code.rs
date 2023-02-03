@@ -1,7 +1,7 @@
 use crate::{
-    deserializer::{Deserializer, Node, Tokenizer},
-    p::ParagraphNode,
-    serializer::Serializer,
+    nodes::p::ParagraphNode,
+    sd::deserializer::{Deserializer, Node, Tokenizer},
+    sd::serializer::Serializer,
 };
 
 #[derive(Debug, PartialEq)]
@@ -44,7 +44,7 @@ impl Deserializer for InlineCode {
 
 #[cfg(test)]
 mod tests {
-    use crate::{deserializer::Deserializer, serializer::Serializer};
+    use crate::sd::{deserializer::Deserializer, serializer::Serializer};
 
     use super::InlineCode;
 
