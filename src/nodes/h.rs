@@ -1,6 +1,9 @@
 use crate::{
     nodes::yamd::YamdNodes,
-    sd::{deserializer::Deserializer, serializer::Serializer},
+    sd::{
+        deserializer::{Deserializer, Node},
+        serializer::Serializer,
+    },
 };
 
 #[derive(Debug, PartialEq)]
@@ -25,23 +28,14 @@ impl H {
 
 impl Deserializer for H {
     fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        let split_position =
-            if input.len() > 6 && &input[start_position..start_position + 7] == "###### " {
-                Some(7)
-            } else if input.len() > 5 && &input[start_position..start_position + 6] == "##### " {
-                Some(6)
-            } else if input.len() > 4 && &input[start_position..start_position + 5] == "#### " {
-                Some(5)
-            } else if input.len() > 3 && &input[start_position..start_position + 4] == "### " {
-                Some(4)
-            } else if input.len() > 2 && &input[start_position..start_position + 3] == "## " {
-                Some(3)
-            } else if input.len() > 1 && &input[start_position..start_position + 2] == "# " {
-                Some(2)
-            } else {
-                None
-            };
-
+        let mut split_position: Option<usize> = None;
+        let tokens = ["# ", "## ", "### ", "#### ", "##### ", "###### "];
+        for (i, token) in tokens.iter().enumerate() {
+            let end_position = start_position + i + 1;
+            if input.len() > end_position && &&input[start_position..end_position + 1] == token {
+                split_position = Some(i + 2);
+            }
+        }
         if let Some(split_position) = split_position {
             let stop_position = match input[start_position..].find("\n\n") {
                 Some(position) => position + start_position + 2,
@@ -70,6 +64,8 @@ impl From<H> for YamdNodes {
         YamdNodes::H(value)
     }
 }
+
+impl Node for H {}
 
 #[cfg(test)]
 mod tests {

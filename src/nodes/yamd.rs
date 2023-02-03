@@ -1,6 +1,11 @@
-use crate::{nodes::h::H, nodes::p::P, sd::serializer::Serializer};
+use crate::{
+    nodes::h::H,
+    nodes::p::P,
+    sd::deserializer::{Branch, Deserializer, MaybeNode, Node, Tokenizer},
+    sd::serializer::Serializer,
+};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum YamdNodes {
     P(P),
     H(H),
@@ -15,23 +20,33 @@ impl Serializer for YamdNodes {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Yamd {
     nodes: Vec<YamdNodes>,
 }
 
-impl Yamd {
-    pub fn new() -> Self {
+impl Branch<YamdNodes> for Yamd {
+    fn new() -> Self {
         Self { nodes: vec![] }
     }
 
-    pub fn from_vec(data: Vec<YamdNodes>) -> Self {
+    fn from_vec(data: Vec<YamdNodes>) -> Self {
         Self { nodes: data }
     }
 
-    pub fn push<TC: Into<YamdNodes>>(mut self, element: TC) -> Self {
+    fn push<TC: Into<YamdNodes>>(&mut self, element: TC) {
         self.nodes.push(element.into());
-        self
+    }
+
+    fn get_parsers() -> Vec<MaybeNode<YamdNodes>> {
+        vec![Box::new(|str, pos| H::maybe_node(str, pos))]
+    }
+
+    fn get_fallback() -> Box<dyn Fn(&str) -> YamdNodes> {
+        Box::new(|str| {
+            let (node, _) = P::deserialize(str, 0).unwrap_or((P::new(), 0));
+            node.into()
+        })
     }
 }
 
@@ -45,6 +60,13 @@ impl Serializer for Yamd {
     }
 }
 
+impl Deserializer for Yamd {
+    fn deserialize(input: &str, _start_position: usize) -> Option<(Self, usize)> {
+        let result = Self::parse_branch(input);
+        return Some((result, input.len()));
+    }
+}
+
 impl Default for Yamd {
     fn default() -> Self {
         Self::new()
@@ -54,20 +76,22 @@ impl Default for Yamd {
 #[cfg(test)]
 mod tests {
     use crate::{
-        nodes::h::H, nodes::p::P, nodes::text::Text, sd::deserializer::Branch,
-        sd::serializer::Serializer,
+        nodes::h::H,
+        nodes::p::P,
+        nodes::{b::B, text::Text},
+        sd::deserializer::Branch,
+        sd::{deserializer::Deserializer, serializer::Serializer},
     };
 
     use super::Yamd;
 
     #[test]
     fn push() {
-        let t: String = Yamd::new()
-            .push(H::new("header", 1))
-            .push(P::from_vec(vec![Text::new("text").into()]))
-            .serialize();
+        let mut t = Yamd::new();
+        t.push(H::new("header", 1));
+        t.push(P::from_vec(vec![Text::new("text").into()]));
 
-        assert_eq!(t, "# header\n\ntext".to_string());
+        assert_eq!(t.serialize(), "# header\n\ntext".to_string());
     }
 
     #[test]
@@ -79,5 +103,34 @@ mod tests {
         .serialize();
 
         assert_eq!(t, "# header\n\ntext".to_string());
+    }
+
+    #[test]
+    fn deserialize() {
+        assert_eq!(
+            Yamd::deserialize("# h\n\nt", 0),
+            Some((
+                Yamd::from_vec(vec![
+                    H::new("h", 1).into(),
+                    P::from_vec(vec![Text::new("t").into()]).into()
+                ]),
+                6
+            ))
+        );
+
+        assert_eq!(
+            Yamd::deserialize("t**b**\n\n## h", 0),
+            Some((
+                Yamd::from_vec(vec![
+                    P::from_vec(vec![
+                        Text::new("t").into(),
+                        B::from_vec(vec![Text::new("b").into()]).into()
+                    ])
+                    .into(),
+                    H::new("h", 2).into(),
+                ]),
+                12
+            ))
+        );
     }
 }

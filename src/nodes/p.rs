@@ -66,7 +66,6 @@ impl Deserializer for P {
             Some(position) => position,
             None => input.len(),
         };
-        println!("{}", &input[start_position..end_position]);
         Some((
             Self::parse_branch(&input[start_position..end_position]),
             end_position,
@@ -95,6 +94,8 @@ impl From<P> for YamdNodes {
         YamdNodes::P(value)
     }
 }
+
+impl Node for P {}
 
 #[cfg(test)]
 mod tests {
