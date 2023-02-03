@@ -1,7 +1,7 @@
 use crate::{
     deserializer::{Branch, Deserializer, Leaf, ParserToTags, Tokenizer},
     i::I,
-    p::ParagraphTags,
+    p::ParagraphNodes,
     s::S,
     serializer::Serializer,
     text::Text,
@@ -29,9 +29,9 @@ pub struct B {
     nodes: Vec<BNodes>,
 }
 
-impl From<B> for ParagraphTags {
+impl From<B> for ParagraphNodes {
     fn from(value: B) -> Self {
-        ParagraphTags::B(value)
+        ParagraphNodes::B(value)
     }
 }
 

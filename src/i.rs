@@ -1,7 +1,7 @@
 use crate::{
     b::BNodes,
     deserializer::{Deserializer, Leaf, Tokenizer},
-    p::ParagraphTags,
+    p::ParagraphNodes,
     serializer::Serializer,
 };
 
@@ -29,9 +29,9 @@ impl From<I> for BNodes {
     }
 }
 
-impl From<I> for ParagraphTags {
+impl From<I> for ParagraphNodes {
     fn from(value: I) -> Self {
-        ParagraphTags::I(value)
+        ParagraphNodes::I(value)
     }
 }
 
