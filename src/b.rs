@@ -1,7 +1,7 @@
 use crate::{
     i::I,
     p::ParagraphTags,
-    parser::{get_iterator, Branch, Deserializer, Leaf, ParserPart, ParserToTags},
+    parser::{Branch, Deserializer, Leaf, ParserPart, ParserToTags},
     s::S,
     text::Text,
 };
@@ -81,11 +81,10 @@ impl Default for B {
 
 impl Deserializer for B {
     fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        let mut chars = get_iterator(input, start_position);
-        if let Some(end_position) = chars.get_token_end_position(vec!['*', '*'], vec!['*', '*']) {
-            let chunk = &input[start_position + 2..end_position - 1];
-            let result = Self::parse_branch(chunk);
-            return Some((result, end_position + 1));
+        let mut chars = ParserPart::new(input, start_position);
+        if let Some(body) = chars.get_token_body(vec!['*', '*'], vec!['*', '*']) {
+            let result = Self::parse_branch(body);
+            return Some((result, chars.get_next_position()));
         }
         None
     }

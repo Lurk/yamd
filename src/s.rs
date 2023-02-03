@@ -1,7 +1,7 @@
 use crate::{
     b::BTags,
     p::ParagraphTags,
-    parser::{get_iterator, Deserializer, Leaf, ParserPart},
+    parser::{Deserializer, Leaf, ParserPart},
 };
 
 /// Representation of strikethrough
@@ -38,15 +38,11 @@ impl Leaf for S {}
 
 impl Deserializer for S {
     fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        let mut chars = get_iterator(input, start_position);
-        if let Some(end_position) = chars.get_token_end_position(vec!['~', '~'], vec!['~', '~']) {
+        let mut chars = ParserPart::new(input, start_position);
+        if let Some(body) = chars.get_token_body(vec!['~', '~'], vec!['~', '~']) {
             return Some((
-                S::new(
-                    input[start_position + 2..end_position - 1]
-                        .to_string()
-                        .replace('\n', ""),
-                ),
-                end_position + 1,
+                S::new(body.to_string().replace('\n', "")),
+                chars.get_next_position(),
             ));
         }
         None

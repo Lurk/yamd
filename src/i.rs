@@ -1,7 +1,7 @@
 use crate::{
     b::BTags,
     p::ParagraphTags,
-    parser::{get_iterator, Deserializer, Leaf, ParserPart},
+    parser::{Deserializer, Leaf, ParserPart},
 };
 
 /// Representation of an Italic text
@@ -38,15 +38,11 @@ impl Leaf for I {}
 
 impl Deserializer for I {
     fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        let mut chars = get_iterator(input, start_position);
-        if let Some(end_postion) = chars.get_token_end_position(vec!['_'], vec!['_']) {
+        let mut chars = ParserPart::new(input, start_position);
+        if let Some(body) = chars.get_token_body(vec!['_'], vec!['_']) {
             return Some((
-                I::new(
-                    input[start_position + 1..end_postion]
-                        .to_string()
-                        .replace('\n', ""),
-                ),
-                end_postion + 1,
+                I::new(body.to_string().replace('\n', "")),
+                chars.get_next_position(),
             ));
         }
 

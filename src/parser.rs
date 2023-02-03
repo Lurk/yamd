@@ -1,4 +1,7 @@
-use std::{iter::Enumerate, str::Chars};
+use std::{
+    iter::{Enumerate, Peekable},
+    str::Chars,
+};
 
 pub trait Branch<Tags> {
     fn new() -> Self;
@@ -51,31 +54,19 @@ pub trait Leaf {
     }
 }
 
-pub fn get_iterator(input: &str, start_position: usize) -> Enumerate<Chars> {
-    let mut chars = input.chars().enumerate();
-    if start_position != 0 {
-        chars.nth(start_position - 1);
-    }
-    chars
-}
-
 pub trait Deserializer {
     fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)>
     where
         Self: Sized;
 }
 
-pub trait ParserPart {
-    fn get_token_end_position(&mut self, start: Vec<char>, end: Vec<char>) -> Option<usize>;
-}
-
-struct Matcher {
+struct Matcher<'a> {
     index: usize,
-    token: Vec<char>,
+    token: &'a Vec<char>,
 }
 
-impl Matcher {
-    fn new(token: Vec<char>) -> Self {
+impl<'a> Matcher<'a> {
+    fn new(token: &'a Vec<char>) -> Self {
         Self { index: 0, token }
     }
 
@@ -93,26 +84,54 @@ impl Matcher {
     }
 }
 
-impl<'a> ParserPart for Enumerate<Chars<'a>> {
-    fn get_token_end_position(&mut self, start: Vec<char>, end: Vec<char>) -> Option<usize> {
-        let mut start_matcher = Matcher::new(start);
-        let mut start_matched = false;
+pub struct ParserPart<'a> {
+    input: &'a str,
+    chars: Peekable<Enumerate<Chars<'a>>>,
+    hard_stop_token: Vec<char>,
+}
 
-        for (_, char) in self.by_ref() {
+impl<'a> ParserPart<'a> {
+    pub fn new(input: &'a str, start_position: usize) -> Self {
+        let mut chars = input.chars().enumerate().peekable();
+        if start_position != 0 {
+            chars.nth(start_position - 1);
+        }
+        ParserPart {
+            chars,
+            input,
+            hard_stop_token: vec!['\n', '\n'],
+        }
+    }
+
+    pub fn get_next_position(&mut self) -> usize {
+        match self.chars.peek() {
+            Some((index, _)) => *index,
+            None => self.input.len(),
+        }
+    }
+
+    pub fn get_token_body(&mut self, start_token: Vec<char>, end_token: Vec<char>) -> Option<&str> {
+        let mut start_matcher = Matcher::new(&start_token);
+        let mut body_start: Option<usize> = None;
+
+        for (index, char) in self.chars.by_ref() {
+            println!("{index}, {char}");
             if !start_matcher.is_match(&char) {
                 break;
             }
             if start_matcher.is_done() {
-                start_matched = true;
+                body_start = Some(index + 1);
+                break;
             }
         }
 
-        if start_matched {
-            let mut end_matcher = Matcher::new(end);
-            let mut hard_stop_matcher = Matcher::new(vec!['\n', '\n']);
-            for (index, char) in self.by_ref() {
+        println!("here, {body_start:?}");
+        if let Some(body_start) = body_start {
+            let mut end_matcher = Matcher::new(&end_token);
+            let mut hard_stop_matcher = Matcher::new(&self.hard_stop_token);
+            for (index, char) in self.chars.by_ref() {
                 if end_matcher.is_match(&char) && end_matcher.is_done() {
-                    return Some(index);
+                    return Some(&self.input[body_start..index - (end_token.len() - 1)]);
                 } else if hard_stop_matcher.is_match(&char) && hard_stop_matcher.is_done() {
                     return None;
                 }
@@ -125,21 +144,19 @@ impl<'a> ParserPart for Enumerate<Chars<'a>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::Matcher;
-
-    use super::ParserPart;
+    use crate::parser::{Matcher, ParserPart};
 
     #[test]
     fn parse_part() {
-        let mut c = "test of *italic**one more* statement".chars().enumerate();
-        c.nth(7);
-        assert_eq!(c.get_token_end_position(vec!['*'], vec!['*']), Some(15));
-        assert_eq!(c.get_token_end_position(vec!['*'], vec!['*']), Some(25));
+        let mut c = ParserPart::new("test of *italic**one more* statement", 8);
+        assert_eq!(c.get_token_body(vec!['*'], vec!['*']), Some("italic"));
+        assert_eq!(c.get_token_body(vec!['*'], vec!['*']), Some("one more"));
     }
 
     #[test]
     fn matcher() {
-        let mut m = Matcher::new(vec!['*', '*']);
+        let token = &vec!['*', '*'];
+        let mut m = Matcher::new(token);
         assert_eq!(m.is_match(&'*'), true);
         assert_eq!(m.is_done(), false);
         assert_eq!(m.is_match(&'*'), true);
@@ -148,7 +165,9 @@ mod tests {
 
     #[test]
     fn matcher_not_matched() {
-        let mut m = Matcher::new(vec!['*', '*']);
+        let token = &vec!['*', '*'];
+        let mut m = Matcher::new(token);
+
         assert_eq!(m.is_match(&'a'), false);
         assert_eq!(m.is_done(), false);
         assert_eq!(m.is_match(&'b'), false);
