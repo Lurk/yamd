@@ -148,7 +148,9 @@ mod tests {
     fn parse_part() {
         let mut c = Tokenizer::new("test of *italic**one more* statement", 8);
         assert_eq!(c.get_token_body(vec!['*'], vec!['*']), Some("italic"));
+        assert_eq!(c.get_next_position(), 16);
         assert_eq!(c.get_token_body(vec!['*'], vec!['*']), Some("one more"));
+        assert_eq!(c.get_next_position(), 26);
     }
 
     #[test]
