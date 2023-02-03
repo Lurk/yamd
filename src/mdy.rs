@@ -1,40 +1,45 @@
-use crate::{h::H, p::P};
+use crate::{h::H, p::P, serializer::Serializer};
 
 #[derive(Debug)]
-pub enum MdyTags {
+pub enum MdyNodes {
     P(P),
     H(H),
 }
 
+impl Serializer for MdyNodes {
+    fn serialize(&self) -> String {
+        match self {
+            MdyNodes::P(v) => v.serialize(),
+            MdyNodes::H(v) => v.serialize(),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Mdy {
-    data: Vec<MdyTags>,
+    nodes: Vec<MdyNodes>,
 }
 
 impl Mdy {
     pub fn new() -> Self {
-        Self { data: vec![] }
+        Self { nodes: vec![] }
     }
 
-    pub fn from_vec(data: Vec<MdyTags>) -> Self {
-        Self { data }
+    pub fn from_vec(data: Vec<MdyNodes>) -> Self {
+        Self { nodes: data }
     }
 
-    pub fn push<TC: Into<MdyTags>>(mut self, element: TC) -> Self {
-        self.data.push(element.into());
+    pub fn push<TC: Into<MdyNodes>>(mut self, element: TC) -> Self {
+        self.nodes.push(element.into());
         self
     }
 }
 
-impl From<Mdy> for String {
-    fn from(value: Mdy) -> Self {
-        value
-            .data
-            .into_iter()
-            .map(|element| match element {
-                MdyTags::P(v) => v.into(),
-                MdyTags::H(v) => v.into(),
-            })
+impl Serializer for Mdy {
+    fn serialize(&self) -> String {
+        self.nodes
+            .iter()
+            .map(|node| node.serialize())
             .collect::<Vec<String>>()
             .join("\n\n")
     }
@@ -48,7 +53,7 @@ impl Default for Mdy {
 
 #[cfg(test)]
 mod tests {
-    use crate::{h::H, p::P, text::Text};
+    use crate::{h::H, p::P, serializer::Serializer, text::Text};
 
     use super::Mdy;
 
@@ -57,7 +62,7 @@ mod tests {
         let t: String = Mdy::new()
             .push(H::new("header", 1))
             .push(P::new().push(Text::new("text")))
-            .into();
+            .serialize();
 
         assert_eq!(t, "# header\n\ntext".to_string());
     }
@@ -68,7 +73,7 @@ mod tests {
             H::new("header", 1).into(),
             P::new().push(Text::new("text")).into(),
         ])
-        .into();
+        .serialize();
 
         assert_eq!(t, "# header\n\ntext".to_string());
     }

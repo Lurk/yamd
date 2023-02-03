@@ -1,6 +1,7 @@
 use crate::{
     deserializer::{Deserializer, Leaf, Tokenizer},
     p::ParagraphTags,
+    serializer::Serializer,
 };
 
 /// Representation of an anchor
@@ -19,9 +20,9 @@ impl A {
     }
 }
 
-impl From<A> for String {
-    fn from(value: A) -> String {
-        format!("[{}]({})", value.text, value.url)
+impl Serializer for A {
+    fn serialize(&self) -> String {
+        format!("[{}]({})", self.text, self.url)
     }
 }
 
@@ -51,7 +52,7 @@ impl Deserializer for A {
 
 #[cfg(test)]
 mod tests {
-    use crate::deserializer::Deserializer;
+    use crate::{deserializer::Deserializer, serializer::Serializer};
 
     use super::A;
 
@@ -64,7 +65,7 @@ mod tests {
 
     #[test]
     fn to_string_with_text() {
-        let a: String = A::new("https://test.io", "nice link").into();
+        let a: String = A::new("https://test.io", "nice link").serialize();
         assert_eq!(a, "[nice link](https://test.io)".to_string());
     }
 

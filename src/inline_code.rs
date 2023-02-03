@@ -1,6 +1,7 @@
 use crate::{
     deserializer::{Deserializer, Leaf, Tokenizer},
     p::ParagraphTags,
+    serializer::Serializer,
 };
 
 #[derive(Debug, PartialEq)]
@@ -14,9 +15,9 @@ impl InlineCode {
     }
 }
 
-impl From<InlineCode> for String {
-    fn from(value: InlineCode) -> Self {
-        format!("`{}`", value.text)
+impl Serializer for InlineCode {
+    fn serialize(&self) -> String {
+        format!("`{}`", self.text)
     }
 }
 
@@ -43,13 +44,13 @@ impl Deserializer for InlineCode {
 
 #[cfg(test)]
 mod tests {
-    use crate::deserializer::Deserializer;
+    use crate::{deserializer::Deserializer, serializer::Serializer};
 
     use super::InlineCode;
 
     #[test]
     fn to_string() {
-        let inline_code: String = InlineCode::new("const bar = 'baz'").into();
+        let inline_code: String = InlineCode::new("const bar = 'baz'").serialize();
         assert_eq!(inline_code, "`const bar = 'baz'`".to_string())
     }
 

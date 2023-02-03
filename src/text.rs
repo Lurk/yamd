@@ -2,6 +2,7 @@ use crate::{
     b::BTags,
     deserializer::{Deserializer, Leaf},
     p::ParagraphTags,
+    serializer::Serializer,
 };
 
 /// Representation of a regular text
@@ -16,9 +17,9 @@ impl Text {
     }
 }
 
-impl From<Text> for String {
-    fn from(value: Text) -> Self {
-        value.text
+impl Serializer for Text {
+    fn serialize(&self) -> String {
+        self.text.clone()
     }
 }
 
@@ -44,7 +45,7 @@ impl Leaf for Text {}
 
 #[cfg(test)]
 mod tests {
-    use crate::deserializer::Deserializer;
+    use crate::{deserializer::Deserializer, serializer::Serializer};
 
     use super::Text;
 
@@ -56,7 +57,7 @@ mod tests {
 
     #[test]
     fn to_string() {
-        let text: String = Text::new("shiny text").into();
+        let text: String = Text::new("shiny text").serialize();
         assert_eq!(text, "shiny text".to_string());
     }
 

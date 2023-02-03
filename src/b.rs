@@ -3,6 +3,7 @@ use crate::{
     i::I,
     p::ParagraphTags,
     s::S,
+    serializer::Serializer,
     text::Text,
 };
 
@@ -13,12 +14,12 @@ pub enum BTags {
     S(S),
 }
 
-impl From<BTags> for String {
-    fn from(value: BTags) -> Self {
-        match value {
-            BTags::Text(v) => v.into(),
-            BTags::I(v) => v.into(),
-            BTags::S(v) => v.into(),
+impl Serializer for BTags {
+    fn serialize(&self) -> String {
+        match self {
+            BTags::Text(v) => v.serialize(),
+            BTags::I(v) => v.serialize(),
+            BTags::S(v) => v.serialize(),
         }
     }
 }
@@ -34,14 +35,13 @@ impl From<B> for ParagraphTags {
     }
 }
 
-impl From<B> for String {
-    fn from(value: B) -> Self {
+impl Serializer for B {
+    fn serialize(&self) -> String {
         format!(
             "**{}**",
-            value
-                .nodes
-                .into_iter()
-                .map(|element| { element.into() })
+            self.nodes
+                .iter()
+                .map(|element| { element.serialize() })
                 .collect::<Vec<String>>()
                 .concat()
         )
@@ -97,6 +97,7 @@ mod tests {
         deserializer::{Branch, Deserializer},
         i::I,
         s::S,
+        serializer::Serializer,
         text::Text,
     };
 
@@ -104,7 +105,7 @@ mod tests {
     fn only_text() {
         let mut b = B::new();
         b.push(Text::new("B as bold"));
-        let str: String = b.into();
+        let str = b.serialize();
         assert_eq!(str, "**B as bold**".to_string());
     }
 
@@ -115,7 +116,7 @@ mod tests {
             I::new("Italic").into(),
             S::new("Strikethrough").into(),
         ])
-        .into();
+        .serialize();
         assert_eq!(b, "**B as bold _Italic_~~Strikethrough~~**".to_string());
     }
 

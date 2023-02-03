@@ -1,4 +1,4 @@
-use crate::{deserializer::Deserializer, mdy::MdyTags};
+use crate::{deserializer::Deserializer, mdy::MdyNodes, serializer::Serializer};
 
 #[derive(Debug, PartialEq)]
 pub struct H {
@@ -55,48 +55,48 @@ impl Deserializer for H {
     }
 }
 
-impl From<H> for String {
-    fn from(value: H) -> Self {
-        let level = String::from('#').repeat(value.level as usize);
-        format!("{} {}", level, value.text)
+impl Serializer for H {
+    fn serialize(&self) -> String {
+        let level = String::from('#').repeat(self.level as usize);
+        format!("{} {}", level, self.text)
     }
 }
 
-impl From<H> for MdyTags {
+impl From<H> for MdyNodes {
     fn from(value: H) -> Self {
-        MdyTags::H(value)
+        MdyNodes::H(value)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::deserializer::Deserializer;
+    use crate::{deserializer::Deserializer, serializer::Serializer};
 
     use super::H;
 
     #[test]
     fn level_one() {
-        let h: String = H::new("Header", 1).into();
+        let h: String = H::new("Header", 1).serialize();
         assert_eq!(h, "# Header");
     }
 
     #[test]
     fn level_gt_six() {
-        let h: String = H::new("Header", 7).into();
+        let h: String = H::new("Header", 7).serialize();
         assert_eq!(h, "###### Header");
-        let h: String = H::new("Header", 34).into();
+        let h: String = H::new("Header", 34).serialize();
         assert_eq!(h, "###### Header");
     }
 
     #[test]
     fn level_eq_zero() {
-        let h: String = H::new("Header", 0).into();
+        let h: String = H::new("Header", 0).serialize();
         assert_eq!(h, "# Header");
     }
 
     #[test]
     fn level_eq_four() {
-        let h: String = H::new("Header", 4).into();
+        let h: String = H::new("Header", 4).serialize();
         assert_eq!(h, "#### Header");
     }
 

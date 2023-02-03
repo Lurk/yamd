@@ -2,6 +2,7 @@ use crate::{
     b::BTags,
     deserializer::{Deserializer, Leaf, Tokenizer},
     p::ParagraphTags,
+    serializer::Serializer,
 };
 
 /// Representation of strikethrough
@@ -16,9 +17,9 @@ impl S {
     }
 }
 
-impl From<S> for String {
-    fn from(value: S) -> Self {
-        format!("~~{}~~", value.text)
+impl Serializer for S {
+    fn serialize(&self) -> String {
+        format!("~~{}~~", self.text)
     }
 }
 
@@ -51,7 +52,7 @@ impl Deserializer for S {
 
 #[cfg(test)]
 mod tests {
-    use crate::deserializer::Deserializer;
+    use crate::{deserializer::Deserializer, serializer::Serializer};
 
     use super::S;
 
@@ -63,7 +64,7 @@ mod tests {
 
     #[test]
     fn to_string() {
-        let s: String = S::new("2+2=5").into();
+        let s: String = S::new("2+2=5").serialize();
         assert_eq!(s, "~~2+2=5~~".to_string());
     }
 

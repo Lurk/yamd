@@ -7,6 +7,7 @@ mod inline_code;
 mod mdy;
 mod p;
 mod s;
+mod serializer;
 mod text;
 
 use a::A;

@@ -2,6 +2,7 @@ use crate::{
     b::BTags,
     deserializer::{Deserializer, Leaf, Tokenizer},
     p::ParagraphTags,
+    serializer::Serializer,
 };
 
 /// Representation of an Italic text
@@ -16,9 +17,9 @@ impl I {
     }
 }
 
-impl From<I> for String {
-    fn from(value: I) -> Self {
-        format!("_{}_", value.text)
+impl Serializer for I {
+    fn serialize(&self) -> String {
+        format!("_{}_", self.text)
     }
 }
 
@@ -52,7 +53,7 @@ impl Deserializer for I {
 
 #[cfg(test)]
 mod tests {
-    use crate::deserializer::Deserializer;
+    use crate::{deserializer::Deserializer, serializer::Serializer};
 
     use super::I;
 
@@ -64,7 +65,7 @@ mod tests {
 
     #[test]
     fn to_string() {
-        let i: String = I::new("italic").into();
+        let i: String = I::new("italic").serialize();
         assert_eq!(i, "_italic_".to_string());
     }
 
