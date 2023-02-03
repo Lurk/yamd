@@ -84,19 +84,19 @@ impl<'a> Matcher<'a> {
     }
 }
 
-pub struct ParserPart<'a> {
+pub struct Tokenizer<'a> {
     input: &'a str,
     chars: Peekable<Enumerate<Chars<'a>>>,
     hard_stop_token: Vec<char>,
 }
 
-impl<'a> ParserPart<'a> {
+impl<'a> Tokenizer<'a> {
     pub fn new(input: &'a str, start_position: usize) -> Self {
         let mut chars = input.chars().enumerate().peekable();
         if start_position != 0 {
             chars.nth(start_position - 1);
         }
-        ParserPart {
+        Tokenizer {
             chars,
             input,
             hard_stop_token: vec!['\n', '\n'],
@@ -115,7 +115,6 @@ impl<'a> ParserPart<'a> {
         let mut body_start: Option<usize> = None;
 
         for (index, char) in self.chars.by_ref() {
-            println!("{index}, {char}");
             if !start_matcher.is_match(&char) {
                 break;
             }
@@ -125,7 +124,6 @@ impl<'a> ParserPart<'a> {
             }
         }
 
-        println!("here, {body_start:?}");
         if let Some(body_start) = body_start {
             let mut end_matcher = Matcher::new(&end_token);
             let mut hard_stop_matcher = Matcher::new(&self.hard_stop_token);
@@ -144,11 +142,11 @@ impl<'a> ParserPart<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::{Matcher, ParserPart};
+    use crate::parser::{Matcher, Tokenizer};
 
     #[test]
     fn parse_part() {
-        let mut c = ParserPart::new("test of *italic**one more* statement", 8);
+        let mut c = Tokenizer::new("test of *italic**one more* statement", 8);
         assert_eq!(c.get_token_body(vec!['*'], vec!['*']), Some("italic"));
         assert_eq!(c.get_token_body(vec!['*'], vec!['*']), Some("one more"));
     }

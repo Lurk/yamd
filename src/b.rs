@@ -1,7 +1,7 @@
 use crate::{
     i::I,
     p::ParagraphTags,
-    parser::{Branch, Deserializer, Leaf, ParserPart, ParserToTags},
+    parser::{Branch, Deserializer, Leaf, ParserToTags, Tokenizer},
     s::S,
     text::Text,
 };
@@ -81,7 +81,7 @@ impl Default for B {
 
 impl Deserializer for B {
     fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        let mut chars = ParserPart::new(input, start_position);
+        let mut chars = Tokenizer::new(input, start_position);
         if let Some(body) = chars.get_token_body(vec!['*', '*'], vec!['*', '*']) {
             let result = Self::parse_branch(body);
             return Some((result, chars.get_next_position()));

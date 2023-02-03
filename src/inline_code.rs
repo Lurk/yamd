@@ -1,6 +1,6 @@
 use crate::{
     p::ParagraphTags,
-    parser::{Deserializer, Leaf, ParserPart},
+    parser::{Deserializer, Leaf, Tokenizer},
 };
 
 #[derive(Debug, PartialEq)]
@@ -30,7 +30,7 @@ impl Leaf for InlineCode {}
 
 impl Deserializer for InlineCode {
     fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        let mut chars = ParserPart::new(input, start_position);
+        let mut chars = Tokenizer::new(input, start_position);
         if let Some(body) = chars.get_token_body(vec!['`'], vec!['`']) {
             return Some((
                 InlineCode::new(body.to_string().replace('\n', "")),

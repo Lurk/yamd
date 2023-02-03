@@ -1,6 +1,6 @@
 use crate::{
     p::ParagraphTags,
-    parser::{Deserializer, Leaf, ParserPart},
+    parser::{Deserializer, Leaf, Tokenizer},
 };
 
 /// Representation of an anchor
@@ -35,7 +35,7 @@ impl Leaf for A {}
 
 impl Deserializer for A {
     fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        let mut chars = ParserPart::new(input, start_position);
+        let mut chars = Tokenizer::new(input, start_position);
         if let Some(first_part) = chars.get_token_body(vec!['['], vec![']']) {
             let first_part = first_part.to_string();
             if let Some(second_part) = chars.get_token_body(vec!['('], vec![')']) {
