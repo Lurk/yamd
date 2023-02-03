@@ -1,6 +1,6 @@
 use crate::{
     b::BNode,
-    deserializer::{Deserializer, Leaf, Tokenizer},
+    deserializer::{Deserializer, Node, Tokenizer},
     p::ParagraphNode,
     serializer::Serializer,
 };
@@ -35,7 +35,7 @@ impl From<I> for ParagraphNode {
     }
 }
 
-impl Leaf for I {}
+impl Node for I {}
 
 impl Deserializer for I {
     fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {

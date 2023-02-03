@@ -1,5 +1,5 @@
 use crate::{
-    deserializer::{Branch, Deserializer, Leaf, MaybeNode, Tokenizer},
+    deserializer::{Branch, Deserializer, MaybeNode, Node, Tokenizer},
     i::I,
     p::ParagraphNode,
     s::S,
@@ -78,6 +78,8 @@ impl Default for B {
         Self::new()
     }
 }
+
+impl Node for B {}
 
 impl Deserializer for B {
     fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {

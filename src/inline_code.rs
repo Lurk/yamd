@@ -1,5 +1,5 @@
 use crate::{
-    deserializer::{Deserializer, Leaf, Tokenizer},
+    deserializer::{Deserializer, Node, Tokenizer},
     p::ParagraphNode,
     serializer::Serializer,
 };
@@ -27,7 +27,7 @@ impl From<InlineCode> for ParagraphNode {
     }
 }
 
-impl Leaf for InlineCode {}
+impl Node for InlineCode {}
 
 impl Deserializer for InlineCode {
     fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {

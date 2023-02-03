@@ -3,7 +3,7 @@ use std::{
     str::Chars,
 };
 
-pub trait Branch<Tags> {
+pub trait Branch<Tags: std::fmt::Debug> {
     fn new() -> Self;
     fn push<Node: Into<Tags>>(&mut self, node: Node);
     fn from_vec(nodes: Vec<Tags>) -> Self;
@@ -20,14 +20,13 @@ pub trait Branch<Tags> {
         let fallback = Self::get_fallback();
         while chunk_position < chunk.len() {
             chunk_position += 1;
-
             for parser in Self::get_parsers() {
                 if let Some((node, pos)) = parser(chunk, chunk_position - 1) {
                     if chunk_position - 1 != text_start {
                         result.push(fallback(&chunk[text_start..chunk_position - 1]));
-                        text_start = pos;
                     }
                     chunk_position = pos;
+                    text_start = pos;
                     result.push(node);
                 }
             }
@@ -42,7 +41,7 @@ pub trait Branch<Tags> {
 
 pub type MaybeNode<Node> = Box<dyn Fn(&str, usize) -> Option<(Node, usize)>>;
 
-pub trait Leaf {
+pub trait Node {
     fn maybe_node<Node>(input: &str, start_position: usize) -> Option<(Node, usize)>
     where
         Self: Sized + Deserializer + Into<Node>,

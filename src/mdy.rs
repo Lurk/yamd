@@ -53,7 +53,7 @@ impl Default for Mdy {
 
 #[cfg(test)]
 mod tests {
-    use crate::{h::H, p::P, serializer::Serializer, text::Text};
+    use crate::{deserializer::Branch, h::H, p::P, serializer::Serializer, text::Text};
 
     use super::Mdy;
 
@@ -61,7 +61,7 @@ mod tests {
     fn push() {
         let t: String = Mdy::new()
             .push(H::new("header", 1))
-            .push(P::new().push(Text::new("text")))
+            .push(P::from_vec(vec![Text::new("text").into()]))
             .serialize();
 
         assert_eq!(t, "# header\n\ntext".to_string());
@@ -71,7 +71,7 @@ mod tests {
     fn from_vec() {
         let t: String = Mdy::from_vec(vec![
             H::new("header", 1).into(),
-            P::new().push(Text::new("text")).into(),
+            P::from_vec(vec![Text::new("text").into()]).into(),
         ])
         .serialize();
 

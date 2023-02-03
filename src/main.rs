@@ -15,8 +15,11 @@ use h::H;
 use mdy::Mdy;
 use p::P;
 
+use crate::deserializer::Branch;
+
 fn main() {
-    let p = P::new().push(A::new("http://foo.bar/", "http://foo.bar/"));
+    let mut p = P::new();
+    p.push(A::new("http://foo.bar/", "http://foo.bar/"));
     let t = Mdy::new().push(H::new("foo", 1)).push(p);
     println!("{t:?}");
 }

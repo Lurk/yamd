@@ -1,6 +1,6 @@
 use crate::{
     b::BNode,
-    deserializer::{Deserializer, Leaf},
+    deserializer::{Deserializer, Node},
     p::ParagraphNode,
     serializer::Serializer,
 };
@@ -41,7 +41,7 @@ impl Deserializer for Text {
     }
 }
 
-impl Leaf for Text {}
+impl Node for Text {}
 
 #[cfg(test)]
 mod tests {
