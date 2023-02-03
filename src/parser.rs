@@ -71,16 +71,16 @@ pub trait ParserPart {
 
 struct Matcher {
     index: usize,
-    needle: Vec<char>,
+    token: Vec<char>,
 }
 
 impl Matcher {
-    fn new(needle: Vec<char>) -> Self {
-        Self { index: 0, needle }
+    fn new(token: Vec<char>) -> Self {
+        Self { index: 0, token }
     }
 
     fn is_match(&mut self, c: &char) -> bool {
-        if self.needle.get(self.index) == Some(c) {
+        if self.token.get(self.index) == Some(c) {
             self.index += 1;
             return true;
         }
@@ -89,7 +89,7 @@ impl Matcher {
     }
 
     fn is_done(&self) -> bool {
-        self.index == self.needle.len()
+        self.index == self.token.len()
     }
 }
 
