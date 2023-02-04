@@ -1,40 +1,42 @@
 use std::{iter::Enumerate, str::Chars};
 
-pub trait Branch<Nodes>
+pub trait Branch<BranchNodes>
 where
-    Nodes: Node,
+    BranchNodes: Node,
 {
     fn new() -> Self;
-    fn push<CanBeNode: Into<Nodes>>(&mut self, node: CanBeNode);
-    fn from_vec(nodes: Vec<Nodes>) -> Self;
-    fn get_maybe_nodes() -> Vec<MaybeNode<Nodes>>;
-    fn get_fallback_node() -> Box<dyn Fn(&str) -> Nodes>;
+    fn push<CanBeNode: Into<BranchNodes>>(&mut self, node: CanBeNode);
+    fn from_vec(nodes: Vec<BranchNodes>) -> Self;
+    fn get_maybe_nodes() -> Vec<MaybeNode<BranchNodes>>;
+    fn get_fallback_node() -> FallbackNode<BranchNodes>;
 
-    fn parse_branch(chunk: &str) -> Self
+    fn parse_branch(input: &str) -> Self
     where
         Self: Sized + Deserializer + Node,
     {
         let mut branch = Self::new();
-        let mut chunk_position = 0;
-        let mut text_start = 0;
+        let mut current_position = 0;
+        let mut fallback_position = 0;
         let fallback_node = Self::get_fallback_node();
         let maybe_nodes = Self::get_maybe_nodes();
-        while chunk_position < chunk.len() {
-            let slice = &chunk[chunk_position..];
-            chunk_position += 1;
+        while current_position < input.len() {
+            let slice = &input[current_position..];
+            current_position += 1;
             for parser in &maybe_nodes {
                 if let Some(node) = parser(slice) {
-                    if text_start != chunk_position - 1 {
-                        branch.push(fallback_node(&chunk[text_start..chunk_position - 1]));
+                    if fallback_position != current_position - 1 {
+                        branch.push(fallback_node(
+                            &input[fallback_position..current_position - 1],
+                        ));
                     }
                     branch.push(node);
-                    chunk_position = branch.len() - branch.get_token_length();
-                    text_start = chunk_position;
+                    current_position = branch.len() - branch.get_token_length();
+                    fallback_position = current_position;
                 }
             }
         }
-        if text_start < chunk.len() {
-            branch.push(fallback_node(&chunk[text_start..]));
+        if fallback_position < input.len() {
+            branch.push(fallback_node(&input[fallback_position..]));
         }
 
         branch
@@ -42,6 +44,7 @@ where
 }
 
 pub type MaybeNode<BranchNodes> = Box<dyn Fn(&str) -> Option<BranchNodes>>;
+pub type FallbackNode<BranchNodes> = Box<dyn Fn(&str) -> BranchNodes>;
 
 pub trait Node {
     fn len(&self) -> usize;

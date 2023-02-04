@@ -1,4 +1,6 @@
-use crate::nodes::{a::A, b::B, i::I, inline_code::InlineCode, s::S, text::Text, yamd::YamdNodes};
+use crate::nodes::{
+    anchor::Anchor, bold::Bold, i::I, inline_code::InlineCode, s::S, text::Text, yamd::YamdNodes,
+};
 use crate::sd::{
     deserializer::{Branch, Deserializer, MaybeNode, Node},
     serializer::Serializer,
@@ -6,8 +8,8 @@ use crate::sd::{
 
 #[derive(Debug, PartialEq)]
 pub enum ParagraphNode {
-    A(A),
-    B(B),
+    A(Anchor),
+    B(Bold),
     I(I),
     S(S),
     Text(Text),
@@ -64,8 +66,8 @@ impl Branch<ParagraphNode> for P {
 
     fn get_maybe_nodes() -> Vec<MaybeNode<ParagraphNode>> {
         vec![
-            Box::new(A::maybe_node),
-            Box::new(B::maybe_node),
+            Box::new(Anchor::maybe_node),
+            Box::new(Bold::maybe_node),
             Box::new(I::maybe_node),
             Box::new(S::maybe_node),
             Box::new(InlineCode::maybe_node),
@@ -122,7 +124,7 @@ impl Node for P {
 #[cfg(test)]
 mod tests {
     use crate::{
-        nodes::b::B,
+        nodes::bold::Bold,
         nodes::inline_code::InlineCode,
         nodes::text::Text,
         sd::deserializer::{Branch, Deserializer},
@@ -135,7 +137,7 @@ mod tests {
     fn push() {
         let mut p = P::new();
         p.push(Text::new("simple text "));
-        p.push(B::from_vec(vec![Text::new("bold text").into()]));
+        p.push(Bold::from_vec(vec![Text::new("bold text").into()]));
         p.push(InlineCode::new("let foo='bar';"));
 
         assert_eq!(
@@ -148,7 +150,7 @@ mod tests {
     fn from_vec() {
         let p: String = P::from_vec(vec![
             Text::new("simple text ").into(),
-            B::from_vec(vec![Text::new("bold text").into()]).into(),
+            Bold::from_vec(vec![Text::new("bold text").into()]).into(),
             InlineCode::new("let foo='bar';").into(),
         ])
         .serialize();
@@ -162,7 +164,7 @@ mod tests {
             P::deserialize("simple text **bold text**`let foo='bar';`"),
             Some(P::from_vec(vec![
                 Text::new("simple text ").into(),
-                B::from_vec(vec![Text::new("bold text").into()]).into(),
+                Bold::from_vec(vec![Text::new("bold text").into()]).into(),
                 InlineCode::new("let foo='bar';").into(),
             ]),)
         );

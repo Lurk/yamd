@@ -4,22 +4,22 @@ use crate::{
     nodes::s::S,
     nodes::text::Text,
     sd::deserializer::{Branch, Deserializer, MaybeNode, Node, Tokenizer},
-    sd::serializer::Serializer,
+    sd::{deserializer::FallbackNode, serializer::Serializer},
 };
 
 #[derive(Debug, PartialEq)]
-pub enum BNode {
+pub enum BoldNodes {
     Text(Text),
     I(I),
     S(S),
 }
 
-impl Node for BNode {
+impl Node for BoldNodes {
     fn len(&self) -> usize {
         match self {
-            BNode::Text(node) => node.len(),
-            BNode::I(node) => node.len(),
-            BNode::S(node) => node.len(),
+            BoldNodes::Text(node) => node.len(),
+            BoldNodes::I(node) => node.len(),
+            BoldNodes::S(node) => node.len(),
         }
     }
 
@@ -28,28 +28,28 @@ impl Node for BNode {
     }
 }
 
-impl Serializer for BNode {
+impl Serializer for BoldNodes {
     fn serialize(&self) -> String {
         match self {
-            BNode::Text(v) => v.serialize(),
-            BNode::I(v) => v.serialize(),
-            BNode::S(v) => v.serialize(),
+            BoldNodes::Text(v) => v.serialize(),
+            BoldNodes::I(v) => v.serialize(),
+            BoldNodes::S(v) => v.serialize(),
         }
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub struct B {
-    nodes: Vec<BNode>,
+pub struct Bold {
+    nodes: Vec<BoldNodes>,
 }
 
-impl From<B> for ParagraphNode {
-    fn from(value: B) -> Self {
+impl From<Bold> for ParagraphNode {
+    fn from(value: Bold) -> Self {
         ParagraphNode::B(value)
     }
 }
 
-impl Serializer for B {
+impl Serializer for Bold {
     fn serialize(&self) -> String {
         format!(
             "**{}**",
@@ -62,35 +62,35 @@ impl Serializer for B {
     }
 }
 
-impl Branch<BNode> for B {
+impl Branch<BoldNodes> for Bold {
     fn new() -> Self {
         Self { nodes: vec![] }
     }
 
-    fn from_vec(data: Vec<BNode>) -> Self {
+    fn from_vec(data: Vec<BoldNodes>) -> Self {
         Self { nodes: data }
     }
 
-    fn push<BC: Into<BNode>>(&mut self, element: BC) {
+    fn push<BC: Into<BoldNodes>>(&mut self, element: BC) {
         self.nodes.push(element.into());
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<BNode>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<BoldNodes>> {
         vec![Box::new(I::maybe_node), Box::new(S::maybe_node)]
     }
 
-    fn get_fallback_node() -> Box<dyn Fn(&str) -> BNode> {
+    fn get_fallback_node() -> FallbackNode<BoldNodes> {
         Box::new(|str| Text::new(str).into())
     }
 }
 
-impl Default for B {
+impl Default for Bold {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Node for B {
+impl Node for Bold {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_token_length()
     }
@@ -100,12 +100,11 @@ impl Node for B {
     }
 }
 
-impl Deserializer for B {
+impl Deserializer for Bold {
     fn deserialize(input: &str) -> Option<Self> {
-        let mut chars = Tokenizer::new(input);
-        if let Some(body) = chars.get_token_body(vec!['*', '*'], vec!['*', '*']) {
-            let result = Self::parse_branch(body);
-            return Some(result);
+        let mut tokenizer = Tokenizer::new(input);
+        if let Some(body) = tokenizer.get_token_body(vec!['*', '*'], vec!['*', '*']) {
+            return Some(Self::parse_branch(body));
         }
         None
     }
@@ -114,7 +113,7 @@ impl Deserializer for B {
 #[cfg(test)]
 mod tests {
     use crate::{
-        nodes::b::B,
+        nodes::bold::Bold,
         nodes::i::I,
         nodes::s::S,
         nodes::text::Text,
@@ -124,7 +123,7 @@ mod tests {
 
     #[test]
     fn only_text() {
-        let mut b = B::new();
+        let mut b = Bold::new();
         b.push(Text::new("B as bold"));
         let str = b.serialize();
         assert_eq!(str, "**B as bold**".to_string());
@@ -132,7 +131,7 @@ mod tests {
 
     #[test]
     fn from_vec() {
-        let b: String = B::from_vec(vec![
+        let b: String = Bold::from_vec(vec![
             Text::new("B as bold ").into(),
             I::new("Italic").into(),
             S::new("Strikethrough").into(),
@@ -144,13 +143,13 @@ mod tests {
     #[test]
     fn from_string() {
         assert_eq!(
-            B::deserialize("**b**"),
-            Some(B::from_vec(vec![Text::new("b").into()]))
+            Bold::deserialize("**b**"),
+            Some(Bold::from_vec(vec![Text::new("b").into()]))
         );
 
         assert_eq!(
-            B::deserialize("**b ~~st~~ _i t_**"),
-            Some(B::from_vec(vec![
+            Bold::deserialize("**b ~~st~~ _i t_**"),
+            Some(Bold::from_vec(vec![
                 Text::new("b ").into(),
                 S::new("st").into(),
                 Text::new(" ").into(),
@@ -161,9 +160,9 @@ mod tests {
 
     #[test]
     fn len() {
-        assert_eq!(B::from_vec(vec![Text::new("T").into()]).len(), 5);
+        assert_eq!(Bold::from_vec(vec![Text::new("T").into()]).len(), 5);
         assert_eq!(
-            B::from_vec(vec![Text::new("T").into(), S::new("S").into()]).len(),
+            Bold::from_vec(vec![Text::new("T").into(), S::new("S").into()]).len(),
             10
         );
     }

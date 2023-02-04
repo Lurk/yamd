@@ -1,5 +1,5 @@
 use crate::{
-    nodes::b::BNode,
+    nodes::bold::BoldNodes,
     nodes::p::ParagraphNode,
     sd::deserializer::{Deserializer, Node, Tokenizer},
     sd::serializer::Serializer,
@@ -23,9 +23,9 @@ impl Serializer for I {
     }
 }
 
-impl From<I> for BNode {
+impl From<I> for BoldNodes {
     fn from(value: I) -> Self {
-        BNode::I(value)
+        BoldNodes::I(value)
     }
 }
 

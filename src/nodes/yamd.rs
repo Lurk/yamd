@@ -100,7 +100,7 @@ mod tests {
     use crate::{
         nodes::h::H,
         nodes::p::P,
-        nodes::{b::B, text::Text},
+        nodes::{bold::Bold, text::Text},
         sd::deserializer::Branch,
         sd::{deserializer::Deserializer, serializer::Serializer},
     };
@@ -142,7 +142,7 @@ mod tests {
             Some(Yamd::from_vec(vec![
                 P::from_vec(vec![
                     Text::new("t").into(),
-                    B::from_vec(vec![Text::new("b").into()]).into()
+                    Bold::from_vec(vec![Text::new("b").into()]).into()
                 ])
                 .into(),
                 H::new("h", 2).into(),

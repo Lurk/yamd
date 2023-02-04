@@ -1,5 +1,5 @@
-pub mod a;
-pub mod b;
+pub mod anchor;
+pub mod bold;
 pub mod h;
 pub mod i;
 pub mod inline_code;
