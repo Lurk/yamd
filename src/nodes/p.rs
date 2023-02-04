@@ -45,13 +45,13 @@ impl Branch<ParagraphNode> for P {
         self.nodes.push(element.into());
     }
 
-    fn get_parsers() -> Vec<MaybeNode<ParagraphNode>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<ParagraphNode>> {
         vec![
-            Box::new(|str, pos| A::maybe_node(str, pos)),
-            Box::new(|str, pos| B::maybe_node(str, pos)),
-            Box::new(|str, pos| I::maybe_node(str, pos)),
-            Box::new(|str, pos| S::maybe_node(str, pos)),
-            Box::new(|str, pos| InlineCode::maybe_node(str, pos)),
+            Box::new(A::maybe_node),
+            Box::new(B::maybe_node),
+            Box::new(I::maybe_node),
+            Box::new(S::maybe_node),
+            Box::new(InlineCode::maybe_node),
         ]
     }
 

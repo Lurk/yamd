@@ -1,7 +1,7 @@
 use crate::{
     nodes::h::H,
     nodes::p::P,
-    sd::deserializer::{Branch, Deserializer, MaybeNode, Node, Tokenizer},
+    sd::deserializer::{Branch, Deserializer, MaybeNode, Node},
     sd::serializer::Serializer,
 };
 
@@ -38,8 +38,8 @@ impl Branch<YamdNodes> for Yamd {
         self.nodes.push(element.into());
     }
 
-    fn get_parsers() -> Vec<MaybeNode<YamdNodes>> {
-        vec![Box::new(|str, pos| H::maybe_node(str, pos))]
+    fn get_maybe_nodes() -> Vec<MaybeNode<YamdNodes>> {
+        vec![Box::new(H::maybe_node)]
     }
 
     fn get_fallback() -> Box<dyn Fn(&str) -> YamdNodes> {

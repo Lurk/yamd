@@ -7,7 +7,7 @@ pub trait Branch<Tags: std::fmt::Debug> {
     fn new() -> Self;
     fn push<Node: Into<Tags>>(&mut self, node: Node);
     fn from_vec(nodes: Vec<Tags>) -> Self;
-    fn get_parsers() -> Vec<MaybeNode<Tags>>;
+    fn get_maybe_nodes() -> Vec<MaybeNode<Tags>>;
     fn get_fallback() -> Box<dyn Fn(&str) -> Tags>;
 
     fn parse_branch(chunk: &str) -> Self
@@ -20,7 +20,7 @@ pub trait Branch<Tags: std::fmt::Debug> {
         let fallback = Self::get_fallback();
         while chunk_position < chunk.len() {
             chunk_position += 1;
-            for parser in Self::get_parsers() {
+            for parser in Self::get_maybe_nodes() {
                 if let Some((node, pos)) = parser(chunk, chunk_position - 1) {
                     if chunk_position - 1 != text_start {
                         result.push(fallback(&chunk[text_start..chunk_position - 1]));

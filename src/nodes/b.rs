@@ -61,11 +61,8 @@ impl Branch<BNode> for B {
         self.nodes.push(element.into());
     }
 
-    fn get_parsers() -> Vec<MaybeNode<BNode>> {
-        vec![
-            Box::new(|str, pos| I::maybe_node(str, pos)),
-            Box::new(|str, pos| S::maybe_node(str, pos)),
-        ]
+    fn get_maybe_nodes() -> Vec<MaybeNode<BNode>> {
+        vec![Box::new(I::maybe_node), Box::new(S::maybe_node)]
     }
 
     fn get_fallback() -> Box<dyn Fn(&str) -> BNode> {
