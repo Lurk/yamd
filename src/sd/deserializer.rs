@@ -1,7 +1,4 @@
-use std::{
-    iter::{Enumerate, Peekable},
-    str::Chars,
-};
+use std::{iter::Enumerate, str::Chars};
 
 pub trait Branch<Tags: std::fmt::Debug>
 where
@@ -91,13 +88,13 @@ impl<'a> Matcher<'a> {
 
 pub struct Tokenizer<'a> {
     input: &'a str,
-    chars: Peekable<Enumerate<Chars<'a>>>,
+    chars: Enumerate<Chars<'a>>,
     hard_stop_token: Vec<char>,
 }
 
 impl<'a> Tokenizer<'a> {
     pub fn new(input: &'a str, start_position: usize) -> Self {
-        let mut chars = input.chars().enumerate().peekable();
+        let mut chars = input.chars().enumerate();
         if start_position != 0 {
             chars.nth(start_position - 1);
         }
