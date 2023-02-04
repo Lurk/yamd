@@ -57,7 +57,7 @@ impl Branch<YamdNodes> for Yamd {
 
     fn get_fallback() -> Box<dyn Fn(&str) -> YamdNodes> {
         Box::new(|str| {
-            let node = P::deserialize(str, 0).unwrap_or(P::new());
+            let node = P::deserialize(str).unwrap_or(P::new());
             node.into()
         })
     }
@@ -74,7 +74,7 @@ impl Serializer for Yamd {
 }
 
 impl Deserializer for Yamd {
-    fn deserialize(input: &str, _start_position: usize) -> Option<Self> {
+    fn deserialize(input: &str) -> Option<Self> {
         Some(Self::parse_branch(input))
     }
 }
@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Yamd::deserialize("# hh\n\ntt", 0),
+            Yamd::deserialize("# hh\n\ntt"),
             Some(Yamd::from_vec(vec![
                 H::new("hh", 1).into(),
                 P::from_vec(vec![Text::new("tt").into()]).into()
@@ -138,7 +138,7 @@ mod tests {
         );
 
         assert_eq!(
-            Yamd::deserialize("t**b**\n\n## h", 0),
+            Yamd::deserialize("t**b**\n\n## h"),
             Some(Yamd::from_vec(vec![
                 P::from_vec(vec![
                     Text::new("t").into(),

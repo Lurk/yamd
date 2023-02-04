@@ -46,8 +46,8 @@ impl Node for I {
 }
 
 impl Deserializer for I {
-    fn deserialize(input: &str, start_position: usize) -> Option<Self> {
-        let mut chars = Tokenizer::new(input, start_position);
+    fn deserialize(input: &str) -> Option<Self> {
+        let mut chars = Tokenizer::new(input);
         if let Some(body) = chars.get_token_body(vec!['_'], vec!['_']) {
             return Some(I::new(body.to_string().replace('\n', "")));
         }
@@ -79,16 +79,13 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(I::deserialize("_italic_", 0), Some(I::new("italic")));
-        assert_eq!(I::deserialize("not_italic_not", 3), Some(I::new("italic")));
-        assert_eq!(
-            I::deserialize("not_it alic_not", 3),
-            Some(I::new("it alic"))
-        );
-        assert_eq!(I::deserialize("not italic_not", 3), None);
-        assert_eq!(I::deserialize("*italic not", 0), None);
-        assert_eq!(I::deserialize("_ita\nlic_", 0), Some(I::new("italic")));
-        assert_eq!(I::deserialize("_ita\n\nlic_", 0), None);
+        assert_eq!(I::deserialize("_italic_"), Some(I::new("italic")));
+        assert_eq!(I::deserialize("_italic_not"), Some(I::new("italic")));
+        assert_eq!(I::deserialize("_it alic_not"), Some(I::new("it alic")));
+        assert_eq!(I::deserialize("not italic_not"), None);
+        assert_eq!(I::deserialize("*italic not"), None);
+        assert_eq!(I::deserialize("_ita\nlic_"), Some(I::new("italic")));
+        assert_eq!(I::deserialize("_ita\n\nlic_"), None);
     }
 
     #[test]

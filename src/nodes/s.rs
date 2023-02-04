@@ -46,8 +46,8 @@ impl Node for S {
 }
 
 impl Deserializer for S {
-    fn deserialize(input: &str, start_position: usize) -> Option<Self> {
-        let mut chars = Tokenizer::new(input, start_position);
+    fn deserialize(input: &str) -> Option<Self> {
+        let mut chars = Tokenizer::new(input);
         if let Some(body) = chars.get_token_body(vec!['~', '~'], vec!['~', '~']) {
             return Some(S::new(body.to_string().replace('\n', "")));
         }
@@ -78,11 +78,11 @@ mod tests {
 
     #[test]
     fn parse() {
-        assert_eq!(S::deserialize("~~2+2=5~~", 0), Some(S::new("2+2=5")));
-        assert_eq!(S::deserialize("not ~~is~~not", 4), Some(S::new("is")));
-        assert_eq!(S::deserialize("~~not", 0), None);
-        assert_eq!(S::deserialize("~~i\n\ns~~", 0), None);
-        assert_eq!(S::deserialize("~~i\ns~~", 0), Some(S::new("is")));
+        assert_eq!(S::deserialize("~~2+2=5~~"), Some(S::new("2+2=5")));
+        assert_eq!(S::deserialize("~~is~~not"), Some(S::new("is")));
+        assert_eq!(S::deserialize("~~not"), None);
+        assert_eq!(S::deserialize("~~i\n\ns~~"), None);
+        assert_eq!(S::deserialize("~~i\ns~~"), Some(S::new("is")));
     }
 
     #[test]

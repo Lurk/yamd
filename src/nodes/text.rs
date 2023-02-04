@@ -36,8 +36,8 @@ impl From<Text> for ParagraphNode {
 }
 
 impl Deserializer for Text {
-    fn deserialize(input: &str, start_position: usize) -> Option<Self> {
-        Some(Text::new(input[start_position..].to_string()))
+    fn deserialize(input: &str) -> Option<Self> {
+        Some(Text::new(input.to_string()))
     }
 }
 
@@ -71,6 +71,6 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(Text::deserialize("t", 0), Some(Text::new("t")));
+        assert_eq!(Text::deserialize("t"), Some(Text::new("t")));
     }
 }

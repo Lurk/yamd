@@ -101,8 +101,8 @@ impl Node for B {
 }
 
 impl Deserializer for B {
-    fn deserialize(input: &str, start_position: usize) -> Option<Self> {
-        let mut chars = Tokenizer::new(input, start_position);
+    fn deserialize(input: &str) -> Option<Self> {
+        let mut chars = Tokenizer::new(input);
         if let Some(body) = chars.get_token_body(vec!['*', '*'], vec!['*', '*']) {
             let result = Self::parse_branch(body);
             return Some(result);
@@ -144,12 +144,12 @@ mod tests {
     #[test]
     fn from_string() {
         assert_eq!(
-            B::deserialize("**b**", 0),
+            B::deserialize("**b**"),
             Some(B::from_vec(vec![Text::new("b").into()]))
         );
 
         assert_eq!(
-            B::deserialize("**b ~~st~~ _i t_**", 0),
+            B::deserialize("**b ~~st~~ _i t_**"),
             Some(B::from_vec(vec![
                 Text::new("b ").into(),
                 S::new("st").into(),

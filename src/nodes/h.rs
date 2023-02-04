@@ -27,21 +27,21 @@ impl H {
 }
 
 impl Deserializer for H {
-    fn deserialize(input: &str, start_position: usize) -> Option<Self> {
+    fn deserialize(input: &str) -> Option<Self> {
         let mut split_position: Option<usize> = None;
         let tokens = ["# ", "## ", "### ", "#### ", "##### ", "###### "];
         for (i, token) in tokens.iter().enumerate() {
-            let end_position = start_position + i + 1;
-            if input.len() > end_position && &&input[start_position..end_position + 1] == token {
+            let end_position = i + 1;
+            if input.len() > end_position && &&input[..end_position + 1] == token {
                 split_position = Some(i + 2);
             }
         }
         if let Some(split_position) = split_position {
-            let stop_position = match input[start_position..].find("\n\n") {
-                Some(position) => position + start_position + 2,
+            let stop_position = match input.find("\n\n") {
+                Some(position) => position + 2,
                 None => input.len(),
             };
-            let mut level: String = input[start_position..stop_position].into();
+            let mut level: String = input[..stop_position].into();
             let text = level.split_off(split_position);
             return Some(Self::new(
                 text.trim(),
@@ -112,16 +112,15 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(H::deserialize("## Header", 0), Some(H::new("Header", 2)));
-        assert_eq!(H::deserialize("### Head", 0), Some(H::new("Head", 3)));
-        assert_eq!(H::deserialize("not ### Head", 4), Some(H::new("Head", 3)));
+        assert_eq!(H::deserialize("## Header"), Some(H::new("Header", 2)));
+        assert_eq!(H::deserialize("### Head"), Some(H::new("Head", 3)));
         assert_eq!(
-            H::deserialize("not ### Head\n\nsome other thing", 4),
+            H::deserialize("### Head\n\nsome other thing"),
             Some(H::new("Head", 3))
         );
-        assert_eq!(H::deserialize("not a header", 0), None);
-        assert_eq!(H::deserialize("######", 0), None);
-        assert_eq!(H::deserialize("######also not a header", 0), None);
+        assert_eq!(H::deserialize("not a header"), None);
+        assert_eq!(H::deserialize("######"), None);
+        assert_eq!(H::deserialize("######also not a header"), None);
     }
 
     #[test]

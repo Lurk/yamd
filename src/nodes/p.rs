@@ -78,12 +78,12 @@ impl Branch<ParagraphNode> for P {
 }
 
 impl Deserializer for P {
-    fn deserialize(input: &str, start_position: usize) -> Option<Self> {
+    fn deserialize(input: &str) -> Option<Self> {
         let end_position = match input.find("\n\n") {
             Some(position) => position,
             None => input.len(),
         };
-        Some(Self::parse_branch(&input[start_position..end_position]))
+        Some(Self::parse_branch(&input[..end_position]))
     }
 }
 
@@ -159,7 +159,7 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            P::deserialize("simple text **bold text**`let foo='bar';`", 0),
+            P::deserialize("simple text **bold text**`let foo='bar';`"),
             Some(P::from_vec(vec![
                 Text::new("simple text ").into(),
                 B::from_vec(vec![Text::new("bold text").into()]).into(),
@@ -167,8 +167,8 @@ mod tests {
             ]),)
         );
         assert_eq!(
-            P::deserialize("1 2\n\n3", 2),
-            Some(P::from_vec(vec![Text::new("2").into()]))
+            P::deserialize("1 2\n\n3"),
+            Some(P::from_vec(vec![Text::new("1 2").into()]))
         );
     }
 }

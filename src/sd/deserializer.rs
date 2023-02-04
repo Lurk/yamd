@@ -49,7 +49,7 @@ pub trait Node {
     where
         Self: Sized + Deserializer + Into<Node>,
     {
-        if let Some(token) = Self::deserialize(input, 0) {
+        if let Some(token) = Self::deserialize(input) {
             return Some(token.into());
         }
         None
@@ -57,7 +57,7 @@ pub trait Node {
 }
 
 pub trait Deserializer {
-    fn deserialize(input: &str, start_position: usize) -> Option<Self>
+    fn deserialize(input: &str) -> Option<Self>
     where
         Self: Sized;
 }
@@ -93,11 +93,8 @@ pub struct Tokenizer<'a> {
 }
 
 impl<'a> Tokenizer<'a> {
-    pub fn new(input: &'a str, start_position: usize) -> Self {
-        let mut chars = input.chars().enumerate();
-        if start_position != 0 {
-            chars.nth(start_position - 1);
-        }
+    pub fn new(input: &'a str) -> Self {
+        let chars = input.chars().enumerate();
         Tokenizer {
             chars,
             input,
@@ -141,7 +138,7 @@ mod tests {
 
     #[test]
     fn parse_part() {
-        let mut c = Tokenizer::new("test of *italic**one more* statement", 8);
+        let mut c = Tokenizer::new("*italic**one more* statement");
         assert_eq!(c.get_token_body(vec!['*'], vec!['*']), Some("italic"));
         assert_eq!(c.get_token_body(vec!['*'], vec!['*']), Some("one more"));
     }

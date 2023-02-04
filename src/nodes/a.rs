@@ -43,8 +43,8 @@ impl Node for A {
 }
 
 impl Deserializer for A {
-    fn deserialize(input: &str, start_position: usize) -> Option<Self> {
-        let mut chars = Tokenizer::new(input, start_position);
+    fn deserialize(input: &str) -> Option<Self> {
+        let mut chars = Tokenizer::new(input);
         if let Some(first_part) = chars.get_token_body(vec!['['], vec![']']) {
             let first_part = first_part.to_string();
             if let Some(second_part) = chars.get_token_body(vec!['('], vec![')']) {
@@ -79,7 +79,7 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(A::deserialize("[1](2)", 0), Some(A::new("2", "1")))
+        assert_eq!(A::deserialize("[1](2)"), Some(A::new("2", "1")))
     }
 
     #[test]

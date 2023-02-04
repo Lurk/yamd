@@ -37,8 +37,8 @@ impl Node for InlineCode {
 }
 
 impl Deserializer for InlineCode {
-    fn deserialize(input: &str, start_position: usize) -> Option<Self> {
-        let mut chars = Tokenizer::new(input, start_position);
+    fn deserialize(input: &str) -> Option<Self> {
+        let mut chars = Tokenizer::new(input);
         if let Some(body) = chars.get_token_body(vec!['`'], vec!['`']) {
             return Some(InlineCode::new(body.to_string().replace('\n', "")));
         }
@@ -60,19 +60,12 @@ mod tests {
 
     #[test]
     fn from_string() {
+        assert_eq!(InlineCode::deserialize("`1`"), Some(InlineCode::new('1')));
         assert_eq!(
-            InlineCode::deserialize("`1`", 0),
-            Some(InlineCode::new('1'))
-        );
-        assert_eq!(
-            InlineCode::deserialize("not`1`", 3),
-            Some(InlineCode::new('1'))
-        );
-        assert_eq!(
-            InlineCode::deserialize("`const \nfoo='bar'`", 0),
+            InlineCode::deserialize("`const \nfoo='bar'`"),
             Some(InlineCode::new("const foo='bar'"))
         );
-        assert_eq!(InlineCode::deserialize("not`a", 3), None);
-        assert_eq!(InlineCode::deserialize("`const \n\nfoo='bar'`", 0), None);
+        assert_eq!(InlineCode::deserialize("`a"), None);
+        assert_eq!(InlineCode::deserialize("`const \n\nfoo='bar'`"), None);
     }
 }
