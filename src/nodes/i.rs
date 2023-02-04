@@ -39,16 +39,17 @@ impl Node for I {
     fn len(&self) -> usize {
         self.text.len() + 2
     }
+
+    fn get_token_length(&self) -> usize {
+        0
+    }
 }
 
 impl Deserializer for I {
-    fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
+    fn deserialize(input: &str, start_position: usize) -> Option<Self> {
         let mut chars = Tokenizer::new(input, start_position);
         if let Some(body) = chars.get_token_body(vec!['_'], vec!['_']) {
-            return Some((
-                I::new(body.to_string().replace('\n', "")),
-                chars.get_next_position(),
-            ));
+            return Some(I::new(body.to_string().replace('\n', "")));
         }
 
         None
@@ -57,7 +58,10 @@ impl Deserializer for I {
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{deserializer::Deserializer, serializer::Serializer};
+    use crate::sd::{
+        deserializer::{Deserializer, Node},
+        serializer::Serializer,
+    };
 
     use super::I;
 
@@ -75,18 +79,20 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(I::deserialize("_italic_", 0), Some((I::new("italic"), 8)));
-        assert_eq!(
-            I::deserialize("not_italic_not", 3),
-            Some((I::new("italic"), 11))
-        );
+        assert_eq!(I::deserialize("_italic_", 0), Some(I::new("italic")));
+        assert_eq!(I::deserialize("not_italic_not", 3), Some(I::new("italic")));
         assert_eq!(
             I::deserialize("not_it alic_not", 3),
-            Some((I::new("it alic"), 12))
+            Some(I::new("it alic"))
         );
         assert_eq!(I::deserialize("not italic_not", 3), None);
         assert_eq!(I::deserialize("*italic not", 0), None);
-        assert_eq!(I::deserialize("_ita\nlic_", 0), Some((I::new("italic"), 9)));
+        assert_eq!(I::deserialize("_ita\nlic_", 0), Some(I::new("italic")));
         assert_eq!(I::deserialize("_ita\n\nlic_", 0), None);
+    }
+
+    #[test]
+    fn len() {
+        assert_eq!(I::new("i").len(), 3);
     }
 }

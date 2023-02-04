@@ -27,7 +27,7 @@ impl H {
 }
 
 impl Deserializer for H {
-    fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
+    fn deserialize(input: &str, start_position: usize) -> Option<Self> {
         let mut split_position: Option<usize> = None;
         let tokens = ["# ", "## ", "### ", "#### ", "##### ", "###### "];
         for (i, token) in tokens.iter().enumerate() {
@@ -43,9 +43,9 @@ impl Deserializer for H {
             };
             let mut level: String = input[start_position..stop_position].into();
             let text = level.split_off(split_position);
-            return Some((
-                Self::new(text.trim(), level.len().try_into().unwrap_or(0) - 1),
-                stop_position,
+            return Some(Self::new(
+                text.trim(),
+                level.len().try_into().unwrap_or(0) - 1,
             ));
         }
         None
@@ -69,11 +69,18 @@ impl Node for H {
     fn len(&self) -> usize {
         self.text.len() + self.level as usize + 1
     }
+
+    fn get_token_length(&self) -> usize {
+        0
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{deserializer::Deserializer, serializer::Serializer};
+    use crate::sd::{
+        deserializer::{Deserializer, Node},
+        serializer::Serializer,
+    };
 
     use super::H;
 
@@ -105,21 +112,21 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(
-            H::deserialize("## Header", 0),
-            Some((H::new("Header", 2), 9))
-        );
-        assert_eq!(H::deserialize("### Head", 0), Some((H::new("Head", 3), 8)));
-        assert_eq!(
-            H::deserialize("not ### Head", 4),
-            Some((H::new("Head", 3), 12))
-        );
+        assert_eq!(H::deserialize("## Header", 0), Some(H::new("Header", 2)));
+        assert_eq!(H::deserialize("### Head", 0), Some(H::new("Head", 3)));
+        assert_eq!(H::deserialize("not ### Head", 4), Some(H::new("Head", 3)));
         assert_eq!(
             H::deserialize("not ### Head\n\nsome other thing", 4),
-            Some((H::new("Head", 3), 14))
+            Some(H::new("Head", 3))
         );
         assert_eq!(H::deserialize("not a header", 0), None);
         assert_eq!(H::deserialize("######", 0), None);
         assert_eq!(H::deserialize("######also not a header", 0), None);
+    }
+
+    #[test]
+    fn len() {
+        assert_eq!(H::new("h", 1).len(), 3);
+        assert_eq!(H::new("h", 2).len(), 4);
     }
 }

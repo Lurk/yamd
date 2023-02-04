@@ -22,6 +22,10 @@ impl Node for BNode {
             BNode::S(node) => node.len(),
         }
     }
+
+    fn get_token_length(&self) -> usize {
+        0
+    }
 }
 
 impl Serializer for BNode {
@@ -88,16 +92,20 @@ impl Default for B {
 
 impl Node for B {
     fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + 4
+        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_token_length()
+    }
+
+    fn get_token_length(&self) -> usize {
+        4
     }
 }
 
 impl Deserializer for B {
-    fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
+    fn deserialize(input: &str, start_position: usize) -> Option<Self> {
         let mut chars = Tokenizer::new(input, start_position);
         if let Some(body) = chars.get_token_body(vec!['*', '*'], vec!['*', '*']) {
             let result = Self::parse_branch(body);
-            return Some((result, chars.get_next_position()));
+            return Some(result);
         }
         None
     }
@@ -111,7 +119,7 @@ mod tests {
         nodes::s::S,
         nodes::text::Text,
         sd::deserializer::{Branch, Deserializer},
-        sd::serializer::Serializer,
+        sd::{deserializer::Node, serializer::Serializer},
     };
 
     #[test]
@@ -137,20 +145,26 @@ mod tests {
     fn from_string() {
         assert_eq!(
             B::deserialize("**b**", 0),
-            Some((B::from_vec(vec![Text::new("b").into()]), 5))
+            Some(B::from_vec(vec![Text::new("b").into()]))
         );
 
         assert_eq!(
             B::deserialize("**b ~~st~~ _i t_**", 0),
-            Some((
-                B::from_vec(vec![
-                    Text::new("b ").into(),
-                    S::new("st").into(),
-                    Text::new(" ").into(),
-                    I::new("i t").into()
-                ]),
-                18
-            ))
+            Some(B::from_vec(vec![
+                Text::new("b ").into(),
+                S::new("st").into(),
+                Text::new(" ").into(),
+                I::new("i t").into()
+            ]))
+        );
+    }
+
+    #[test]
+    fn len() {
+        assert_eq!(B::from_vec(vec![Text::new("T").into()]).len(), 5);
+        assert_eq!(
+            B::from_vec(vec![Text::new("T").into(), S::new("S").into()]).len(),
+            10
         );
     }
 }

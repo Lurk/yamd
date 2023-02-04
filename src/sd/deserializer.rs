@@ -3,59 +3,64 @@ use std::{
     str::Chars,
 };
 
-pub trait Branch<Node: std::fmt::Debug> {
+pub trait Branch<Tags: std::fmt::Debug>
+where
+    Tags: Node,
+{
     fn new() -> Self;
-    fn push<N: Into<N>>(&mut self, node: N);
-    fn from_vec(nodes: Vec<Node>) -> Self;
-    fn get_maybe_nodes() -> Vec<MaybeNode<Node>>;
-    fn get_fallback() -> Box<dyn Fn(&str) -> Node>;
+    fn push<Node: Into<Tags>>(&mut self, node: Node);
+    fn from_vec(nodes: Vec<Tags>) -> Self;
+    fn get_maybe_nodes() -> Vec<MaybeNode<Tags>>;
+    fn get_fallback() -> Box<dyn Fn(&str) -> Tags>;
 
     fn parse_branch(chunk: &str) -> Self
     where
-        Self: Sized + Deserializer,
+        Self: Sized + Deserializer + Node,
     {
         let mut result = Self::new();
         let mut chunk_position = 0;
         let mut text_start = 0;
         let fallback = Self::get_fallback();
         while chunk_position < chunk.len() {
-            chunk_position += 1;
             for parser in Self::get_maybe_nodes() {
-                if let Some((node, pos)) = parser(chunk, chunk_position - 1) {
-                    if chunk_position - 1 != text_start {
-                        result.push(fallback(&chunk[text_start..chunk_position - 1]));
+                let slice = &chunk[chunk_position..];
+                if let Some(node) = parser(slice, 0) {
+                    if chunk_position != text_start {
+                        result.push(fallback(&chunk[text_start..chunk_position]));
                     }
-                    chunk_position = pos;
-                    text_start = pos;
                     result.push(node);
+                    chunk_position = result.len() - result.get_token_length();
+                    text_start = chunk_position;
                 }
             }
+            chunk_position += 1;
         }
-        if text_start != chunk_position {
-            result.push(fallback(&chunk[text_start..chunk_position]));
+        if text_start < chunk.len() {
+            result.push(fallback(&chunk[text_start..]));
         }
 
         result
     }
 }
 
-pub type MaybeNode<Node> = Box<dyn Fn(&str, usize) -> Option<(Node, usize)>>;
+pub type MaybeNode<Nodes> = Box<dyn Fn(&str, usize) -> Option<Nodes>>;
 
 pub trait Node {
     fn len(&self) -> usize;
-    fn maybe_node<Node>(input: &str, start_position: usize) -> Option<(Node, usize)>
+    fn get_token_length(&self) -> usize;
+    fn maybe_node<Node>(input: &str, start_position: usize) -> Option<Node>
     where
         Self: Sized + Deserializer + Into<Node>,
     {
-        if let Some((token, pos)) = Self::deserialize(input, start_position) {
-            return Some((token.into(), pos));
+        if let Some(token) = Self::deserialize(input, start_position) {
+            return Some(token.into());
         }
         None
     }
 }
 
 pub trait Deserializer {
-    fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)>
+    fn deserialize(input: &str, start_position: usize) -> Option<Self>
     where
         Self: Sized;
 }
@@ -103,13 +108,6 @@ impl<'a> Tokenizer<'a> {
         }
     }
 
-    pub fn get_next_position(&mut self) -> usize {
-        match self.chars.peek() {
-            Some((index, _)) => *index,
-            None => self.input.len(),
-        }
-    }
-
     pub fn get_token_body(&mut self, start_token: Vec<char>, end_token: Vec<char>) -> Option<&str> {
         let mut start_matcher = Matcher::new(&start_token);
         let mut body_start: Option<usize> = None;
@@ -148,9 +146,7 @@ mod tests {
     fn parse_part() {
         let mut c = Tokenizer::new("test of *italic**one more* statement", 8);
         assert_eq!(c.get_token_body(vec!['*'], vec!['*']), Some("italic"));
-        assert_eq!(c.get_next_position(), 16);
         assert_eq!(c.get_token_body(vec!['*'], vec!['*']), Some("one more"));
-        assert_eq!(c.get_next_position(), 26);
     }
 
     #[test]

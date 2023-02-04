@@ -36,14 +36,18 @@ impl From<Text> for ParagraphNode {
 }
 
 impl Deserializer for Text {
-    fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
-        Some((Text::new(input[start_position..].to_string()), input.len()))
+    fn deserialize(input: &str, start_position: usize) -> Option<Self> {
+        Some(Text::new(input[start_position..].to_string()))
     }
 }
 
 impl Node for Text {
     fn len(&self) -> usize {
         self.text.len()
+    }
+
+    fn get_token_length(&self) -> usize {
+        0
     }
 }
 
@@ -67,6 +71,6 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(Text::deserialize("t", 0), Some((Text::new("t"), 1)));
+        assert_eq!(Text::deserialize("t", 0), Some(Text::new("t")));
     }
 }

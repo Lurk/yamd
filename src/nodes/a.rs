@@ -34,20 +34,21 @@ impl From<A> for ParagraphNode {
 
 impl Node for A {
     fn len(&self) -> usize {
-        self.text.len() + self.url.len() + 4
+        self.text.len() + self.url.len() + self.get_token_length()
+    }
+
+    fn get_token_length(&self) -> usize {
+        4
     }
 }
 
 impl Deserializer for A {
-    fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
+    fn deserialize(input: &str, start_position: usize) -> Option<Self> {
         let mut chars = Tokenizer::new(input, start_position);
         if let Some(first_part) = chars.get_token_body(vec!['['], vec![']']) {
             let first_part = first_part.to_string();
             if let Some(second_part) = chars.get_token_body(vec!['('], vec![')']) {
-                return Some((
-                    A::new(second_part.to_string(), first_part),
-                    chars.get_next_position(),
-                ));
+                return Some(A::new(second_part.to_string(), first_part));
             }
         }
         None
@@ -78,7 +79,7 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(A::deserialize("[1](2)", 0), Some((A::new("2", "1"), 6)))
+        assert_eq!(A::deserialize("[1](2)", 0), Some(A::new("2", "1")))
     }
 
     #[test]

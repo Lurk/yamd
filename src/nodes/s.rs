@@ -39,16 +39,17 @@ impl Node for S {
     fn len(&self) -> usize {
         self.text.len() + 4
     }
+
+    fn get_token_length(&self) -> usize {
+        0
+    }
 }
 
 impl Deserializer for S {
-    fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
+    fn deserialize(input: &str, start_position: usize) -> Option<Self> {
         let mut chars = Tokenizer::new(input, start_position);
         if let Some(body) = chars.get_token_body(vec!['~', '~'], vec!['~', '~']) {
-            return Some((
-                S::new(body.to_string().replace('\n', "")),
-                chars.get_next_position(),
-            ));
+            return Some(S::new(body.to_string().replace('\n', "")));
         }
         None
     }
@@ -56,7 +57,10 @@ impl Deserializer for S {
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{deserializer::Deserializer, serializer::Serializer};
+    use crate::sd::{
+        deserializer::{Deserializer, Node},
+        serializer::Serializer,
+    };
 
     use super::S;
 
@@ -74,10 +78,16 @@ mod tests {
 
     #[test]
     fn parse() {
-        assert_eq!(S::deserialize("~~2+2=5~~", 0), Some((S::new("2+2=5"), 9)));
-        assert_eq!(S::deserialize("not ~~is~~not", 4), Some((S::new("is"), 10)));
+        assert_eq!(S::deserialize("~~2+2=5~~", 0), Some(S::new("2+2=5")));
+        assert_eq!(S::deserialize("not ~~is~~not", 4), Some(S::new("is")));
         assert_eq!(S::deserialize("~~not", 0), None);
         assert_eq!(S::deserialize("~~i\n\ns~~", 0), None);
-        assert_eq!(S::deserialize("~~i\ns~~", 0), Some((S::new("is"), 7)));
+        assert_eq!(S::deserialize("~~i\ns~~", 0), Some(S::new("is")));
+    }
+
+    #[test]
+    fn len() {
+        assert_eq!(S::new("s").len(), 5);
+        assert_eq!(S::new("st").len(), 6);
     }
 }

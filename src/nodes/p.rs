@@ -25,6 +25,10 @@ impl Node for ParagraphNode {
             ParagraphNode::InlineCode(node) => node.len(),
         }
     }
+
+    fn get_token_length(&self) -> usize {
+        0
+    }
 }
 
 impl Serializer for ParagraphNode {
@@ -74,15 +78,12 @@ impl Branch<ParagraphNode> for P {
 }
 
 impl Deserializer for P {
-    fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
+    fn deserialize(input: &str, start_position: usize) -> Option<Self> {
         let end_position = match input.find("\n\n") {
             Some(position) => position,
             None => input.len(),
         };
-        Some((
-            Self::parse_branch(&input[start_position..end_position]),
-            end_position,
-        ))
+        Some(Self::parse_branch(&input[start_position..end_position]))
     }
 }
 
@@ -111,6 +112,10 @@ impl From<P> for YamdNodes {
 impl Node for P {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum()
+    }
+
+    fn get_token_length(&self) -> usize {
+        0
     }
 }
 
@@ -155,18 +160,15 @@ mod tests {
     fn deserialize() {
         assert_eq!(
             P::deserialize("simple text **bold text**`let foo='bar';`", 0),
-            Some((
-                P::from_vec(vec![
-                    Text::new("simple text ").into(),
-                    B::from_vec(vec![Text::new("bold text").into()]).into(),
-                    InlineCode::new("let foo='bar';").into(),
-                ]),
-                41
-            ))
+            Some(P::from_vec(vec![
+                Text::new("simple text ").into(),
+                B::from_vec(vec![Text::new("bold text").into()]).into(),
+                InlineCode::new("let foo='bar';").into(),
+            ]),)
         );
         assert_eq!(
             P::deserialize("1 2\n\n3", 2),
-            Some((P::from_vec(vec![Text::new("2").into()]), 3))
+            Some(P::from_vec(vec![Text::new("2").into()]))
         );
     }
 }

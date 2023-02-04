@@ -11,6 +11,19 @@ pub enum YamdNodes {
     H(H),
 }
 
+impl Node for YamdNodes {
+    fn len(&self) -> usize {
+        match self {
+            YamdNodes::P(node) => node.len() + self.get_token_length(),
+            YamdNodes::H(node) => node.len() + self.get_token_length(),
+        }
+    }
+
+    fn get_token_length(&self) -> usize {
+        2
+    }
+}
+
 impl Serializer for YamdNodes {
     fn serialize(&self) -> String {
         match self {
@@ -44,7 +57,7 @@ impl Branch<YamdNodes> for Yamd {
 
     fn get_fallback() -> Box<dyn Fn(&str) -> YamdNodes> {
         Box::new(|str| {
-            let (node, _) = P::deserialize(str, 0).unwrap_or((P::new(), 0));
+            let node = P::deserialize(str, 0).unwrap_or(P::new());
             node.into()
         })
     }
@@ -61,15 +74,24 @@ impl Serializer for Yamd {
 }
 
 impl Deserializer for Yamd {
-    fn deserialize(input: &str, _start_position: usize) -> Option<(Self, usize)> {
-        let result = Self::parse_branch(input);
-        return Some((result, input.len()));
+    fn deserialize(input: &str, _start_position: usize) -> Option<Self> {
+        Some(Self::parse_branch(input))
     }
 }
 
 impl Default for Yamd {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Node for Yamd {
+    fn len(&self) -> usize {
+        self.nodes.iter().map(|node| node.len()).sum()
+    }
+
+    fn get_token_length(&self) -> usize {
+        0
     }
 }
 
@@ -108,29 +130,23 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Yamd::deserialize("# h\n\nt", 0),
-            Some((
-                Yamd::from_vec(vec![
-                    H::new("h", 1).into(),
-                    P::from_vec(vec![Text::new("t").into()]).into()
-                ]),
-                6
-            ))
+            Yamd::deserialize("# hh\n\ntt", 0),
+            Some(Yamd::from_vec(vec![
+                H::new("hh", 1).into(),
+                P::from_vec(vec![Text::new("tt").into()]).into()
+            ]),)
         );
 
         assert_eq!(
             Yamd::deserialize("t**b**\n\n## h", 0),
-            Some((
-                Yamd::from_vec(vec![
-                    P::from_vec(vec![
-                        Text::new("t").into(),
-                        B::from_vec(vec![Text::new("b").into()]).into()
-                    ])
-                    .into(),
-                    H::new("h", 2).into(),
-                ]),
-                12
-            ))
+            Some(Yamd::from_vec(vec![
+                P::from_vec(vec![
+                    Text::new("t").into(),
+                    B::from_vec(vec![Text::new("b").into()]).into()
+                ])
+                .into(),
+                H::new("h", 2).into(),
+            ]),)
         );
     }
 }
