@@ -1,14 +1,14 @@
 use std::{iter::Enumerate, str::Chars};
 
-pub trait Branch<Tags: std::fmt::Debug>
+pub trait Branch<Nodes>
 where
-    Tags: Node,
+    Nodes: Node,
 {
     fn new() -> Self;
-    fn push<Node: Into<Tags>>(&mut self, node: Node);
-    fn from_vec(nodes: Vec<Tags>) -> Self;
-    fn get_maybe_nodes() -> Vec<MaybeNode<Tags>>;
-    fn get_fallback_node() -> Box<dyn Fn(&str) -> Tags>;
+    fn push<CanBeNode: Into<Nodes>>(&mut self, node: CanBeNode);
+    fn from_vec(nodes: Vec<Nodes>) -> Self;
+    fn get_maybe_nodes() -> Vec<MaybeNode<Nodes>>;
+    fn get_fallback_node() -> Box<dyn Fn(&str) -> Nodes>;
 
     fn parse_branch(chunk: &str) -> Self
     where
@@ -41,14 +41,14 @@ where
     }
 }
 
-pub type MaybeNode<Nodes> = Box<dyn Fn(&str) -> Option<Nodes>>;
+pub type MaybeNode<BranchNodes> = Box<dyn Fn(&str) -> Option<BranchNodes>>;
 
 pub trait Node {
     fn len(&self) -> usize;
     fn get_token_length(&self) -> usize;
-    fn maybe_node<Node>(input: &str) -> Option<Node>
+    fn maybe_node<BranchNodes>(input: &str) -> Option<BranchNodes>
     where
-        Self: Sized + Deserializer + Into<Node>,
+        Self: Sized + Deserializer + Into<BranchNodes>,
     {
         if let Some(token) = Self::deserialize(input) {
             return Some(token.into());
@@ -63,13 +63,13 @@ pub trait Deserializer {
         Self: Sized;
 }
 
-struct Matcher<'a> {
+struct Matcher<'token> {
     index: usize,
-    token: &'a Vec<char>,
+    token: &'token Vec<char>,
 }
 
-impl<'a> Matcher<'a> {
-    fn new(token: &'a Vec<char>) -> Self {
+impl<'token> Matcher<'token> {
+    fn new(token: &'token Vec<char>) -> Self {
         Self { index: 0, token }
     }
 
@@ -87,14 +87,14 @@ impl<'a> Matcher<'a> {
     }
 }
 
-pub struct Tokenizer<'a> {
-    input: &'a str,
-    chars: Enumerate<Chars<'a>>,
+pub struct Tokenizer<'input> {
+    input: &'input str,
+    chars: Enumerate<Chars<'input>>,
     hard_stop_token: Vec<char>,
 }
 
-impl<'a> Tokenizer<'a> {
-    pub fn new(input: &'a str) -> Self {
+impl<'input> Tokenizer<'input> {
+    pub fn new(input: &'input str) -> Self {
         let chars = input.chars().enumerate();
         Tokenizer {
             chars,
