@@ -1,5 +1,5 @@
 use crate::{
-    nodes::i::I,
+    nodes::italic::Italic,
     nodes::p::ParagraphNode,
     nodes::s::S,
     nodes::text::Text,
@@ -10,7 +10,7 @@ use crate::{
 #[derive(Debug, PartialEq)]
 pub enum BoldNodes {
     Text(Text),
-    I(I),
+    I(Italic),
     S(S),
 }
 
@@ -72,7 +72,7 @@ impl Branch<BoldNodes> for Bold {
     }
 
     fn get_maybe_nodes() -> Vec<MaybeNode<BoldNodes>> {
-        vec![Box::new(I::maybe_node), Box::new(S::maybe_node)]
+        vec![Box::new(Italic::maybe_node), Box::new(S::maybe_node)]
     }
 
     fn get_fallback_node() -> FallbackNode<BoldNodes> {
@@ -109,7 +109,7 @@ impl Deserializer for Bold {
 mod tests {
     use crate::{
         nodes::bold::Bold,
-        nodes::i::I,
+        nodes::italic::Italic,
         nodes::s::S,
         nodes::text::Text,
         sd::deserializer::{Branch, Deserializer},
@@ -128,7 +128,7 @@ mod tests {
     fn from_vec() {
         let b: String = Bold::from_vec(vec![
             Text::new("B as bold ").into(),
-            I::new("Italic").into(),
+            Italic::new("Italic").into(),
             S::new("Strikethrough").into(),
         ])
         .serialize();
@@ -148,7 +148,7 @@ mod tests {
                 Text::new("b ").into(),
                 S::new("st").into(),
                 Text::new(" ").into(),
-                I::new("i t").into()
+                Italic::new("i t").into()
             ]))
         );
     }

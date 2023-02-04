@@ -1,5 +1,6 @@
 use crate::nodes::{
-    anchor::Anchor, bold::Bold, i::I, inline_code::InlineCode, s::S, text::Text, yamd::YamdNodes,
+    anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic, s::S, text::Text,
+    yamd::YamdNodes,
 };
 use crate::sd::{
     deserializer::{Branch, Deserializer, MaybeNode, Node},
@@ -10,7 +11,7 @@ use crate::sd::{
 pub enum ParagraphNode {
     A(Anchor),
     B(Bold),
-    I(I),
+    I(Italic),
     S(S),
     Text(Text),
     InlineCode(InlineCode),
@@ -64,7 +65,7 @@ impl Branch<ParagraphNode> for P {
         vec![
             Box::new(Anchor::maybe_node),
             Box::new(Bold::maybe_node),
-            Box::new(I::maybe_node),
+            Box::new(Italic::maybe_node),
             Box::new(S::maybe_node),
             Box::new(InlineCode::maybe_node),
         ]
