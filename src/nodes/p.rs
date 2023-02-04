@@ -72,7 +72,7 @@ impl Branch<ParagraphNode> for P {
         ]
     }
 
-    fn get_fallback() -> Box<dyn Fn(&str) -> ParagraphNode> {
+    fn get_fallback_node() -> Box<dyn Fn(&str) -> ParagraphNode> {
         Box::new(|str| Text::new(str).into())
     }
 }

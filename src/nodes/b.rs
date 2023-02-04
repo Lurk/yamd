@@ -79,7 +79,7 @@ impl Branch<BNode> for B {
         vec![Box::new(I::maybe_node), Box::new(S::maybe_node)]
     }
 
-    fn get_fallback() -> Box<dyn Fn(&str) -> BNode> {
+    fn get_fallback_node() -> Box<dyn Fn(&str) -> BNode> {
         Box::new(|str| Text::new(str).into())
     }
 }

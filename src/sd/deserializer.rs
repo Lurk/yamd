@@ -8,7 +8,7 @@ where
     fn push<Node: Into<Tags>>(&mut self, node: Node);
     fn from_vec(nodes: Vec<Tags>) -> Self;
     fn get_maybe_nodes() -> Vec<MaybeNode<Tags>>;
-    fn get_fallback() -> Box<dyn Fn(&str) -> Tags>;
+    fn get_fallback_node() -> Box<dyn Fn(&str) -> Tags>;
 
     fn parse_branch(chunk: &str) -> Self
     where
@@ -17,7 +17,7 @@ where
         let mut result = Self::new();
         let mut chunk_position = 0;
         let mut text_start = 0;
-        let fallback = Self::get_fallback();
+        let fallback = Self::get_fallback_node();
         while chunk_position < chunk.len() {
             for parser in Self::get_maybe_nodes() {
                 let slice = &chunk[chunk_position..];

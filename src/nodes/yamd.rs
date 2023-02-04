@@ -55,7 +55,7 @@ impl Branch<YamdNodes> for Yamd {
         vec![Box::new(H::maybe_node)]
     }
 
-    fn get_fallback() -> Box<dyn Fn(&str) -> YamdNodes> {
+    fn get_fallback_node() -> Box<dyn Fn(&str) -> YamdNodes> {
         Box::new(|str| {
             let node = P::deserialize(str).unwrap_or(P::new());
             node.into()
