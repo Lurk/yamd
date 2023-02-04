@@ -1,13 +1,13 @@
 use crate::{
     nodes::heading::Heading,
-    nodes::p::P,
+    nodes::paragraph::Paragraph,
     sd::deserializer::{Branch, Deserializer, MaybeNode, Node},
     sd::serializer::Serializer,
 };
 
 #[derive(Debug, PartialEq)]
 pub enum YamdNodes {
-    P(P),
+    P(Paragraph),
     H(Heading),
 }
 
@@ -53,7 +53,7 @@ impl Branch<YamdNodes> for Yamd {
 
     fn get_fallback_node() -> Box<dyn Fn(&str) -> YamdNodes> {
         Box::new(|str| {
-            let node = P::deserialize(str).unwrap_or(P::new());
+            let node = Paragraph::deserialize(str).unwrap_or(Paragraph::new());
             node.into()
         })
     }
@@ -95,7 +95,7 @@ impl Node for Yamd {
 mod tests {
     use crate::{
         nodes::heading::Heading,
-        nodes::p::P,
+        nodes::paragraph::Paragraph,
         nodes::{bold::Bold, text::Text},
         sd::deserializer::Branch,
         sd::{deserializer::Deserializer, serializer::Serializer},
@@ -107,7 +107,7 @@ mod tests {
     fn push() {
         let mut t = Yamd::new();
         t.push(Heading::new("header", 1));
-        t.push(P::from_vec(vec![Text::new("text").into()]));
+        t.push(Paragraph::from_vec(vec![Text::new("text").into()]));
 
         assert_eq!(t.serialize(), "# header\n\ntext".to_string());
     }
@@ -116,7 +116,7 @@ mod tests {
     fn from_vec() {
         let t: String = Yamd::from_vec(vec![
             Heading::new("header", 1).into(),
-            P::from_vec(vec![Text::new("text").into()]).into(),
+            Paragraph::from_vec(vec![Text::new("text").into()]).into(),
         ])
         .serialize();
 
@@ -129,14 +129,14 @@ mod tests {
             Yamd::deserialize("# hh\n\ntt"),
             Some(Yamd::from_vec(vec![
                 Heading::new("hh", 1).into(),
-                P::from_vec(vec![Text::new("tt").into()]).into()
+                Paragraph::from_vec(vec![Text::new("tt").into()]).into()
             ]),)
         );
 
         assert_eq!(
             Yamd::deserialize("t**b**\n\n## h"),
             Some(Yamd::from_vec(vec![
-                P::from_vec(vec![
+                Paragraph::from_vec(vec![
                     Text::new("t").into(),
                     Bold::from_vec(vec![Text::new("b").into()]).into()
                 ])

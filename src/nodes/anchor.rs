@@ -1,5 +1,5 @@
 use crate::{
-    nodes::p::ParagraphNode,
+    nodes::paragraph::ParagraphNodes,
     sd::deserializer::{Deserializer, Node, Tokenizer},
     sd::serializer::Serializer,
 };
@@ -26,9 +26,9 @@ impl Serializer for Anchor {
     }
 }
 
-impl From<Anchor> for ParagraphNode {
+impl From<Anchor> for ParagraphNodes {
     fn from(value: Anchor) -> Self {
-        ParagraphNode::A(value)
+        ParagraphNodes::A(value)
     }
 }
 

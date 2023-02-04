@@ -1,6 +1,6 @@
 use crate::{
     nodes::italic::Italic,
-    nodes::p::ParagraphNode,
+    nodes::paragraph::ParagraphNodes,
     nodes::s::S,
     nodes::text::Text,
     sd::deserializer::{Branch, Deserializer, MaybeNode, Node, Tokenizer},
@@ -39,9 +39,9 @@ pub struct Bold {
     nodes: Vec<BoldNodes>,
 }
 
-impl From<Bold> for ParagraphNode {
+impl From<Bold> for ParagraphNodes {
     fn from(value: Bold) -> Self {
-        ParagraphNode::B(value)
+        ParagraphNodes::B(value)
     }
 }
 

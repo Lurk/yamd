@@ -2,13 +2,14 @@ use crate::nodes::{
     anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic, s::S, text::Text,
     yamd::YamdNodes,
 };
+use crate::sd::deserializer::Tokenizer;
 use crate::sd::{
     deserializer::{Branch, Deserializer, MaybeNode, Node},
     serializer::Serializer,
 };
 
 #[derive(Debug, PartialEq)]
-pub enum ParagraphNode {
+pub enum ParagraphNodes {
     A(Anchor),
     B(Bold),
     I(Italic),
@@ -17,51 +18,51 @@ pub enum ParagraphNode {
     InlineCode(InlineCode),
 }
 
-impl Node for ParagraphNode {
+impl Node for ParagraphNodes {
     fn len(&self) -> usize {
         match self {
-            ParagraphNode::A(node) => node.len(),
-            ParagraphNode::B(node) => node.len(),
-            ParagraphNode::I(node) => node.len(),
-            ParagraphNode::S(node) => node.len(),
-            ParagraphNode::Text(node) => node.len(),
-            ParagraphNode::InlineCode(node) => node.len(),
+            ParagraphNodes::A(node) => node.len(),
+            ParagraphNodes::B(node) => node.len(),
+            ParagraphNodes::I(node) => node.len(),
+            ParagraphNodes::S(node) => node.len(),
+            ParagraphNodes::Text(node) => node.len(),
+            ParagraphNodes::InlineCode(node) => node.len(),
         }
     }
 }
 
-impl Serializer for ParagraphNode {
+impl Serializer for ParagraphNodes {
     fn serialize(&self) -> String {
         match self {
-            ParagraphNode::A(v) => v.serialize(),
-            ParagraphNode::B(v) => v.serialize(),
-            ParagraphNode::I(v) => v.serialize(),
-            ParagraphNode::S(v) => v.serialize(),
-            ParagraphNode::Text(v) => v.serialize(),
-            ParagraphNode::InlineCode(v) => v.serialize(),
+            ParagraphNodes::A(v) => v.serialize(),
+            ParagraphNodes::B(v) => v.serialize(),
+            ParagraphNodes::I(v) => v.serialize(),
+            ParagraphNodes::S(v) => v.serialize(),
+            ParagraphNodes::Text(v) => v.serialize(),
+            ParagraphNodes::InlineCode(v) => v.serialize(),
         }
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub struct P {
-    nodes: Vec<ParagraphNode>,
+pub struct Paragraph {
+    nodes: Vec<ParagraphNodes>,
 }
 
-impl Branch<ParagraphNode> for P {
+impl Branch<ParagraphNodes> for Paragraph {
     fn new() -> Self {
         Self { nodes: vec![] }
     }
 
-    fn from_vec(data: Vec<ParagraphNode>) -> Self {
+    fn from_vec(data: Vec<ParagraphNodes>) -> Self {
         Self { nodes: data }
     }
 
-    fn push<TP: Into<ParagraphNode>>(&mut self, element: TP) {
+    fn push<TP: Into<ParagraphNodes>>(&mut self, element: TP) {
         self.nodes.push(element.into());
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<ParagraphNode>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<ParagraphNodes>> {
         vec![
             Box::new(Anchor::maybe_node),
             Box::new(Bold::maybe_node),
@@ -71,7 +72,7 @@ impl Branch<ParagraphNode> for P {
         ]
     }
 
-    fn get_fallback_node() -> Box<dyn Fn(&str) -> ParagraphNode> {
+    fn get_fallback_node() -> Box<dyn Fn(&str) -> ParagraphNodes> {
         Box::new(|str| Text::new(str).into())
     }
     fn get_outer_token_length(&self) -> usize {
@@ -79,17 +80,17 @@ impl Branch<ParagraphNode> for P {
     }
 }
 
-impl Deserializer for P {
+impl Deserializer for Paragraph {
     fn deserialize(input: &str) -> Option<Self> {
-        let end_position = match input.find("\n\n") {
-            Some(position) => position,
-            None => input.len(),
-        };
-        Some(Self::parse_branch(&input[..end_position]))
+        let mut tokenizer = Tokenizer::new_with_custom_hard_stop(input, vec![]);
+        let body = tokenizer
+            .get_token_body(vec![], vec!['\n', '\n'])
+            .unwrap_or(input);
+        Some(Self::parse_branch(body))
     }
 }
 
-impl Serializer for P {
+impl Serializer for Paragraph {
     fn serialize(&self) -> String {
         self.nodes
             .iter()
@@ -99,19 +100,19 @@ impl Serializer for P {
     }
 }
 
-impl Default for P {
+impl Default for Paragraph {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl From<P> for YamdNodes {
-    fn from(value: P) -> Self {
+impl From<Paragraph> for YamdNodes {
+    fn from(value: Paragraph) -> Self {
         YamdNodes::P(value)
     }
 }
 
-impl Node for P {
+impl Node for Paragraph {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum()
     }
@@ -127,11 +128,11 @@ mod tests {
         sd::serializer::Serializer,
     };
 
-    use super::P;
+    use super::Paragraph;
 
     #[test]
     fn push() {
-        let mut p = P::new();
+        let mut p = Paragraph::new();
         p.push(Text::new("simple text "));
         p.push(Bold::from_vec(vec![Text::new("bold text").into()]));
         p.push(InlineCode::new("let foo='bar';"));
@@ -144,7 +145,7 @@ mod tests {
 
     #[test]
     fn from_vec() {
-        let p: String = P::from_vec(vec![
+        let p: String = Paragraph::from_vec(vec![
             Text::new("simple text ").into(),
             Bold::from_vec(vec![Text::new("bold text").into()]).into(),
             InlineCode::new("let foo='bar';").into(),
@@ -157,16 +158,16 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            P::deserialize("simple text **bold text**`let foo='bar';`"),
-            Some(P::from_vec(vec![
+            Paragraph::deserialize("simple text **bold text**`let foo='bar';`"),
+            Some(Paragraph::from_vec(vec![
                 Text::new("simple text ").into(),
                 Bold::from_vec(vec![Text::new("bold text").into()]).into(),
                 InlineCode::new("let foo='bar';").into(),
             ]),)
         );
         assert_eq!(
-            P::deserialize("1 2\n\n3"),
-            Some(P::from_vec(vec![Text::new("1 2").into()]))
+            Paragraph::deserialize("1 2\n\n3"),
+            Some(Paragraph::from_vec(vec![Text::new("1 2").into()]))
         );
     }
 }

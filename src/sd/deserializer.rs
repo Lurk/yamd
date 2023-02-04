@@ -112,17 +112,22 @@ impl<'input> Tokenizer<'input> {
 
     pub fn get_token_body(&mut self, start_token: Vec<char>, end_token: Vec<char>) -> Option<&str> {
         let mut start_matcher = Matcher::new(&start_token);
-        let mut body_start: Option<usize> = None;
+        let body_start: Option<usize> = if start_token.is_empty() {
+            Some(0)
+        } else {
+            let mut body_start = None;
+            for (index, char) in self.chars.by_ref() {
+                if !start_matcher.is_match(&char) {
+                    break;
+                }
+                if start_matcher.is_done() {
+                    body_start = Some(index + 1);
+                    break;
+                }
+            }
+            body_start
+        };
 
-        for (index, char) in self.chars.by_ref() {
-            if !start_matcher.is_match(&char) {
-                break;
-            }
-            if start_matcher.is_done() {
-                body_start = Some(index + 1);
-                break;
-            }
-        }
         if let Some(body_start) = body_start {
             let mut end_matcher = Matcher::new(&end_token);
             let mut hard_stop_matcher = Matcher::new(&self.hard_stop_token);

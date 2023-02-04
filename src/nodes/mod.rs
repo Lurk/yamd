@@ -3,7 +3,7 @@ pub mod bold;
 pub mod heading;
 pub mod inline_code;
 pub mod italic;
-pub mod p;
+pub mod paragraph;
 pub mod s;
 pub mod text;
 pub mod yamd;

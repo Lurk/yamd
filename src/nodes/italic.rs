@@ -1,6 +1,6 @@
 use crate::{
     nodes::bold::BoldNodes,
-    nodes::p::ParagraphNode,
+    nodes::paragraph::ParagraphNodes,
     sd::deserializer::{Deserializer, Node, Tokenizer},
     sd::serializer::Serializer,
 };
@@ -29,9 +29,9 @@ impl From<Italic> for BoldNodes {
     }
 }
 
-impl From<Italic> for ParagraphNode {
+impl From<Italic> for ParagraphNodes {
     fn from(value: Italic) -> Self {
-        ParagraphNode::I(value)
+        ParagraphNodes::I(value)
     }
 }
 
