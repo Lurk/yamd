@@ -27,7 +27,11 @@ impl From<InlineCode> for ParagraphNode {
     }
 }
 
-impl Node for InlineCode {}
+impl Node for InlineCode {
+    fn len(&self) -> usize {
+        self.text.len() + 2
+    }
+}
 
 impl Deserializer for InlineCode {
     fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {

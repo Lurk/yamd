@@ -32,7 +32,11 @@ impl From<A> for ParagraphNode {
     }
 }
 
-impl Node for A {}
+impl Node for A {
+    fn len(&self) -> usize {
+        self.text.len() + self.url.len() + 4
+    }
+}
 
 impl Deserializer for A {
     fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {
@@ -52,7 +56,10 @@ impl Deserializer for A {
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{deserializer::Deserializer, serializer::Serializer};
+    use crate::sd::{
+        deserializer::{Deserializer, Node},
+        serializer::Serializer,
+    };
 
     use super::A;
 
@@ -72,5 +79,10 @@ mod tests {
     #[test]
     fn from_string() {
         assert_eq!(A::deserialize("[1](2)", 0), Some((A::new("2", "1"), 6)))
+    }
+
+    #[test]
+    fn len() {
+        assert_eq!(A::new("a", "b").len(), 6);
     }
 }

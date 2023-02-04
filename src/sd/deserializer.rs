@@ -3,12 +3,12 @@ use std::{
     str::Chars,
 };
 
-pub trait Branch<Tags: std::fmt::Debug> {
+pub trait Branch<Node: std::fmt::Debug> {
     fn new() -> Self;
-    fn push<Node: Into<Tags>>(&mut self, node: Node);
-    fn from_vec(nodes: Vec<Tags>) -> Self;
-    fn get_maybe_nodes() -> Vec<MaybeNode<Tags>>;
-    fn get_fallback() -> Box<dyn Fn(&str) -> Tags>;
+    fn push<N: Into<N>>(&mut self, node: N);
+    fn from_vec(nodes: Vec<Node>) -> Self;
+    fn get_maybe_nodes() -> Vec<MaybeNode<Node>>;
+    fn get_fallback() -> Box<dyn Fn(&str) -> Node>;
 
     fn parse_branch(chunk: &str) -> Self
     where
@@ -42,6 +42,7 @@ pub trait Branch<Tags: std::fmt::Debug> {
 pub type MaybeNode<Node> = Box<dyn Fn(&str, usize) -> Option<(Node, usize)>>;
 
 pub trait Node {
+    fn len(&self) -> usize;
     fn maybe_node<Node>(input: &str, start_position: usize) -> Option<(Node, usize)>
     where
         Self: Sized + Deserializer + Into<Node>,

@@ -65,7 +65,11 @@ impl From<H> for YamdNodes {
     }
 }
 
-impl Node for H {}
+impl Node for H {
+    fn len(&self) -> usize {
+        self.text.len() + self.level as usize + 1
+    }
+}
 
 #[cfg(test)]
 mod tests {

@@ -14,6 +14,19 @@ pub enum ParagraphNode {
     InlineCode(InlineCode),
 }
 
+impl Node for ParagraphNode {
+    fn len(&self) -> usize {
+        match self {
+            ParagraphNode::A(node) => node.len(),
+            ParagraphNode::B(node) => node.len(),
+            ParagraphNode::I(node) => node.len(),
+            ParagraphNode::S(node) => node.len(),
+            ParagraphNode::Text(node) => node.len(),
+            ParagraphNode::InlineCode(node) => node.len(),
+        }
+    }
+}
+
 impl Serializer for ParagraphNode {
     fn serialize(&self) -> String {
         match self {
@@ -95,7 +108,11 @@ impl From<P> for YamdNodes {
     }
 }
 
-impl Node for P {}
+impl Node for P {
+    fn len(&self) -> usize {
+        self.nodes.iter().map(|node| node.len()).sum()
+    }
+}
 
 #[cfg(test)]
 mod tests {

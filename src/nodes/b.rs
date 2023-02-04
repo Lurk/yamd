@@ -14,6 +14,16 @@ pub enum BNode {
     S(S),
 }
 
+impl Node for BNode {
+    fn len(&self) -> usize {
+        match self {
+            BNode::Text(node) => node.len(),
+            BNode::I(node) => node.len(),
+            BNode::S(node) => node.len(),
+        }
+    }
+}
+
 impl Serializer for BNode {
     fn serialize(&self) -> String {
         match self {
@@ -76,7 +86,11 @@ impl Default for B {
     }
 }
 
-impl Node for B {}
+impl Node for B {
+    fn len(&self) -> usize {
+        self.nodes.iter().map(|node| node.len()).sum::<usize>() + 4
+    }
+}
 
 impl Deserializer for B {
     fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {

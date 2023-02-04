@@ -35,7 +35,11 @@ impl From<I> for ParagraphNode {
     }
 }
 
-impl Node for I {}
+impl Node for I {
+    fn len(&self) -> usize {
+        self.text.len() + 2
+    }
+}
 
 impl Deserializer for I {
     fn deserialize(input: &str, start_position: usize) -> Option<(Self, usize)> {

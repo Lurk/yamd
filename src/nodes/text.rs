@@ -41,7 +41,11 @@ impl Deserializer for Text {
     }
 }
 
-impl Node for Text {}
+impl Node for Text {
+    fn len(&self) -> usize {
+        self.text.len()
+    }
+}
 
 #[cfg(test)]
 mod tests {
