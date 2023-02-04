@@ -98,11 +98,15 @@ pub struct Tokenizer<'input> {
 
 impl<'input> Tokenizer<'input> {
     pub fn new(input: &'input str) -> Self {
+        Self::new_with_custom_hard_stop(input, vec!['\n', '\n'])
+    }
+
+    pub fn new_with_custom_hard_stop(input: &'input str, hard_stop_token: Vec<char>) -> Self {
         let chars = input.chars().enumerate();
         Tokenizer {
             chars,
             input,
-            hard_stop_token: vec!['\n', '\n'],
+            hard_stop_token,
         }
     }
 
@@ -119,7 +123,6 @@ impl<'input> Tokenizer<'input> {
                 break;
             }
         }
-
         if let Some(body_start) = body_start {
             let mut end_matcher = Matcher::new(&end_token);
             let mut hard_stop_matcher = Matcher::new(&self.hard_stop_token);
@@ -128,6 +131,8 @@ impl<'input> Tokenizer<'input> {
                     return Some(&self.input[body_start..index - (end_token.len() - 1)]);
                 } else if hard_stop_matcher.is_match(&char) && hard_stop_matcher.is_done() {
                     return None;
+                } else if self.hard_stop_token.is_empty() && index == self.input.len() - 1 {
+                    return Some(&self.input[body_start..]);
                 }
             }
         }

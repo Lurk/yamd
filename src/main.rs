@@ -2,7 +2,7 @@ mod nodes;
 mod sd;
 
 use nodes::anchor::Anchor;
-use nodes::h::H;
+use nodes::heading::Heading;
 use nodes::p::P;
 use nodes::yamd::Yamd;
 
@@ -12,7 +12,7 @@ fn main() {
     let mut p = P::new();
     p.push(Anchor::new("http://foo.bar/", "http://foo.bar/"));
     let mut t = Yamd::new();
-    t.push(H::new("foo", 1));
+    t.push(Heading::new("foo", 1));
     t.push(p);
     println!("{t:?}");
 }

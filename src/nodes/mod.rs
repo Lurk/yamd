@@ -1,6 +1,6 @@
 pub mod anchor;
 pub mod bold;
-pub mod h;
+pub mod heading;
 pub mod i;
 pub mod inline_code;
 pub mod p;

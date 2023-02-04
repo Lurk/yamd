@@ -1,5 +1,5 @@
 use crate::{
-    nodes::h::H,
+    nodes::heading::Heading,
     nodes::p::P,
     sd::deserializer::{Branch, Deserializer, MaybeNode, Node},
     sd::serializer::Serializer,
@@ -8,7 +8,7 @@ use crate::{
 #[derive(Debug, PartialEq)]
 pub enum YamdNodes {
     P(P),
-    H(H),
+    H(Heading),
 }
 
 impl Node for YamdNodes {
@@ -48,7 +48,7 @@ impl Branch<YamdNodes> for Yamd {
     }
 
     fn get_maybe_nodes() -> Vec<MaybeNode<YamdNodes>> {
-        vec![Box::new(H::maybe_node)]
+        vec![Box::new(Heading::maybe_node)]
     }
 
     fn get_fallback_node() -> Box<dyn Fn(&str) -> YamdNodes> {
@@ -94,7 +94,7 @@ impl Node for Yamd {
 #[cfg(test)]
 mod tests {
     use crate::{
-        nodes::h::H,
+        nodes::heading::Heading,
         nodes::p::P,
         nodes::{bold::Bold, text::Text},
         sd::deserializer::Branch,
@@ -106,7 +106,7 @@ mod tests {
     #[test]
     fn push() {
         let mut t = Yamd::new();
-        t.push(H::new("header", 1));
+        t.push(Heading::new("header", 1));
         t.push(P::from_vec(vec![Text::new("text").into()]));
 
         assert_eq!(t.serialize(), "# header\n\ntext".to_string());
@@ -115,7 +115,7 @@ mod tests {
     #[test]
     fn from_vec() {
         let t: String = Yamd::from_vec(vec![
-            H::new("header", 1).into(),
+            Heading::new("header", 1).into(),
             P::from_vec(vec![Text::new("text").into()]).into(),
         ])
         .serialize();
@@ -128,7 +128,7 @@ mod tests {
         assert_eq!(
             Yamd::deserialize("# hh\n\ntt"),
             Some(Yamd::from_vec(vec![
-                H::new("hh", 1).into(),
+                Heading::new("hh", 1).into(),
                 P::from_vec(vec![Text::new("tt").into()]).into()
             ]),)
         );
@@ -141,7 +141,7 @@ mod tests {
                     Bold::from_vec(vec![Text::new("b").into()]).into()
                 ])
                 .into(),
-                H::new("h", 2).into(),
+                Heading::new("h", 2).into(),
             ]),)
         );
     }
