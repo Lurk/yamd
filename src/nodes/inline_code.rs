@@ -31,9 +31,6 @@ impl Node for InlineCode {
     fn len(&self) -> usize {
         self.text.len() + 2
     }
-    fn get_token_length(&self) -> usize {
-        0
-    }
 }
 
 impl Deserializer for InlineCode {

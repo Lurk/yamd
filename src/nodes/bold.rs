@@ -22,10 +22,6 @@ impl Node for BoldNodes {
             BoldNodes::S(node) => node.len(),
         }
     }
-
-    fn get_token_length(&self) -> usize {
-        0
-    }
 }
 
 impl Serializer for BoldNodes {
@@ -82,6 +78,9 @@ impl Branch<BoldNodes> for Bold {
     fn get_fallback_node() -> FallbackNode<BoldNodes> {
         Box::new(|str| Text::new(str).into())
     }
+    fn get_outer_token_length(&self) -> usize {
+        4
+    }
 }
 
 impl Default for Bold {
@@ -92,11 +91,7 @@ impl Default for Bold {
 
 impl Node for Bold {
     fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_token_length()
-    }
-
-    fn get_token_length(&self) -> usize {
-        4
+        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
     }
 }
 

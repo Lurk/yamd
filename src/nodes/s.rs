@@ -39,10 +39,6 @@ impl Node for S {
     fn len(&self) -> usize {
         self.text.len() + 4
     }
-
-    fn get_token_length(&self) -> usize {
-        0
-    }
 }
 
 impl Deserializer for S {

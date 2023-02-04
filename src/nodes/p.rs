@@ -27,10 +27,6 @@ impl Node for ParagraphNode {
             ParagraphNode::InlineCode(node) => node.len(),
         }
     }
-
-    fn get_token_length(&self) -> usize {
-        0
-    }
 }
 
 impl Serializer for ParagraphNode {
@@ -77,6 +73,9 @@ impl Branch<ParagraphNode> for P {
     fn get_fallback_node() -> Box<dyn Fn(&str) -> ParagraphNode> {
         Box::new(|str| Text::new(str).into())
     }
+    fn get_outer_token_length(&self) -> usize {
+        0
+    }
 }
 
 impl Deserializer for P {
@@ -114,10 +113,6 @@ impl From<P> for YamdNodes {
 impl Node for P {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum()
-    }
-
-    fn get_token_length(&self) -> usize {
-        0
     }
 }
 

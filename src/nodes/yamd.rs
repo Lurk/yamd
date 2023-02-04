@@ -14,13 +14,9 @@ pub enum YamdNodes {
 impl Node for YamdNodes {
     fn len(&self) -> usize {
         match self {
-            YamdNodes::P(node) => node.len() + self.get_token_length(),
-            YamdNodes::H(node) => node.len() + self.get_token_length(),
+            YamdNodes::P(node) => node.len() + 2,
+            YamdNodes::H(node) => node.len() + 2,
         }
-    }
-
-    fn get_token_length(&self) -> usize {
-        2
     }
 }
 
@@ -61,6 +57,10 @@ impl Branch<YamdNodes> for Yamd {
             node.into()
         })
     }
+
+    fn get_outer_token_length(&self) -> usize {
+        0
+    }
 }
 
 impl Serializer for Yamd {
@@ -88,10 +88,6 @@ impl Default for Yamd {
 impl Node for Yamd {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum()
-    }
-
-    fn get_token_length(&self) -> usize {
-        0
     }
 }
 

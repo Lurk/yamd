@@ -9,6 +9,7 @@ where
     fn from_vec(nodes: Vec<BranchNodes>) -> Self;
     fn get_maybe_nodes() -> Vec<MaybeNode<BranchNodes>>;
     fn get_fallback_node() -> FallbackNode<BranchNodes>;
+    fn get_outer_token_length(&self) -> usize;
 
     fn parse_branch(input: &str) -> Self
     where
@@ -30,7 +31,7 @@ where
                         ));
                     }
                     branch.push(node);
-                    current_position = branch.len() - branch.get_token_length();
+                    current_position = branch.len() - branch.get_outer_token_length();
                     fallback_position = current_position;
                 }
             }
@@ -48,7 +49,6 @@ pub type FallbackNode<BranchNodes> = Box<dyn Fn(&str) -> BranchNodes>;
 
 pub trait Node {
     fn len(&self) -> usize;
-    fn get_token_length(&self) -> usize;
     fn maybe_node<BranchNodes>(input: &str) -> Option<BranchNodes>
     where
         Self: Sized + Deserializer + Into<BranchNodes>,

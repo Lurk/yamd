@@ -45,10 +45,6 @@ impl Node for Text {
     fn len(&self) -> usize {
         self.text.len()
     }
-
-    fn get_token_length(&self) -> usize {
-        0
-    }
 }
 
 #[cfg(test)]

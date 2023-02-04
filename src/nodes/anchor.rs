@@ -34,11 +34,7 @@ impl From<Anchor> for ParagraphNode {
 
 impl Node for Anchor {
     fn len(&self) -> usize {
-        self.text.len() + self.url.len() + self.get_token_length()
-    }
-
-    fn get_token_length(&self) -> usize {
-        4
+        self.text.len() + self.url.len() + 4
     }
 }
 

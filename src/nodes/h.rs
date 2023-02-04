@@ -69,10 +69,6 @@ impl Node for H {
     fn len(&self) -> usize {
         self.text.len() + self.level as usize + 1
     }
-
-    fn get_token_length(&self) -> usize {
-        0
-    }
 }
 
 #[cfg(test)]
