@@ -14,29 +14,30 @@ where
     where
         Self: Sized + Deserializer + Node,
     {
-        let mut result = Self::new();
+        let mut branch = Self::new();
         let mut chunk_position = 0;
         let mut text_start = 0;
-        let fallback = Self::get_fallback_node();
+        let fallback_node = Self::get_fallback_node();
+        let maybe_nodes = Self::get_maybe_nodes();
         while chunk_position < chunk.len() {
-            for parser in Self::get_maybe_nodes() {
-                let slice = &chunk[chunk_position..];
+            let slice = &chunk[chunk_position..];
+            chunk_position += 1;
+            for parser in &maybe_nodes {
                 if let Some(node) = parser(slice) {
-                    if chunk_position != text_start {
-                        result.push(fallback(&chunk[text_start..chunk_position]));
+                    if text_start != chunk_position - 1 {
+                        branch.push(fallback_node(&chunk[text_start..chunk_position - 1]));
                     }
-                    result.push(node);
-                    chunk_position = result.len() - result.get_token_length();
+                    branch.push(node);
+                    chunk_position = branch.len() - branch.get_token_length();
                     text_start = chunk_position;
                 }
             }
-            chunk_position += 1;
         }
         if text_start < chunk.len() {
-            result.push(fallback(&chunk[text_start..]));
+            branch.push(fallback_node(&chunk[text_start..]));
         }
 
-        result
+        branch
     }
 }
 
