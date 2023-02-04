@@ -24,7 +24,7 @@ where
         while chunk_position < chunk.len() {
             for parser in Self::get_maybe_nodes() {
                 let slice = &chunk[chunk_position..];
-                if let Some(node) = parser(slice, 0) {
+                if let Some(node) = parser(slice) {
                     if chunk_position != text_start {
                         result.push(fallback(&chunk[text_start..chunk_position]));
                     }
@@ -43,16 +43,16 @@ where
     }
 }
 
-pub type MaybeNode<Nodes> = Box<dyn Fn(&str, usize) -> Option<Nodes>>;
+pub type MaybeNode<Nodes> = Box<dyn Fn(&str) -> Option<Nodes>>;
 
 pub trait Node {
     fn len(&self) -> usize;
     fn get_token_length(&self) -> usize;
-    fn maybe_node<Node>(input: &str, start_position: usize) -> Option<Node>
+    fn maybe_node<Node>(input: &str) -> Option<Node>
     where
         Self: Sized + Deserializer + Into<Node>,
     {
-        if let Some(token) = Self::deserialize(input, start_position) {
+        if let Some(token) = Self::deserialize(input, 0) {
             return Some(token.into());
         }
         None
