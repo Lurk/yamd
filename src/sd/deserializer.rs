@@ -93,20 +93,20 @@ impl<'token> Matcher<'token> {
 pub struct Tokenizer<'input> {
     input: &'input str,
     chars: Enumerate<Chars<'input>>,
-    hard_stop_token: Vec<char>,
+    match_end_of_input: bool,
 }
 
 impl<'input> Tokenizer<'input> {
     pub fn new(input: &'input str) -> Self {
-        Self::new_with_custom_hard_stop(input, vec!['\n', '\n'])
+        Self::new_with_match_end_of_input(input, false)
     }
 
-    pub fn new_with_custom_hard_stop(input: &'input str, hard_stop_token: Vec<char>) -> Self {
+    pub fn new_with_match_end_of_input(input: &'input str, match_end_of_input: bool) -> Self {
         let chars = input.chars().enumerate();
         Tokenizer {
             chars,
             input,
-            hard_stop_token,
+            match_end_of_input,
         }
     }
 
@@ -130,13 +130,10 @@ impl<'input> Tokenizer<'input> {
 
         if let Some(body_start) = body_start {
             let mut end_matcher = Matcher::new(&end_token);
-            let mut hard_stop_matcher = Matcher::new(&self.hard_stop_token);
             for (index, char) in self.chars.by_ref() {
                 if end_matcher.is_match(&char) && end_matcher.is_done() {
                     return Some(&self.input[body_start..index - (end_token.len() - 1)]);
-                } else if hard_stop_matcher.is_match(&char) && hard_stop_matcher.is_done() {
-                    return None;
-                } else if self.hard_stop_token.is_empty() && index == self.input.len() - 1 {
+                } else if self.match_end_of_input && index == self.input.len() - 1 {
                     return Some(&self.input[body_start..]);
                 }
             }

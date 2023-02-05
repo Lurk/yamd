@@ -63,6 +63,5 @@ mod tests {
             Some(InlineCode::new("const foo='bar'"))
         );
         assert_eq!(InlineCode::deserialize("`a"), None);
-        assert_eq!(InlineCode::deserialize("`const \n\nfoo='bar'`"), None);
     }
 }

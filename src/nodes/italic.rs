@@ -90,7 +90,6 @@ mod tests {
             Italic::deserialize("_ita\nlic_"),
             Some(Italic::new("ita\nlic"))
         );
-        assert_eq!(Italic::deserialize("_ita\n\nlic_"), None);
     }
 
     #[test]

@@ -77,7 +77,6 @@ mod tests {
         assert_eq!(S::deserialize("~~2+2=5~~"), Some(S::new("2+2=5")));
         assert_eq!(S::deserialize("~~is~~not"), Some(S::new("is")));
         assert_eq!(S::deserialize("~~not"), None);
-        assert_eq!(S::deserialize("~~i\n\ns~~"), None);
         assert_eq!(S::deserialize("~~i\ns~~"), Some(S::new("is")));
     }
 
