@@ -4,7 +4,7 @@ use crate::{
     nodes::s::S,
     nodes::text::Text,
     sd::deserializer::{Branch, Deserializer, MaybeNode, Node, Tokenizer},
-    sd::{deserializer::FallbackNode, serializer::Serializer},
+    sd::{deserializer::DefinitelyNode, serializer::Serializer},
 };
 
 #[derive(Debug, PartialEq)]
@@ -72,10 +72,10 @@ impl Branch<BoldNodes> for Bold {
     }
 
     fn get_maybe_nodes() -> Vec<MaybeNode<BoldNodes>> {
-        vec![Box::new(Italic::maybe_node), Box::new(S::maybe_node)]
+        vec![Italic::maybe_node(), S::maybe_node()]
     }
 
-    fn get_fallback_node() -> FallbackNode<BoldNodes> {
+    fn get_fallback_node() -> DefinitelyNode<BoldNodes> {
         Box::new(|str| Text::new(str).into())
     }
     fn get_outer_token_length(&self) -> usize {

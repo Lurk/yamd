@@ -8,7 +8,7 @@ where
     fn push<CanBeNode: Into<BranchNodes>>(&mut self, node: CanBeNode);
     fn from_vec(nodes: Vec<BranchNodes>) -> Self;
     fn get_maybe_nodes() -> Vec<MaybeNode<BranchNodes>>;
-    fn get_fallback_node() -> FallbackNode<BranchNodes>;
+    fn get_fallback_node() -> DefinitelyNode<BranchNodes>;
     fn get_outer_token_length(&self) -> usize;
 
     fn parse_branch(input: &str) -> Self
@@ -45,18 +45,26 @@ where
 }
 
 pub type MaybeNode<BranchNodes> = Box<dyn Fn(&str) -> Option<BranchNodes>>;
-pub type FallbackNode<BranchNodes> = Box<dyn Fn(&str) -> BranchNodes>;
+pub type DefinitelyNode<BranchNodes> = Box<dyn Fn(&str) -> BranchNodes>;
+
+pub trait FallbackNode {
+    fn fallback_node<BranchNodes>() -> DefinitelyNode<BranchNodes>
+    where
+        Self: Into<BranchNodes>;
+}
 
 pub trait Node {
     fn len(&self) -> usize;
-    fn maybe_node<BranchNodes>(input: &str) -> Option<BranchNodes>
+    fn maybe_node<BranchNodes>() -> MaybeNode<BranchNodes>
     where
         Self: Sized + Deserializer + Into<BranchNodes>,
     {
-        if let Some(token) = Self::deserialize(input) {
-            return Some(token.into());
-        }
-        None
+        Box::new(|input| {
+            if let Some(token) = Self::deserialize(input) {
+                return Some(token.into());
+            }
+            None
+        })
     }
 }
 

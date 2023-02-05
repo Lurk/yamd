@@ -1,7 +1,7 @@
 use crate::{
     nodes::bold::BoldNodes,
     nodes::paragraph::ParagraphNodes,
-    sd::deserializer::{Deserializer, Node},
+    sd::deserializer::{DefinitelyNode, Deserializer, FallbackNode, Node},
     sd::serializer::Serializer,
 };
 
@@ -44,6 +44,15 @@ impl Deserializer for Text {
 impl Node for Text {
     fn len(&self) -> usize {
         self.text.len()
+    }
+}
+
+impl FallbackNode for Text {
+    fn fallback_node<BranchNodes>() -> DefinitelyNode<BranchNodes>
+    where
+        Self: Into<BranchNodes>,
+    {
+        Box::new(|input| Text::new(input).into())
     }
 }
 

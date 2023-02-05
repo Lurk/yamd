@@ -2,7 +2,7 @@ use crate::nodes::{
     anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic, s::S, text::Text,
     yamd::YamdNodes,
 };
-use crate::sd::deserializer::Tokenizer;
+use crate::sd::deserializer::{DefinitelyNode, FallbackNode, Tokenizer};
 use crate::sd::{
     deserializer::{Branch, Deserializer, MaybeNode, Node},
     serializer::Serializer,
@@ -34,12 +34,12 @@ impl Node for ParagraphNodes {
 impl Serializer for ParagraphNodes {
     fn serialize(&self) -> String {
         match self {
-            ParagraphNodes::A(v) => v.serialize(),
-            ParagraphNodes::B(v) => v.serialize(),
-            ParagraphNodes::I(v) => v.serialize(),
-            ParagraphNodes::S(v) => v.serialize(),
-            ParagraphNodes::Text(v) => v.serialize(),
-            ParagraphNodes::InlineCode(v) => v.serialize(),
+            ParagraphNodes::A(node) => node.serialize(),
+            ParagraphNodes::B(node) => node.serialize(),
+            ParagraphNodes::I(node) => node.serialize(),
+            ParagraphNodes::S(node) => node.serialize(),
+            ParagraphNodes::Text(node) => node.serialize(),
+            ParagraphNodes::InlineCode(node) => node.serialize(),
         }
     }
 }
@@ -64,16 +64,16 @@ impl Branch<ParagraphNodes> for Paragraph {
 
     fn get_maybe_nodes() -> Vec<MaybeNode<ParagraphNodes>> {
         vec![
-            Box::new(Anchor::maybe_node),
-            Box::new(Bold::maybe_node),
-            Box::new(Italic::maybe_node),
-            Box::new(S::maybe_node),
-            Box::new(InlineCode::maybe_node),
+            Anchor::maybe_node(),
+            Bold::maybe_node(),
+            Italic::maybe_node(),
+            S::maybe_node(),
+            InlineCode::maybe_node(),
         ]
     }
 
     fn get_fallback_node() -> Box<dyn Fn(&str) -> ParagraphNodes> {
-        Box::new(|str| Text::new(str).into())
+        Text::fallback_node()
     }
     fn get_outer_token_length(&self) -> usize {
         0
@@ -115,6 +115,19 @@ impl From<Paragraph> for YamdNodes {
 impl Node for Paragraph {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum()
+    }
+}
+
+impl FallbackNode for Paragraph {
+    fn fallback_node<BranchNodes>() -> DefinitelyNode<BranchNodes>
+    where
+        Self: Into<BranchNodes>,
+    {
+        Box::new(|input| {
+            Paragraph::deserialize(input)
+                .unwrap_or(Paragraph::new())
+                .into()
+        })
     }
 }
 
