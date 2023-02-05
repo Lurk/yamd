@@ -5,10 +5,13 @@ use crate::{
     sd::serializer::Serializer,
 };
 
+use super::image::Image;
+
 #[derive(Debug, PartialEq)]
 pub enum YamdNodes {
     P(Paragraph),
     H(Heading),
+    Image(Image),
 }
 
 impl Node for YamdNodes {
@@ -16,6 +19,7 @@ impl Node for YamdNodes {
         match self {
             YamdNodes::P(node) => node.len() + 2,
             YamdNodes::H(node) => node.len() + 2,
+            YamdNodes::Image(node) => node.len() + 2,
         }
     }
 }
@@ -23,8 +27,9 @@ impl Node for YamdNodes {
 impl Serializer for YamdNodes {
     fn serialize(&self) -> String {
         match self {
-            YamdNodes::P(v) => v.serialize(),
-            YamdNodes::H(v) => v.serialize(),
+            YamdNodes::P(node) => node.serialize(),
+            YamdNodes::H(node) => node.serialize(),
+            YamdNodes::Image(node) => node.serialize(),
         }
     }
 }
@@ -48,7 +53,7 @@ impl Branch<YamdNodes> for Yamd {
     }
 
     fn get_maybe_nodes() -> Vec<MaybeNode<YamdNodes>> {
-        vec![Heading::maybe_node()]
+        vec![Heading::maybe_node(), Image::maybe_node()]
     }
 
     fn get_fallback_node() -> Box<dyn Fn(&str) -> YamdNodes> {
@@ -93,7 +98,7 @@ mod tests {
     use crate::{
         nodes::heading::Heading,
         nodes::paragraph::Paragraph,
-        nodes::{bold::Bold, text::Text},
+        nodes::{bold::Bold, image::Image, text::Text},
         sd::deserializer::Branch,
         sd::{deserializer::Deserializer, serializer::Serializer},
     };
@@ -123,21 +128,23 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Yamd::deserialize("# hh\n\ntt"),
+            Yamd::deserialize("# hh\n\ntt\n\n![a](u)"),
             Some(Yamd::from_vec(vec![
                 Heading::new("hh", 1).into(),
-                Paragraph::from_vec(vec![Text::new("tt").into()]).into()
+                Paragraph::from_vec(vec![Text::new("tt").into()]).into(),
+                Image::new("a", "u").into()
             ]),)
         );
 
         assert_eq!(
-            Yamd::deserialize("t**b**\n\n## h"),
+            Yamd::deserialize("t**b**\n\n![a](u)\n\n## h"),
             Some(Yamd::from_vec(vec![
                 Paragraph::from_vec(vec![
                     Text::new("t").into(),
                     Bold::from_vec(vec![Text::new("b").into()]).into()
                 ])
                 .into(),
+                Image::new('a', 'u').into(),
                 Heading::new("h", 2).into(),
             ]),)
         );
