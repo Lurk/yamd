@@ -1,5 +1,6 @@
 pub mod anchor;
 pub mod bold;
+pub mod code;
 pub mod heading;
 pub mod image;
 pub mod inline_code;

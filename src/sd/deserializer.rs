@@ -102,6 +102,7 @@ pub struct Tokenizer<'input> {
     input: &'input str,
     chars: Enumerate<Chars<'input>>,
     match_end_of_input: bool,
+    position: usize,
 }
 
 impl<'input> Tokenizer<'input> {
@@ -115,13 +116,15 @@ impl<'input> Tokenizer<'input> {
             chars,
             input,
             match_end_of_input,
+            position: 0,
         }
     }
 
     pub fn get_token_body(&mut self, start_token: Vec<char>, end_token: Vec<char>) -> Option<&str> {
         let mut start_matcher = Matcher::new(&start_token);
         let body_start: Option<usize> = if start_token.is_empty() {
-            Some(0)
+            let add = if self.position == 0 { 0 } else { 1 };
+            Some(self.position + add)
         } else {
             let mut body_start = None;
             for (index, char) in self.chars.by_ref() {
@@ -139,6 +142,7 @@ impl<'input> Tokenizer<'input> {
         if let Some(body_start) = body_start {
             let mut end_matcher = Matcher::new(&end_token);
             for (index, char) in self.chars.by_ref() {
+                self.position = index;
                 if end_matcher.is_match(&char) && end_matcher.is_done() {
                     return Some(&self.input[body_start..index - (end_token.len() - 1)]);
                 } else if self.match_end_of_input && index == self.input.len() - 1 {

@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "mdy"
+name = "yamd"
 version = "0.1.0"

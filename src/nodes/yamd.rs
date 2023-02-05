@@ -5,13 +5,14 @@ use crate::{
     sd::serializer::Serializer,
 };
 
-use super::image::Image;
+use super::{code::Code, image::Image};
 
 #[derive(Debug, PartialEq)]
 pub enum YamdNodes {
     P(Paragraph),
     H(Heading),
     Image(Image),
+    Code(Code),
 }
 
 impl Node for YamdNodes {
@@ -20,6 +21,7 @@ impl Node for YamdNodes {
             YamdNodes::P(node) => node.len() + 2,
             YamdNodes::H(node) => node.len() + 2,
             YamdNodes::Image(node) => node.len() + 2,
+            YamdNodes::Code(node) => node.len() + 2,
         }
     }
 }
@@ -30,6 +32,7 @@ impl Serializer for YamdNodes {
             YamdNodes::P(node) => node.serialize(),
             YamdNodes::H(node) => node.serialize(),
             YamdNodes::Image(node) => node.serialize(),
+            YamdNodes::Code(node) => node.serialize(),
         }
     }
 }
@@ -53,7 +56,11 @@ impl Branch<YamdNodes> for Yamd {
     }
 
     fn get_maybe_nodes() -> Vec<MaybeNode<YamdNodes>> {
-        vec![Heading::maybe_node(), Image::maybe_node()]
+        vec![
+            Heading::maybe_node(),
+            Image::maybe_node(),
+            Code::maybe_node(),
+        ]
     }
 
     fn get_fallback_node() -> Box<dyn Fn(&str) -> YamdNodes> {
@@ -98,7 +105,7 @@ mod tests {
     use crate::{
         nodes::heading::Heading,
         nodes::paragraph::Paragraph,
-        nodes::{bold::Bold, image::Image, text::Text},
+        nodes::{bold::Bold, code::Code, image::Image, text::Text},
         sd::deserializer::Branch,
         sd::{deserializer::Deserializer, serializer::Serializer},
     };
@@ -139,6 +146,20 @@ mod tests {
         assert_eq!(
             Yamd::deserialize("t**b**\n\n![a](u)\n\n## h"),
             Some(Yamd::from_vec(vec![
+                Paragraph::from_vec(vec![
+                    Text::new("t").into(),
+                    Bold::from_vec(vec![Text::new("b").into()]).into()
+                ])
+                .into(),
+                Image::new('a', 'u').into(),
+                Heading::new("h", 2).into(),
+            ]),)
+        );
+
+        assert_eq!(
+            Yamd::deserialize("```rust\nlet a=1;\n```\n\nt**b**\n\n![a](u)\n\n## h"),
+            Some(Yamd::from_vec(vec![
+                Code::new("rust", "let a=1;").into(),
                 Paragraph::from_vec(vec![
                     Text::new("t").into(),
                     Bold::from_vec(vec![Text::new("b").into()]).into()
