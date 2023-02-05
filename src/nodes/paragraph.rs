@@ -1,6 +1,6 @@
 use crate::nodes::{
-    anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic, s::S, text::Text,
-    yamd::YamdNodes,
+    anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic,
+    strikethrough::Strikethrough, text::Text, yamd::YamdNodes,
 };
 use crate::sd::deserializer::{DefinitelyNode, FallbackNode, Tokenizer};
 use crate::sd::{
@@ -13,7 +13,7 @@ pub enum ParagraphNodes {
     A(Anchor),
     B(Bold),
     I(Italic),
-    S(S),
+    S(Strikethrough),
     Text(Text),
     InlineCode(InlineCode),
 }
@@ -67,7 +67,7 @@ impl Branch<ParagraphNodes> for Paragraph {
             Anchor::maybe_node(),
             Bold::maybe_node(),
             Italic::maybe_node(),
-            S::maybe_node(),
+            Strikethrough::maybe_node(),
             InlineCode::maybe_node(),
         ]
     }

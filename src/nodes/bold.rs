@@ -1,7 +1,7 @@
 use crate::{
     nodes::italic::Italic,
     nodes::paragraph::ParagraphNodes,
-    nodes::s::S,
+    nodes::strikethrough::Strikethrough,
     nodes::text::Text,
     sd::deserializer::{Branch, Deserializer, MaybeNode, Node, Tokenizer},
     sd::{deserializer::DefinitelyNode, serializer::Serializer},
@@ -11,7 +11,7 @@ use crate::{
 pub enum BoldNodes {
     Text(Text),
     I(Italic),
-    S(S),
+    S(Strikethrough),
 }
 
 impl Node for BoldNodes {
@@ -72,7 +72,7 @@ impl Branch<BoldNodes> for Bold {
     }
 
     fn get_maybe_nodes() -> Vec<MaybeNode<BoldNodes>> {
-        vec![Italic::maybe_node(), S::maybe_node()]
+        vec![Italic::maybe_node(), Strikethrough::maybe_node()]
     }
 
     fn get_fallback_node() -> DefinitelyNode<BoldNodes> {
@@ -110,7 +110,7 @@ mod tests {
     use crate::{
         nodes::bold::Bold,
         nodes::italic::Italic,
-        nodes::s::S,
+        nodes::strikethrough::Strikethrough,
         nodes::text::Text,
         sd::deserializer::{Branch, Deserializer},
         sd::{deserializer::Node, serializer::Serializer},
@@ -129,7 +129,7 @@ mod tests {
         let b: String = Bold::from_vec(vec![
             Text::new("B as bold ").into(),
             Italic::new("Italic").into(),
-            S::new("Strikethrough").into(),
+            Strikethrough::new("Strikethrough").into(),
         ])
         .serialize();
         assert_eq!(b, "**B as bold _Italic_~~Strikethrough~~**".to_string());
@@ -146,7 +146,7 @@ mod tests {
             Bold::deserialize("**b ~~st~~ _i t_**"),
             Some(Bold::from_vec(vec![
                 Text::new("b ").into(),
-                S::new("st").into(),
+                Strikethrough::new("st").into(),
                 Text::new(" ").into(),
                 Italic::new("i t").into()
             ]))
@@ -157,7 +157,7 @@ mod tests {
     fn len() {
         assert_eq!(Bold::from_vec(vec![Text::new("T").into()]).len(), 5);
         assert_eq!(
-            Bold::from_vec(vec![Text::new("T").into(), S::new("S").into()]).len(),
+            Bold::from_vec(vec![Text::new("T").into(), Strikethrough::new("S").into()]).len(),
             10
         );
     }

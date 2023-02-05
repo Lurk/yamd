@@ -4,6 +4,6 @@ pub mod heading;
 pub mod inline_code;
 pub mod italic;
 pub mod paragraph;
-pub mod s;
+pub mod strikethrough;
 pub mod text;
 pub mod yamd;
