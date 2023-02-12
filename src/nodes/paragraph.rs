@@ -8,8 +8,6 @@ use crate::sd::{
     serializer::Serializer,
 };
 
-use super::unordered_list_item::UnorderedListItemNodes;
-
 #[derive(Debug, PartialEq)]
 pub enum ParagraphNodes {
     A(Anchor),
@@ -111,12 +109,6 @@ impl Default for Paragraph {
 impl From<Paragraph> for YamdNodes {
     fn from(value: Paragraph) -> Self {
         YamdNodes::P(value)
-    }
-}
-
-impl From<Paragraph> for UnorderedListItemNodes {
-    fn from(value: Paragraph) -> Self {
-        UnorderedListItemNodes::P(value)
     }
 }
 
