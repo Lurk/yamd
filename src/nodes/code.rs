@@ -1,5 +1,5 @@
 use crate::sd::{
-    deserializer::{Deserializer, Node, Tokenizer},
+    deserializer::{Deserializer, Node, Pattern::Exact, Tokenizer},
     serializer::Serializer,
 };
 
@@ -35,9 +35,14 @@ impl Node for Code {
 impl Deserializer for Code {
     fn deserialize(input: &str) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
-        if let Some(lang_body) = tokenizer.get_token_body(vec!['`', '`', '`'], vec!['\n']) {
+        if let Some(lang_body) =
+            tokenizer.get_token_body(vec![Exact('`'), Exact('`'), Exact('`')], vec![Exact('\n')])
+        {
             let lang_body = lang_body.to_string();
-            if let Some(code_boy) = tokenizer.get_token_body(vec![], vec!['\n', '`', '`', '`']) {
+            if let Some(code_boy) = tokenizer.get_token_body(
+                vec![],
+                vec![Exact('\n'), Exact('`'), Exact('`'), Exact('`')],
+            ) {
                 return Some(Self::new(lang_body, code_boy.to_string()));
             }
         }

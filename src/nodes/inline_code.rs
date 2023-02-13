@@ -1,6 +1,6 @@
 use crate::{
     nodes::paragraph::ParagraphNodes,
-    sd::deserializer::{Deserializer, Node, Tokenizer},
+    sd::deserializer::{Deserializer, Node, Pattern::Exact, Tokenizer},
     sd::serializer::Serializer,
 };
 
@@ -36,8 +36,8 @@ impl Node for InlineCode {
 impl Deserializer for InlineCode {
     fn deserialize(input: &str) -> Option<Self> {
         let mut chars = Tokenizer::new(input);
-        if let Some(body) = chars.get_token_body(vec!['`'], vec!['`']) {
-            return Some(InlineCode::new(body.to_string().replace('\n', "")));
+        if let Some(body) = chars.get_token_body(vec![Exact('`')], vec![Exact('`')]) {
+            return Some(InlineCode::new(body));
         }
         None
     }
@@ -60,7 +60,7 @@ mod tests {
         assert_eq!(InlineCode::deserialize("`1`"), Some(InlineCode::new('1')));
         assert_eq!(
             InlineCode::deserialize("`const \nfoo='bar'`"),
-            Some(InlineCode::new("const foo='bar'"))
+            Some(InlineCode::new("const \nfoo='bar'"))
         );
         assert_eq!(InlineCode::deserialize("`a"), None);
     }

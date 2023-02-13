@@ -1,7 +1,7 @@
 use crate::{
     nodes::yamd::YamdNodes,
     sd::{
-        deserializer::{Deserializer, Node, Tokenizer},
+        deserializer::{Deserializer, Node, Pattern::Exact, Tokenizer},
         serializer::Serializer,
     },
 };
@@ -29,17 +29,34 @@ impl Heading {
 impl Deserializer for Heading {
     fn deserialize(input: &str) -> Option<Self> {
         let start_tokens = [
-            vec!['#', ' '],
-            vec!['#', '#', ' '],
-            vec!['#', '#', '#', ' '],
-            vec!['#', '#', '#', '#', ' '],
-            vec!['#', '#', '#', '#', '#', ' '],
-            vec!['#', '#', '#', '#', '#', '#', ' '],
+            vec![Exact('#'), Exact(' ')],
+            vec![Exact('#'), Exact('#'), Exact(' ')],
+            vec![Exact('#'), Exact('#'), Exact('#'), Exact(' ')],
+            vec![Exact('#'), Exact('#'), Exact('#'), Exact('#'), Exact(' ')],
+            vec![
+                Exact('#'),
+                Exact('#'),
+                Exact('#'),
+                Exact('#'),
+                Exact('#'),
+                Exact(' '),
+            ],
+            vec![
+                Exact('#'),
+                Exact('#'),
+                Exact('#'),
+                Exact('#'),
+                Exact('#'),
+                Exact('#'),
+                Exact(' '),
+            ],
         ];
 
         for (i, start_token) in start_tokens.iter().enumerate() {
             let mut tokenizer = Tokenizer::new_with_match_end_of_input(input, true);
-            if let Some(body) = tokenizer.get_token_body(start_token.to_vec(), vec!['\n', '\n']) {
+            if let Some(body) =
+                tokenizer.get_token_body(start_token.to_vec(), vec![Exact('\n'), Exact('\n')])
+            {
                 return Some(Self::new(body, (i + 1).try_into().unwrap_or(1)));
             }
         }

@@ -73,20 +73,41 @@ pub trait Deserializer {
     where
         Self: Sized;
 }
+#[derive(Clone)]
+pub enum Pattern {
+    Exact(char),
+    Repeat(char),
+}
 
 struct Matcher<'token> {
     index: usize,
-    token: &'token Vec<char>,
+    token: &'token Vec<Pattern>,
 }
 
 impl<'token> Matcher<'token> {
-    fn new(token: &'token Vec<char>) -> Self {
+    fn new(token: &'token Vec<Pattern>) -> Self {
         Self { index: 0, token }
     }
 
+    fn new_index(&self, c: &char, index: usize) -> Option<usize> {
+        return match self.token.get(index) {
+            Some(Pattern::Exact(p)) if p == c => {
+                println!("Exact '{}' == '{}'", p, c);
+                Some(index + 1)
+            }
+            Some(Pattern::Repeat(p)) if p == c => {
+                println!("Repeat '{}' == '{}'", p, c);
+                Some(index)
+            }
+            Some(Pattern::Repeat(p)) if p != c => self.new_index(c, index + 1),
+            _ => None,
+        };
+    }
     fn is_match(&mut self, c: &char) -> bool {
-        if self.token.get(self.index) == Some(c) {
-            self.index += 1;
+        println!("'{}': {}", c, self.index);
+        if let Some(new_index) = self.new_index(c, self.index) {
+            println!("here");
+            self.index = new_index;
             return true;
         }
         self.index = 0;
@@ -120,7 +141,11 @@ impl<'input> Tokenizer<'input> {
         }
     }
 
-    pub fn get_token_body(&mut self, start_token: Vec<char>, end_token: Vec<char>) -> Option<&str> {
+    pub fn get_token_body(
+        &mut self,
+        start_token: Vec<Pattern>,
+        end_token: Vec<Pattern>,
+    ) -> Option<&str> {
         let mut start_matcher = Matcher::new(&start_token);
         let body_start: Option<usize> = if start_token.is_empty() {
             let add = if self.position == 0 { 0 } else { 1 };
@@ -157,18 +182,28 @@ impl<'input> Tokenizer<'input> {
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::deserializer::{Matcher, Tokenizer};
+    use crate::sd::deserializer::{
+        Matcher,
+        Pattern::{Exact, Repeat},
+        Tokenizer,
+    };
 
     #[test]
     fn parse_part() {
         let mut c = Tokenizer::new("*italic**one more* statement");
-        assert_eq!(c.get_token_body(vec!['*'], vec!['*']), Some("italic"));
-        assert_eq!(c.get_token_body(vec!['*'], vec!['*']), Some("one more"));
+        assert_eq!(
+            c.get_token_body(vec![Exact('*')], vec![Exact('*')]),
+            Some("italic")
+        );
+        assert_eq!(
+            c.get_token_body(vec![Exact('*')], vec![Exact('*')]),
+            Some("one more")
+        );
     }
 
     #[test]
     fn matcher() {
-        let token = &vec!['*', '*'];
+        let token = &vec![Exact('*'), Exact('*')];
         let mut m = Matcher::new(token);
         assert_eq!(m.is_match(&'*'), true);
         assert_eq!(m.is_done(), false);
@@ -178,12 +213,51 @@ mod tests {
 
     #[test]
     fn matcher_not_matched() {
-        let token = &vec!['*', '*'];
+        let token = &vec![Exact('*'), Exact('*')];
         let mut m = Matcher::new(token);
 
         assert_eq!(m.is_match(&'a'), false);
         assert_eq!(m.is_done(), false);
         assert_eq!(m.is_match(&'b'), false);
+        assert_eq!(m.is_done(), false);
+    }
+
+    #[test]
+    fn pattern_repeat() {
+        let token = &vec![Repeat(' '), Exact('-')];
+        let mut m = Matcher::new(token);
+        assert_eq!(m.is_match(&' '), true);
+        assert_eq!(m.is_match(&' '), true);
+        assert_eq!(m.is_match(&'-'), true);
+        assert_eq!(m.is_done(), true);
+        assert_eq!(m.is_match(&'-'), false);
+    }
+
+    #[test]
+    fn pattern_repeat_zero() {
+        let token = &vec![Repeat(' '), Exact('-')];
+        let mut m = Matcher::new(token);
+        assert_eq!(m.is_match(&'-'), true);
+        assert_eq!(m.is_done(), true);
+        assert_eq!(m.is_match(&'-'), false);
+    }
+
+    #[test]
+    fn new_index() {
+        let token = &vec![Repeat(' '), Exact('-')];
+        let m = Matcher::new(token);
+        assert_eq!(m.new_index(&' ', 0), Some(0));
+        assert_eq!(m.new_index(&'-', 1), Some(2));
+        assert_eq!(m.new_index(&'d', 0), None);
+        assert_eq!(m.new_index(&'d', 1), None);
+    }
+    #[test]
+    fn pattern_repeat_is_not_matched() {
+        let token = &vec![Repeat(' '), Exact('-')];
+        let mut m = Matcher::new(token);
+        assert_eq!(m.is_match(&' '), true);
+        assert_eq!(m.is_match(&' '), true);
+        assert_eq!(m.is_match(&'a'), false);
         assert_eq!(m.is_done(), false);
     }
 }

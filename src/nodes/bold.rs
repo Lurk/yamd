@@ -3,7 +3,7 @@ use crate::{
     nodes::paragraph::ParagraphNodes,
     nodes::strikethrough::Strikethrough,
     nodes::text::Text,
-    sd::deserializer::{Branch, Deserializer, MaybeNode, Node, Tokenizer},
+    sd::deserializer::{Branch, Deserializer, MaybeNode, Node, Pattern::Exact, Tokenizer},
     sd::{deserializer::DefinitelyNode, serializer::Serializer},
 };
 
@@ -98,7 +98,9 @@ impl Node for Bold {
 impl Deserializer for Bold {
     fn deserialize(input: &str) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
-        if let Some(body) = tokenizer.get_token_body(vec!['*', '*'], vec!['*', '*']) {
+        if let Some(body) =
+            tokenizer.get_token_body(vec![Exact('*'), Exact('*')], vec![Exact('*'), Exact('*')])
+        {
             return Some(Self::parse_branch(body));
         }
         None

@@ -1,5 +1,9 @@
 use crate::sd::{
-    deserializer::{Deserializer, Node, Tokenizer},
+    deserializer::{
+        Deserializer, Node,
+        Pattern::{Exact, Repeat},
+        Tokenizer,
+    },
     serializer::Serializer,
 };
 
@@ -36,10 +40,10 @@ impl Serializer for UnorderedListItem {
 impl Deserializer for UnorderedListItem {
     fn deserialize(input: &str) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
-        if let Some(level) = tokenizer.get_token_body(vec![], vec!['-']) {
+        if let Some(level) = tokenizer.get_token_body(vec![Repeat(' ')], vec![Exact('-')]) {
             if level.chars().all(|c| c == ' ') {
                 let level = level.len();
-                if let Some(body) = tokenizer.get_token_body(vec![' '], vec!['\n']) {
+                if let Some(body) = tokenizer.get_token_body(vec![Exact(' ')], vec![Exact('\n')]) {
                     if let Some(p) = Paragraph::deserialize(body) {
                         return Some(Self::new(level, p));
                     }

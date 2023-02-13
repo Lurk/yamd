@@ -2,7 +2,7 @@ use crate::nodes::{
     anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic,
     strikethrough::Strikethrough, text::Text, yamd::YamdNodes,
 };
-use crate::sd::deserializer::{DefinitelyNode, FallbackNode, Tokenizer};
+use crate::sd::deserializer::{DefinitelyNode, FallbackNode, Pattern::Exact, Tokenizer};
 use crate::sd::{
     deserializer::{Branch, Deserializer, MaybeNode, Node},
     serializer::Serializer,
@@ -84,7 +84,7 @@ impl Deserializer for Paragraph {
     fn deserialize(input: &str) -> Option<Self> {
         let mut tokenizer = Tokenizer::new_with_match_end_of_input(input, true);
         let body = tokenizer
-            .get_token_body(vec![], vec!['\n', '\n'])
+            .get_token_body(vec![], vec![Exact('\n'), Exact('\n')])
             .unwrap_or(input);
         Some(Self::parse_branch(body))
     }

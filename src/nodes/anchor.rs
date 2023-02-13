@@ -1,6 +1,6 @@
 use crate::{
     nodes::paragraph::ParagraphNodes,
-    sd::deserializer::{Deserializer, Node, Tokenizer},
+    sd::deserializer::{Deserializer, Node, Pattern::Exact, Tokenizer},
     sd::serializer::Serializer,
 };
 
@@ -41,9 +41,9 @@ impl Node for Anchor {
 impl Deserializer for Anchor {
     fn deserialize(input: &str) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
-        if let Some(text_part) = tokenizer.get_token_body(vec!['['], vec![']']) {
+        if let Some(text_part) = tokenizer.get_token_body(vec![Exact('[')], vec![Exact(']')]) {
             let text_part = text_part.to_string();
-            if let Some(url_part) = tokenizer.get_token_body(vec!['('], vec![')']) {
+            if let Some(url_part) = tokenizer.get_token_body(vec![Exact('(')], vec![Exact(')')]) {
                 return Some(Anchor::new(url_part.to_string(), text_part));
             }
         }

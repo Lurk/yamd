@@ -1,5 +1,5 @@
 use crate::sd::{
-    deserializer::{Deserializer, Node, Tokenizer},
+    deserializer::{Deserializer, Node, Pattern::Exact, Tokenizer},
     serializer::Serializer,
 };
 
@@ -35,9 +35,11 @@ impl Node for Image {
 impl Deserializer for Image {
     fn deserialize(input: &str) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
-        if let Some(alt_body) = tokenizer.get_token_body(vec!['!', '['], vec![']']) {
+        if let Some(alt_body) =
+            tokenizer.get_token_body(vec![Exact('!'), Exact('[')], vec![Exact(']')])
+        {
             let alt_body = alt_body.to_string();
-            if let Some(url_body) = tokenizer.get_token_body(vec!['('], vec![')']) {
+            if let Some(url_body) = tokenizer.get_token_body(vec![Exact('(')], vec![Exact(')')]) {
                 return Some(Self::new(alt_body, url_body.to_string()));
             }
         }
