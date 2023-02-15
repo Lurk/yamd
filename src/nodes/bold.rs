@@ -3,8 +3,11 @@ use crate::{
     nodes::paragraph::ParagraphNodes,
     nodes::strikethrough::Strikethrough,
     nodes::text::Text,
-    sd::deserializer::{Branch, Deserializer, MaybeNode, Node, Pattern::Exact, Tokenizer},
-    sd::{deserializer::DefinitelyNode, serializer::Serializer},
+    sd::{
+        deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode, Node},
+        serializer::Serializer,
+        tokenizer::{Pattern::Exact, Tokenizer},
+    },
 };
 
 #[derive(Debug, PartialEq)]

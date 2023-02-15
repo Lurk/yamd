@@ -2,10 +2,10 @@ use crate::nodes::{
     anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic,
     strikethrough::Strikethrough, text::Text, yamd::YamdNodes,
 };
-use crate::sd::deserializer::{DefinitelyNode, FallbackNode, Pattern::Exact, Tokenizer};
 use crate::sd::{
-    deserializer::{Branch, Deserializer, MaybeNode, Node},
+    deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode, Node},
     serializer::Serializer,
+    tokenizer::{Pattern::Exact, Tokenizer},
 };
 
 #[derive(Debug, PartialEq)]

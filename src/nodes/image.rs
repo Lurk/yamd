@@ -1,6 +1,7 @@
 use crate::sd::{
-    deserializer::{Deserializer, Node, Pattern::Exact, Tokenizer},
+    deserializer::{Deserializer, Node},
     serializer::Serializer,
+    tokenizer::{Pattern::Exact, Tokenizer},
 };
 
 use super::yamd::YamdNodes;

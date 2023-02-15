@@ -1,8 +1,9 @@
 use crate::{
     nodes::bold::BoldNodes,
     nodes::paragraph::ParagraphNodes,
-    sd::deserializer::{Deserializer, Node, Pattern::Exact, Tokenizer},
+    sd::deserializer::{Deserializer, Node},
     sd::serializer::Serializer,
+    sd::tokenizer::{Pattern::Exact, Tokenizer},
 };
 
 /// Representation of strikethrough
