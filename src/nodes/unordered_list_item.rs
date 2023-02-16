@@ -42,11 +42,11 @@ impl Deserializer for UnorderedListItem {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(length) = tokenizer.get_body_start(vec![Repeat(' '), Exact('-'), Exact(' ')]) {
             let mut tokenizer = Tokenizer::new_with_match_end_of_input(input, true);
-            if let Some(token) = tokenizer.get_token_body(
+            if let Some(body) = tokenizer.get_token_body(
                 vec![ExactRepeat(length - 2, ' '), Exact('-'), Exact(' ')],
                 vec![ExactRepeat(length - 2, ' '), Exact('-'), Exact(' ')],
             ) {
-                if let Some(p) = Paragraph::deserialize(token) {
+                if let Some(p) = Paragraph::deserialize(body) {
                     return Some(Self::new(length - 2, p));
                 }
             }

@@ -79,12 +79,6 @@ pub struct Tokenizer<'input> {
     position: usize,
 }
 
-#[derive(Debug, PartialEq)]
-pub struct Token<'body> {
-    pub end_token_len: usize,
-    pub body: &'body str,
-}
-
 impl<'input> Tokenizer<'input> {
     pub fn new(input: &'input str) -> Self {
         Self::new_with_match_end_of_input(input, false)
