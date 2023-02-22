@@ -1,7 +1,7 @@
 use crate::{
     nodes::heading::Heading,
     nodes::paragraph::Paragraph,
-    sd::deserializer::{Branch, Deserializer, FallbackNode, MaybeNode, Node},
+    sd::deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode, Node},
     sd::serializer::Serializer,
 };
 
@@ -63,8 +63,8 @@ impl Branch<YamdNodes> for Yamd {
         ]
     }
 
-    fn get_fallback_node() -> Box<dyn Fn(&str) -> YamdNodes> {
-        Paragraph::fallback_node()
+    fn get_fallback_node() -> Option<DefinitelyNode<YamdNodes>> {
+        Some(Paragraph::fallback_node())
     }
 
     fn get_outer_token_length(&self) -> usize {
@@ -84,7 +84,7 @@ impl Serializer for Yamd {
 
 impl Deserializer for Yamd {
     fn deserialize(input: &str) -> Option<Self> {
-        Some(Self::parse_branch(input))
+        Self::parse_branch(input)
     }
 }
 

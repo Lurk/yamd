@@ -1,5 +1,5 @@
 use crate::sd::{
-    deserializer::{Branch, Deserializer, FallbackNode, MaybeNode, Node},
+    deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode, Node},
     serializer::Serializer,
     tokenizer::{
         Pattern::{Exact, ExactRepeat, Repeat},
@@ -68,8 +68,8 @@ impl Branch<UnorderedListItemNodes> for UnorderedListItem {
         vec![Paragraph::maybe_node()]
     }
 
-    fn get_fallback_node() -> crate::sd::deserializer::DefinitelyNode<UnorderedListItemNodes> {
-        Paragraph::fallback_node()
+    fn get_fallback_node() -> Option<DefinitelyNode<UnorderedListItemNodes>> {
+        Some(Paragraph::fallback_node())
     }
 
     fn get_outer_token_length(&self) -> usize {
@@ -111,9 +111,10 @@ impl Deserializer for UnorderedListItem {
                     Exact(' '),
                 ],
             ) {
-                let mut instance = Self::parse_branch(body);
-                instance.set_level(length - 2);
-                return Some(instance);
+                if let Some(mut instance) = Self::parse_branch(body) {
+                    instance.set_level(length - 2);
+                    return Some(instance);
+                }
             }
         }
 

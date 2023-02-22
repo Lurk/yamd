@@ -56,8 +56,8 @@ impl Branch<ListNodes> for List {
         vec![UnorderedListItem::maybe_node()]
     }
 
-    fn get_fallback_node() -> DefinitelyNode<ListNodes> {
-        todo!()
+    fn get_fallback_node() -> Option<DefinitelyNode<ListNodes>> {
+        None
     }
 
     fn get_outer_token_length(&self) -> usize {
@@ -69,11 +69,4 @@ impl Deserializer for List {
     fn deserialize(input: &str) -> Option<Self> {
         None
     }
-}
-
-fn produce_start_token_for_a_level(level: usize, identifier: char) -> Vec<char> {
-    let mut start_token: String = String::from(' ').repeat(level);
-    start_token.push(identifier);
-
-    start_token.chars().collect()
 }

@@ -6,10 +6,10 @@ where
     fn push<CanBeNode: Into<BranchNodes>>(&mut self, node: CanBeNode);
     fn from_vec(nodes: Vec<BranchNodes>) -> Self;
     fn get_maybe_nodes() -> Vec<MaybeNode<BranchNodes>>;
-    fn get_fallback_node() -> DefinitelyNode<BranchNodes>;
+    fn get_fallback_node() -> Option<DefinitelyNode<BranchNodes>>;
     fn get_outer_token_length(&self) -> usize;
 
-    fn parse_branch(input: &str) -> Self
+    fn parse_branch(input: &str) -> Option<Self>
     where
         Self: Sized + Deserializer + Node,
     {
@@ -24,9 +24,12 @@ where
             for parser in &maybe_nodes {
                 if let Some(node) = parser(slice) {
                     if fallback_position != current_position - 1 {
-                        branch.push(fallback_node(
-                            &input[fallback_position..current_position - 1],
-                        ));
+                        match &fallback_node {
+                            Some(fallback_node) => branch.push(fallback_node(
+                                &input[fallback_position..current_position - 1],
+                            )),
+                            None => return None,
+                        }
                     }
                     branch.push(node);
                     current_position = branch.len() - branch.get_outer_token_length();
@@ -35,10 +38,13 @@ where
             }
         }
         if fallback_position < input.len() {
-            branch.push(fallback_node(&input[fallback_position..]));
+            match fallback_node {
+                Some(fallback_node) => branch.push(fallback_node(&input[fallback_position..])),
+                None => return None,
+            }
         }
 
-        branch
+        Some(branch)
     }
 }
 

@@ -78,8 +78,8 @@ impl Branch<BoldNodes> for Bold {
         vec![Italic::maybe_node(), Strikethrough::maybe_node()]
     }
 
-    fn get_fallback_node() -> DefinitelyNode<BoldNodes> {
-        Box::new(|str| Text::new(str).into())
+    fn get_fallback_node() -> Option<DefinitelyNode<BoldNodes>> {
+        Some(Box::new(|str| Text::new(str).into()))
     }
     fn get_outer_token_length(&self) -> usize {
         4
@@ -104,7 +104,7 @@ impl Deserializer for Bold {
         if let Some(body) =
             tokenizer.get_token_body(vec![Exact('*'), Exact('*')], vec![Exact('*'), Exact('*')])
         {
-            return Some(Self::parse_branch(body));
+            return Self::parse_branch(body);
         }
         None
     }

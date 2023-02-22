@@ -11,4 +11,3 @@ pub mod strikethrough;
 pub mod text;
 pub mod unordered_list_item;
 pub mod yamd;
-

@@ -72,8 +72,8 @@ impl Branch<ParagraphNodes> for Paragraph {
         ]
     }
 
-    fn get_fallback_node() -> Box<dyn Fn(&str) -> ParagraphNodes> {
-        Text::fallback_node()
+    fn get_fallback_node() -> Option<DefinitelyNode<ParagraphNodes>> {
+        Some(Text::fallback_node())
     }
     fn get_outer_token_length(&self) -> usize {
         0
@@ -86,7 +86,7 @@ impl Deserializer for Paragraph {
         let body = tokenizer
             .get_token_body(vec![], vec![Exact('\n'), Exact('\n')])
             .unwrap_or(input);
-        Some(Self::parse_branch(body))
+        Self::parse_branch(body)
     }
 }
 
