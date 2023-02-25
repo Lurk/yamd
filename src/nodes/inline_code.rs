@@ -2,7 +2,7 @@ use crate::{
     nodes::paragraph::ParagraphNodes,
     sd::deserializer::{Deserializer, Node},
     sd::serializer::Serializer,
-    sd::tokenizer::{Pattern::Exact, Tokenizer},
+    sd::tokenizer::{Pattern::Once, Tokenizer},
 };
 
 #[derive(Debug, PartialEq)]
@@ -37,7 +37,7 @@ impl Node for InlineCode {
 impl Deserializer for InlineCode {
     fn deserialize(input: &str) -> Option<Self> {
         let mut chars = Tokenizer::new(input);
-        if let Some(body) = chars.get_token_body(vec![Exact('`')], vec![Exact('`')]) {
+        if let Some(body) = chars.get_token_body(vec![Once('`')], vec![Once('`')]) {
             return Some(InlineCode::new(body));
         }
         None

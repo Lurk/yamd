@@ -2,21 +2,28 @@ use crate::sd::{
     deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode, Node},
     serializer::Serializer,
     tokenizer::{
-        Pattern::{Exact, ExactRepeat, Repeat},
+        Pattern::{Once, RepeatTimes, ZerroOrMore},
         Tokenizer,
     },
 };
 
-use super::paragraph::Paragraph;
+use super::{list::List, paragraph::Paragraph};
 
 #[derive(Debug, PartialEq)]
 pub enum UnorderedListItemNodes {
     Paragraph(Paragraph),
+    List(List),
 }
 
 impl From<Paragraph> for UnorderedListItemNodes {
     fn from(value: Paragraph) -> Self {
         UnorderedListItemNodes::Paragraph(value)
+    }
+}
+
+impl From<List> for UnorderedListItemNodes {
+    fn from(value: List) -> Self {
+        UnorderedListItemNodes::List(value)
     }
 }
 
@@ -36,6 +43,7 @@ impl Node for UnorderedListItemNodes {
     fn len(&self) -> usize {
         match self {
             UnorderedListItemNodes::Paragraph(node) => node.len(),
+            UnorderedListItemNodes::List(node) => node.len(),
         }
     }
 }
@@ -44,6 +52,7 @@ impl Serializer for UnorderedListItemNodes {
     fn serialize(&self) -> String {
         match self {
             UnorderedListItemNodes::Paragraph(node) => node.serialize(),
+            UnorderedListItemNodes::List(node) => node.serialize(),
         }
     }
 }
@@ -65,7 +74,7 @@ impl Branch<UnorderedListItemNodes> for UnorderedListItem {
     }
 
     fn get_maybe_nodes() -> Vec<MaybeNode<UnorderedListItemNodes>> {
-        vec![Paragraph::maybe_node()]
+        vec![List::maybe_node()]
     }
 
     fn get_fallback_node() -> Option<DefinitelyNode<UnorderedListItemNodes>> {
@@ -73,7 +82,8 @@ impl Branch<UnorderedListItemNodes> for UnorderedListItem {
     }
 
     fn get_outer_token_length(&self) -> usize {
-        2 + self.level
+        let add = if self.level > 0 { 1 } else { 0 };
+        2 + self.level + add
     }
 }
 
@@ -100,19 +110,25 @@ impl Serializer for UnorderedListItem {
 impl Deserializer for UnorderedListItem {
     fn deserialize(input: &str) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
-        if let Some(length) = tokenizer.get_body_start(vec![Repeat(' '), Exact('-'), Exact(' ')]) {
+        if let Some(pattern_lenghs) = tokenizer.get_pattern_lenghs(vec![
+            ZerroOrMore('\n'),
+            ZerroOrMore(' '),
+            Once('-'),
+            Once(' '),
+        ]) {
+            let level = *pattern_lenghs.get(1).unwrap_or(&0);
             let mut tokenizer = Tokenizer::new_with_match_end_of_input(input, true);
             if let Some(body) = tokenizer.get_token_body(
-                vec![ExactRepeat(length - 2, ' '), Exact('-'), Exact(' ')],
                 vec![
-                    Exact('\n'),
-                    ExactRepeat(length - 2, ' '),
-                    Exact('-'),
-                    Exact(' '),
+                    ZerroOrMore('\n'),
+                    RepeatTimes(level, ' '),
+                    Once('-'),
+                    Once(' '),
                 ],
+                vec![Once('\n'), RepeatTimes(level, ' '), Once('-'), Once(' ')],
             ) {
                 if let Some(mut instance) = Self::parse_branch(body) {
-                    instance.set_level(length - 2);
+                    instance.set_level(level);
                     return Some(instance);
                 }
             }
@@ -125,7 +141,7 @@ impl Deserializer for UnorderedListItem {
 #[cfg(test)]
 mod tests {
     use crate::{
-        nodes::{paragraph::Paragraph, text::Text},
+        nodes::{list::List, paragraph::Paragraph, text::Text},
         sd::{
             deserializer::{Branch, Deserializer, Node},
             serializer::Serializer,
@@ -165,6 +181,25 @@ mod tests {
     }
 
     #[test]
+    fn deserialize_with_nested_list() {
+        assert_eq!(
+            UnorderedListItem::deserialize("- foo\n - bar"),
+            Some(UnorderedListItem {
+                level: 0,
+                nodes: vec![
+                    Paragraph::from_vec(vec![Text::new("foo").into()]).into(),
+                    List::from_vec(vec![UnorderedListItem {
+                        level: 1,
+                        nodes: vec![Paragraph::from_vec(vec![Text::new("bar").into()]).into()]
+                    }
+                    .into()])
+                    .into()
+                ]
+            })
+        );
+    }
+
+    #[test]
     fn serialize() {
         assert_eq!(
             UnorderedListItem {
@@ -188,11 +223,19 @@ mod tests {
     fn len() {
         assert_eq!(
             UnorderedListItem {
+                level: 0,
+                nodes: vec![Paragraph::from_vec(vec![Text::new("foo").into()]).into()]
+            }
+            .len(),
+            5
+        );
+        assert_eq!(
+            UnorderedListItem {
                 level: 3,
                 nodes: vec![Paragraph::from_vec(vec![Text::new("foo").into()]).into()]
             }
             .len(),
-            8
+            9
         );
     }
 }

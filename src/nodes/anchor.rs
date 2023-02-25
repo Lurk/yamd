@@ -2,7 +2,7 @@ use crate::{
     nodes::paragraph::ParagraphNodes,
     sd::deserializer::{Deserializer, Node},
     sd::serializer::Serializer,
-    sd::tokenizer::{Pattern::Exact, Tokenizer},
+    sd::tokenizer::{Pattern::Once, Tokenizer},
 };
 
 /// Representation of an anchor
@@ -42,9 +42,9 @@ impl Node for Anchor {
 impl Deserializer for Anchor {
     fn deserialize(input: &str) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
-        if let Some(text_part) = tokenizer.get_token_body(vec![Exact('[')], vec![Exact(']')]) {
+        if let Some(text_part) = tokenizer.get_token_body(vec![Once('[')], vec![Once(']')]) {
             let text_part = text_part.to_string();
-            if let Some(url_part) = tokenizer.get_token_body(vec![Exact('(')], vec![Exact(')')]) {
+            if let Some(url_part) = tokenizer.get_token_body(vec![Once('(')], vec![Once(')')]) {
                 return Some(Anchor::new(url_part.to_string(), text_part));
             }
         }

@@ -6,7 +6,7 @@ use crate::{
     sd::{
         deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode, Node},
         serializer::Serializer,
-        tokenizer::{Pattern::Exact, Tokenizer},
+        tokenizer::{Pattern::Once, Tokenizer},
     },
 };
 
@@ -102,7 +102,7 @@ impl Deserializer for Bold {
     fn deserialize(input: &str) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(body) =
-            tokenizer.get_token_body(vec![Exact('*'), Exact('*')], vec![Exact('*'), Exact('*')])
+            tokenizer.get_token_body(vec![Once('*'), Once('*')], vec![Once('*'), Once('*')])
         {
             return Self::parse_branch(body);
         }

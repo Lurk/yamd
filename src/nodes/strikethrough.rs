@@ -3,7 +3,7 @@ use crate::{
     nodes::paragraph::ParagraphNodes,
     sd::deserializer::{Deserializer, Node},
     sd::serializer::Serializer,
-    sd::tokenizer::{Pattern::Exact, Tokenizer},
+    sd::tokenizer::{Pattern::Once, Tokenizer},
 };
 
 /// Representation of strikethrough
@@ -46,7 +46,7 @@ impl Deserializer for Strikethrough {
     fn deserialize(input: &str) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(body) =
-            tokenizer.get_token_body(vec![Exact('~'), Exact('~')], vec![Exact('~'), Exact('~')])
+            tokenizer.get_token_body(vec![Once('~'), Once('~')], vec![Once('~'), Once('~')])
         {
             return Some(Strikethrough::new(body));
         }

@@ -1,7 +1,7 @@
 use crate::sd::{
     deserializer::{Deserializer, Node},
     serializer::Serializer,
-    tokenizer::{Pattern::Exact, Tokenizer},
+    tokenizer::{Pattern::Once, Tokenizer},
 };
 
 use super::yamd::YamdNodes;
@@ -37,10 +37,10 @@ impl Deserializer for Image {
     fn deserialize(input: &str) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(alt_body) =
-            tokenizer.get_token_body(vec![Exact('!'), Exact('[')], vec![Exact(']')])
+            tokenizer.get_token_body(vec![Once('!'), Once('[')], vec![Once(']')])
         {
             let alt_body = alt_body.to_string();
-            if let Some(url_body) = tokenizer.get_token_body(vec![Exact('(')], vec![Exact(')')]) {
+            if let Some(url_body) = tokenizer.get_token_body(vec![Once('(')], vec![Once(')')]) {
                 return Some(Self::new(alt_body, url_body.to_string()));
             }
         }
