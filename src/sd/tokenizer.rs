@@ -1,5 +1,3 @@
-use std::{iter::Enumerate, str::Chars};
-
 #[derive(Clone)]
 pub enum Pattern {
     Once(char),
@@ -80,43 +78,19 @@ impl<'token> Matcher<'token> {
 
 pub struct Tokenizer<'input> {
     input: &'input str,
-    chars: Enumerate<Chars<'input>>,
-    match_end_of_input: bool,
     position: usize,
 }
 
 impl<'input> Tokenizer<'input> {
     pub fn new(input: &'input str) -> Self {
-        Self::new_with_match_end_of_input(input, false)
-    }
-
-    pub fn new_with_match_end_of_input(input: &'input str, match_end_of_input: bool) -> Self {
-        let chars = input.chars().enumerate();
-        Tokenizer {
-            chars,
-            input,
-            match_end_of_input,
-            position: 0,
-        }
-    }
-
-    pub fn get_token_lengh(&mut self, start_token: Vec<Pattern>) -> Option<usize> {
-        let mut start_matcher = Matcher::new(&start_token);
-        for (_, char) in self.chars.by_ref() {
-            if !start_matcher.is_match(&char) {
-                break;
-            }
-            if start_matcher.is_done() {
-                return Some(start_matcher.length);
-            }
-        }
-        None
+        Self { input, position: 0 }
     }
 
     pub fn get_pattern_lenghs(&mut self, start_token: Vec<Pattern>) -> Option<Vec<usize>> {
         let mut start_matcher = Matcher::new(&start_token);
-        for (_, char) in self.chars.by_ref() {
-            if !start_matcher.is_match(&char) {
+        let bytes = self.input.as_bytes();
+        for i in 0..self.input.len() {
+            if !start_matcher.is_match(&bytes[i].into()) {
                 break;
             }
             if start_matcher.is_done() {
@@ -131,8 +105,15 @@ impl<'input> Tokenizer<'input> {
         if start_token.is_empty() {
             return Some(self.position + add);
         } else {
-            if let Some(token_length) = self.get_token_lengh(start_token) {
-                return Some(token_length + self.position + add);
+            let mut start_matcher = Matcher::new(&start_token);
+            let bytes = self.input.as_bytes();
+            for i in self.position + add..self.input.len() {
+                if !start_matcher.is_match(&bytes[i].into()) {
+                    break;
+                }
+                if start_matcher.is_done() {
+                    return Some(start_matcher.length + self.position + add);
+                }
             }
         }
         None
@@ -143,13 +124,23 @@ impl<'input> Tokenizer<'input> {
         start_token: Vec<Pattern>,
         end_token: Vec<Pattern>,
     ) -> Option<&str> {
+        self.get_token_body_with_options(start_token, end_token, false)
+    }
+
+    pub fn get_token_body_with_options(
+        &mut self,
+        start_token: Vec<Pattern>,
+        end_token: Vec<Pattern>,
+        match_end_of_input: bool,
+    ) -> Option<&str> {
         if let Some(body_start) = self.get_body_start_position(start_token) {
             let mut end_matcher = Matcher::new(&end_token);
-            for (index, char) in self.chars.by_ref() {
+            let bytes = self.input.as_bytes();
+            for index in body_start..self.input.len() {
                 self.position = index;
-                if end_matcher.is_match(&char) && end_matcher.is_done() {
+                if end_matcher.is_match(&bytes[index].into()) && end_matcher.is_done() {
                     return Some(&self.input[body_start..index - (end_matcher.length - 1)]);
-                } else if self.match_end_of_input && index == self.input.len() - 1 {
+                } else if match_end_of_input && index == self.input.len() - 1 {
                     return Some(&self.input[body_start..]);
                 }
             }

@@ -82,9 +82,9 @@ impl Branch<ParagraphNodes> for Paragraph {
 
 impl Deserializer for Paragraph {
     fn deserialize(input: &str) -> Option<Self> {
-        let mut tokenizer = Tokenizer::new_with_match_end_of_input(input, true);
+        let mut tokenizer = Tokenizer::new(input);
         let body = tokenizer
-            .get_token_body(vec![], vec![Once('\n'), Once('\n')])
+            .get_token_body_with_options(vec![], vec![Once('\n'), Once('\n')], true)
             .unwrap_or(input);
         Self::parse_branch(body)
     }

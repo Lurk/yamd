@@ -5,7 +5,6 @@ pub mod heading;
 pub mod image;
 pub mod inline_code;
 pub mod italic;
-pub mod list;
 pub mod paragraph;
 pub mod strikethrough;
 pub mod text;
