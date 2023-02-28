@@ -176,7 +176,7 @@ mod tests {
             UnorderedListItem::deserialize("- foo\nbla\n- bar"),
             Some(UnorderedListItem {
                 level: 0,
-                nodes: vec![Paragraph::from_vec(vec![Text::new("foo\nbla").into()]).into(),]
+                nodes: vec![Paragraph::from_vec(vec![Text::new("foo\nbla").into()]).into()]
             })
         )
     }
@@ -197,6 +197,38 @@ mod tests {
                     UnorderedListItem {
                         level: 1,
                         nodes: vec![Paragraph::from_vec(vec![Text::new("baz").into()]).into()]
+                    }
+                    .into()
+                ]
+            })
+        );
+    }
+
+    #[test]
+    fn deserialize_with_deeply_nested_list() {
+        assert_eq!(
+            UnorderedListItem::deserialize("- level 0\n - level 1\n  - level 2\n - level 1"),
+            Some(UnorderedListItem {
+                level: 0,
+                nodes: vec![
+                    Paragraph::from_vec(vec![Text::new("level 0").into()]).into(),
+                    UnorderedListItem {
+                        level: 1,
+                        nodes: vec![
+                            Paragraph::from_vec(vec![Text::new("level 1").into()]).into(),
+                            UnorderedListItem {
+                                level: 2,
+                                nodes: vec![
+                                    Paragraph::from_vec(vec![Text::new("level 2").into()]).into()
+                                ]
+                            }
+                            .into()
+                        ]
+                    }
+                    .into(),
+                    UnorderedListItem {
+                        level: 1,
+                        nodes: vec![Paragraph::from_vec(vec![Text::new("level 1").into()]).into()]
                     }
                     .into()
                 ]

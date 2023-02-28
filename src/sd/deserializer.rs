@@ -64,8 +64,8 @@ pub trait Node {
         Self: Sized + Deserializer + Into<BranchNodes>,
     {
         Box::new(|input| {
-            if let Some(token) = Self::deserialize(input) {
-                return Some(token.into());
+            if let Some(node) = Self::deserialize(input) {
+                return Some(node.into());
             }
             None
         })
