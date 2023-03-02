@@ -88,9 +88,8 @@ impl<'input> Tokenizer<'input> {
 
     pub fn get_pattern_lenghs(&mut self, start_token: Vec<Pattern>) -> Option<Vec<usize>> {
         let mut start_matcher = Matcher::new(&start_token);
-        let bytes = self.input.as_bytes();
-        for i in 0..self.input.len() {
-            if !start_matcher.is_match(&bytes[i].into()) {
+        for char in self.input.chars() {
+            if !start_matcher.is_match(&char) {
                 break;
             }
             if start_matcher.is_done() {
@@ -106,9 +105,8 @@ impl<'input> Tokenizer<'input> {
             return Some(self.position + add);
         } else {
             let mut start_matcher = Matcher::new(&start_token);
-            let bytes = self.input.as_bytes();
-            for i in self.position + add..self.input.len() {
-                if !start_matcher.is_match(&bytes[i].into()) {
+            for char in self.input.chars().skip(self.position + add) {
+                if !start_matcher.is_match(&char) {
                     break;
                 }
                 if start_matcher.is_done() {
@@ -135,10 +133,9 @@ impl<'input> Tokenizer<'input> {
     ) -> Option<&str> {
         if let Some(body_start) = self.get_body_start_position(start_token) {
             let mut end_matcher = Matcher::new(&end_token);
-            let bytes = self.input.as_bytes();
-            for index in body_start..self.input.len() {
+            for (index, char) in self.input.chars().enumerate().skip(body_start) {
                 self.position = index;
-                if end_matcher.is_match(&bytes[index].into()) && end_matcher.is_done() {
+                if end_matcher.is_match(&char) && end_matcher.is_done() {
                     return Some(&self.input[body_start..index - (end_matcher.length - 1)]);
                 } else if match_end_of_input && index == self.input.len() - 1 {
                     return Some(&self.input[body_start..]);
