@@ -1,7 +1,7 @@
 use crate::{
     nodes::yamd::YamdNodes,
     sd::{
-        context::ContextValues,
+        context::Context,
         deserializer::{Deserializer, Node},
         serializer::Serializer,
         tokenizer::{Pattern::Once, Pattern::RepeatTimes, Tokenizer},
@@ -29,7 +29,7 @@ impl Heading {
 }
 
 impl Deserializer for Heading {
-    fn deserialize(input: &str, _: Option<ContextValues>) -> Option<Self> {
+    fn deserialize(input: &str, _: Option<Context>) -> Option<Self> {
         let start_tokens = [
             vec![Once('#'), Once(' ')],
             vec![RepeatTimes(2, '#'), Once(' ')],

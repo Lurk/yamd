@@ -3,7 +3,7 @@ use crate::{
     nodes::paragraph::ParagraphNodes,
     sd::serializer::Serializer,
     sd::{
-        context::ContextValues,
+        context::Context,
         deserializer::{DefinitelyNode, Deserializer, FallbackNode, Node},
     },
 };
@@ -39,7 +39,7 @@ impl From<Text> for ParagraphNodes {
 }
 
 impl Deserializer for Text {
-    fn deserialize(input: &str, _: Option<ContextValues>) -> Option<Self> {
+    fn deserialize(input: &str, _: Option<Context>) -> Option<Self> {
         Some(Text::new(input.to_string()))
     }
 }

@@ -1,5 +1,5 @@
 use crate::sd::{
-    context::ContextValues,
+    context::Context,
     deserializer::{Deserializer, Node},
     serializer::Serializer,
     tokenizer::{Pattern::Once, Tokenizer},
@@ -35,7 +35,7 @@ impl Node for Image {
 }
 
 impl Deserializer for Image {
-    fn deserialize(input: &str, _: Option<ContextValues>) -> Option<Self> {
+    fn deserialize(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(alt_body) =
             tokenizer.get_token_body(vec![Once('!'), Once('[')], vec![Once(']')])

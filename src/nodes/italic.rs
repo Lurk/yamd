@@ -3,7 +3,7 @@ use crate::{
     nodes::paragraph::ParagraphNodes,
     sd::tokenizer::{Pattern::Once, Tokenizer},
     sd::{
-        context::ContextValues,
+        context::Context,
         deserializer::{Deserializer, Node},
         serializer::Serializer,
     },
@@ -46,7 +46,7 @@ impl Node for Italic {
 }
 
 impl Deserializer for Italic {
-    fn deserialize(input: &str, _: Option<ContextValues>) -> Option<Self> {
+    fn deserialize(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(body) = tokenizer.get_token_body(vec![Once('_')], vec![Once('_')]) {
             return Some(Italic::new(body));

@@ -86,7 +86,7 @@ impl<'input> Tokenizer<'input> {
         Self { input, position: 0 }
     }
 
-    fn get_body_start_position(&mut self, start_token: Vec<Pattern>) -> Option<usize> {
+    pub fn get_body_start_position(&self, start_token: Vec<Pattern>) -> Option<usize> {
         let add = if self.position == 0 { 0 } else { 1 };
         if start_token.is_empty() {
             return Some(self.position + add);

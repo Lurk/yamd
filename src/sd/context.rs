@@ -1,7 +1,9 @@
+use std::collections::HashMap;
+
 #[derive(Debug)]
 pub enum ContextValues {
     Usize(usize),
-    String(String),
+    Char(char),
 }
 
 impl From<usize> for ContextValues {
@@ -10,23 +12,37 @@ impl From<usize> for ContextValues {
     }
 }
 
-impl From<String> for ContextValues {
-    fn from(value: String) -> Self {
-        ContextValues::String(value)
+impl From<char> for ContextValues {
+    fn from(value: char) -> Self {
+        ContextValues::Char(value)
     }
 }
 
-impl ContextValues {
-    pub fn get_usize_value(&self) -> Option<usize> {
-        if let ContextValues::Usize(value) = self {
+pub struct Context {
+    inner: HashMap<String, ContextValues>,
+}
+
+impl Context {
+    pub fn new() -> Self {
+        Self {
+            inner: HashMap::new(),
+        }
+    }
+
+    pub fn add(&mut self, key: impl Into<String>, value: impl Into<ContextValues>) {
+        self.inner.insert(key.into(), value.into());
+    }
+
+    pub fn get_usize_value(&self, key: impl Into<String>) -> Option<usize> {
+        if let Some(ContextValues::Usize(value)) = self.inner.get(&key.into()) {
             return Some(*value);
         }
         None
     }
 
-    pub fn get_string_value(&self) -> Option<&String> {
-        if let ContextValues::String(value) = self {
-            return Some(value);
+    pub fn get_char_value(&self, key: impl Into<String>) -> Option<char> {
+        if let Some(ContextValues::Char(value)) = self.inner.get(&key.into()) {
+            return Some(*value);
         }
         None
     }
@@ -34,19 +50,23 @@ impl ContextValues {
 
 #[cfg(test)]
 mod tests {
-    use super::ContextValues;
+    use super::Context;
 
     #[test]
     fn usize_value() {
-        let ctx: ContextValues = 1.into();
-        assert_eq!(ctx.get_usize_value(), Some(1));
-        assert_eq!(ctx.get_string_value(), None)
+        let mut ctx = Context::new();
+        ctx.add("usize_value", 1);
+
+        assert_eq!(ctx.get_usize_value("usize_value"), Some(1));
+        assert_eq!(ctx.get_usize_value("not_usize_value"), None);
     }
 
     #[test]
-    fn string_value() {
-        let ctx: ContextValues = String::new().into();
-        assert_eq!(ctx.get_string_value(), Some(&String::new()));
-        assert_eq!(ctx.get_usize_value(), None)
+    fn char_value() {
+        let mut ctx = Context::new();
+        ctx.add("char_value", 'c');
+
+        assert_eq!(ctx.get_char_value("char_value"), Some('c'));
+        assert_eq!(ctx.get_char_value("not_char_value"), None);
     }
 }

@@ -1,17 +1,17 @@
-use super::context::ContextValues;
+use super::context::Context;
 
 pub trait Branch<BranchNodes>
 where
     BranchNodes: Node,
 {
-    fn new(ctx: &Option<ContextValues>) -> Self;
+    fn new(ctx: &Option<Context>) -> Self;
     fn push<CanBeNode: Into<BranchNodes>>(&mut self, node: CanBeNode);
-    fn from_vec(nodes: Vec<BranchNodes>) -> Self;
+    fn from_vec(nodes: Vec<BranchNodes>, ctx: Option<Context>) -> Self;
     fn get_maybe_nodes() -> Vec<MaybeNode<BranchNodes>>;
     fn get_fallback_node() -> Option<DefinitelyNode<BranchNodes>>;
     fn get_outer_token_length(&self) -> usize;
 
-    fn parse_branch(input: &str, ctx: &Option<ContextValues>) -> Option<Self>
+    fn parse_branch(input: &str, ctx: &Option<Context>) -> Option<Self>
     where
         Self: Sized + Deserializer + Node,
     {
@@ -50,7 +50,7 @@ where
     }
 }
 
-pub type MaybeNode<BranchNodes> = Box<dyn Fn(&str, Option<ContextValues>) -> Option<BranchNodes>>;
+pub type MaybeNode<BranchNodes> = Box<dyn Fn(&str, Option<Context>) -> Option<BranchNodes>>;
 pub type DefinitelyNode<BranchNodes> = Box<dyn Fn(&str) -> BranchNodes>;
 
 pub trait FallbackNode {
@@ -73,13 +73,13 @@ pub trait Node {
         })
     }
 
-    fn context(&self) -> Option<ContextValues> {
+    fn context(&self) -> Option<Context> {
         None
     }
 }
 
 pub trait Deserializer {
-    fn deserialize(input: &str, ctx: Option<ContextValues>) -> Option<Self>
+    fn deserialize(input: &str, ctx: Option<Context>) -> Option<Self>
     where
         Self: Sized;
     fn deserialize_without_context(input: &str) -> Option<Self>
