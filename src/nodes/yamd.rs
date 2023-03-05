@@ -1,6 +1,7 @@
 use crate::{
     nodes::heading::Heading,
     nodes::paragraph::Paragraph,
+    sd::context::ContextValues,
     sd::deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode, Node},
     sd::serializer::Serializer,
 };
@@ -43,7 +44,7 @@ pub struct Yamd {
 }
 
 impl Branch<YamdNodes> for Yamd {
-    fn new() -> Self {
+    fn new(_: &Option<ContextValues>) -> Self {
         Self { nodes: vec![] }
     }
 
@@ -83,14 +84,14 @@ impl Serializer for Yamd {
 }
 
 impl Deserializer for Yamd {
-    fn deserialize(input: &str) -> Option<Self> {
-        Self::parse_branch(input)
+    fn deserialize(input: &str, _: Option<ContextValues>) -> Option<Self> {
+        Self::parse_branch(input, &None)
     }
 }
 
 impl Default for Yamd {
     fn default() -> Self {
-        Self::new()
+        Self::new(&None)
     }
 }
 
@@ -114,7 +115,7 @@ mod tests {
 
     #[test]
     fn push() {
-        let mut t = Yamd::new();
+        let mut t = Yamd::new(&None);
         t.push(Heading::new("header", 1));
         t.push(Paragraph::from_vec(vec![Text::new("text").into()]));
 
@@ -135,7 +136,7 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Yamd::deserialize("# hh\n\ntt\n\n![a](u)"),
+            Yamd::deserialize_without_context("# hh\n\ntt\n\n![a](u)"),
             Some(Yamd::from_vec(vec![
                 Heading::new("hh", 1).into(),
                 Paragraph::from_vec(vec![Text::new("tt").into()]).into(),
@@ -144,7 +145,7 @@ mod tests {
         );
 
         assert_eq!(
-            Yamd::deserialize("t**b**\n\n![a](u)\n\n## h"),
+            Yamd::deserialize_without_context("t**b**\n\n![a](u)\n\n## h"),
             Some(Yamd::from_vec(vec![
                 Paragraph::from_vec(vec![
                     Text::new("t").into(),
@@ -157,7 +158,9 @@ mod tests {
         );
 
         assert_eq!(
-            Yamd::deserialize("```rust\nlet a=1;\n```\n\nt**b**\n\n![a](u)\n\n## h"),
+            Yamd::deserialize_without_context(
+                "```rust\nlet a=1;\n```\n\nt**b**\n\n![a](u)\n\n## h"
+            ),
             Some(Yamd::from_vec(vec![
                 Code::new("rust", "let a=1;").into(),
                 Paragraph::from_vec(vec![

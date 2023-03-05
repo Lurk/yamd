@@ -1,9 +1,12 @@
 use crate::{
     nodes::bold::BoldNodes,
     nodes::paragraph::ParagraphNodes,
-    sd::deserializer::{Deserializer, Node},
     sd::serializer::Serializer,
     sd::tokenizer::{Pattern::Once, Tokenizer},
+    sd::{
+        context::ContextValues,
+        deserializer::{Deserializer, Node},
+    },
 };
 
 /// Representation of strikethrough
@@ -43,7 +46,7 @@ impl Node for Strikethrough {
 }
 
 impl Deserializer for Strikethrough {
-    fn deserialize(input: &str) -> Option<Self> {
+    fn deserialize(input: &str, _: Option<ContextValues>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(body) =
             tokenizer.get_token_body(vec![Once('~'), Once('~')], vec![Once('~'), Once('~')])
@@ -78,16 +81,16 @@ mod tests {
     #[test]
     fn parse() {
         assert_eq!(
-            Strikethrough::deserialize("~~2+2=5~~"),
+            Strikethrough::deserialize_without_context("~~2+2=5~~"),
             Some(Strikethrough::new("2+2=5"))
         );
         assert_eq!(
-            Strikethrough::deserialize("~~is~~not"),
+            Strikethrough::deserialize_without_context("~~is~~not"),
             Some(Strikethrough::new("is"))
         );
-        assert_eq!(Strikethrough::deserialize("~~not"), None);
+        assert_eq!(Strikethrough::deserialize_without_context("~~not"), None);
         assert_eq!(
-            Strikethrough::deserialize("~~i\ns~~"),
+            Strikethrough::deserialize_without_context("~~i\ns~~"),
             Some(Strikethrough::new("i\ns"))
         );
     }

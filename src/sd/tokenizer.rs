@@ -86,19 +86,6 @@ impl<'input> Tokenizer<'input> {
         Self { input, position: 0 }
     }
 
-    pub fn get_pattern_lenghs(&mut self, start_token: Vec<Pattern>) -> Option<Vec<usize>> {
-        let mut start_matcher = Matcher::new(&start_token);
-        for char in self.input.chars() {
-            if !start_matcher.is_match(&char) {
-                break;
-            }
-            if start_matcher.is_done() {
-                return Some(start_matcher.pattern_lengths);
-            }
-        }
-        None
-    }
-
     fn get_body_start_position(&mut self, start_token: Vec<Pattern>) -> Option<usize> {
         let add = if self.position == 0 { 0 } else { 1 };
         if start_token.is_empty() {

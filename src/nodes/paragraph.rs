@@ -3,6 +3,7 @@ use crate::nodes::{
     strikethrough::Strikethrough, text::Text, yamd::YamdNodes,
 };
 use crate::sd::{
+    context::ContextValues,
     deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode, Node},
     serializer::Serializer,
     tokenizer::{Pattern::Once, Tokenizer},
@@ -50,7 +51,7 @@ pub struct Paragraph {
 }
 
 impl Branch<ParagraphNodes> for Paragraph {
-    fn new() -> Self {
+    fn new(_: &Option<ContextValues>) -> Self {
         Self { nodes: vec![] }
     }
 
@@ -81,12 +82,12 @@ impl Branch<ParagraphNodes> for Paragraph {
 }
 
 impl Deserializer for Paragraph {
-    fn deserialize(input: &str) -> Option<Self> {
+    fn deserialize(input: &str, _: Option<ContextValues>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         let body = tokenizer
             .get_token_body_with_options(vec![], vec![Once('\n'), Once('\n')], true)
             .unwrap_or(input);
-        Self::parse_branch(body)
+        Self::parse_branch(body, &None)
     }
 }
 
@@ -102,7 +103,7 @@ impl Serializer for Paragraph {
 
 impl Default for Paragraph {
     fn default() -> Self {
-        Self::new()
+        Self::new(&None)
     }
 }
 
@@ -124,8 +125,8 @@ impl FallbackNode for Paragraph {
         Self: Into<BranchNodes>,
     {
         Box::new(|input| {
-            Paragraph::deserialize(input)
-                .unwrap_or(Paragraph::new())
+            Paragraph::deserialize_without_context(input)
+                .unwrap_or(Paragraph::new(&None))
                 .into()
         })
     }
@@ -145,7 +146,7 @@ mod tests {
 
     #[test]
     fn push() {
-        let mut p = Paragraph::new();
+        let mut p = Paragraph::new(&None);
         p.push(Text::new("simple text "));
         p.push(Bold::from_vec(vec![Text::new("bold text").into()]));
         p.push(InlineCode::new("let foo='bar';"));
@@ -171,7 +172,7 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Paragraph::deserialize("simple text **bold text**`let foo='bar';`"),
+            Paragraph::deserialize_without_context("simple text **bold text**`let foo='bar';`"),
             Some(Paragraph::from_vec(vec![
                 Text::new("simple text ").into(),
                 Bold::from_vec(vec![Text::new("bold text").into()]).into(),
@@ -179,7 +180,7 @@ mod tests {
             ]),)
         );
         assert_eq!(
-            Paragraph::deserialize("1 2\n\n3"),
+            Paragraph::deserialize_without_context("1 2\n\n3"),
             Some(Paragraph::from_vec(vec![Text::new("1 2").into()]))
         );
     }

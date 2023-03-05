@@ -9,9 +9,9 @@ use nodes::yamd::Yamd;
 use sd::deserializer::Branch;
 
 fn main() {
-    let mut p = Paragraph::new();
+    let mut p = Paragraph::new(&None);
     p.push(Anchor::new("http://foo.bar/", "http://foo.bar/"));
-    let mut t = Yamd::new();
+    let mut t = Yamd::new(&None);
     t.push(Heading::new("foo", 1));
     t.push(p);
     println!("{t:?}");

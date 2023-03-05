@@ -4,6 +4,7 @@ use crate::{
     nodes::strikethrough::Strikethrough,
     nodes::text::Text,
     sd::{
+        context::ContextValues,
         deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode, Node},
         serializer::Serializer,
         tokenizer::{Pattern::Once, Tokenizer},
@@ -62,7 +63,7 @@ impl Serializer for Bold {
 }
 
 impl Branch<BoldNodes> for Bold {
-    fn new() -> Self {
+    fn new(_: &Option<ContextValues>) -> Self {
         Self { nodes: vec![] }
     }
 
@@ -88,7 +89,7 @@ impl Branch<BoldNodes> for Bold {
 
 impl Default for Bold {
     fn default() -> Self {
-        Self::new()
+        Self::new(&None)
     }
 }
 
@@ -99,12 +100,12 @@ impl Node for Bold {
 }
 
 impl Deserializer for Bold {
-    fn deserialize(input: &str) -> Option<Self> {
+    fn deserialize(input: &str, _: Option<ContextValues>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(body) =
             tokenizer.get_token_body(vec![Once('*'), Once('*')], vec![Once('*'), Once('*')])
         {
-            return Self::parse_branch(body);
+            return Self::parse_branch(body, &None);
         }
         None
     }
@@ -123,7 +124,7 @@ mod tests {
 
     #[test]
     fn only_text() {
-        let mut b = Bold::new();
+        let mut b = Bold::new(&None);
         b.push(Text::new("B as bold"));
         let str = b.serialize();
         assert_eq!(str, "**B as bold**".to_string());
@@ -143,12 +144,12 @@ mod tests {
     #[test]
     fn from_string() {
         assert_eq!(
-            Bold::deserialize("**b**"),
+            Bold::deserialize_without_context("**b**"),
             Some(Bold::from_vec(vec![Text::new("b").into()]))
         );
 
         assert_eq!(
-            Bold::deserialize("**b ~~st~~ _i t_**"),
+            Bold::deserialize_without_context("**b ~~st~~ _i t_**"),
             Some(Bold::from_vec(vec![
                 Text::new("b ").into(),
                 Strikethrough::new("st").into(),

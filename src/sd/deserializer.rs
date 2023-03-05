@@ -1,19 +1,21 @@
+use super::context::ContextValues;
+
 pub trait Branch<BranchNodes>
 where
     BranchNodes: Node,
 {
-    fn new() -> Self;
+    fn new(ctx: &Option<ContextValues>) -> Self;
     fn push<CanBeNode: Into<BranchNodes>>(&mut self, node: CanBeNode);
     fn from_vec(nodes: Vec<BranchNodes>) -> Self;
     fn get_maybe_nodes() -> Vec<MaybeNode<BranchNodes>>;
     fn get_fallback_node() -> Option<DefinitelyNode<BranchNodes>>;
     fn get_outer_token_length(&self) -> usize;
 
-    fn parse_branch(input: &str) -> Option<Self>
+    fn parse_branch(input: &str, ctx: &Option<ContextValues>) -> Option<Self>
     where
         Self: Sized + Deserializer + Node,
     {
-        let mut branch = Self::new();
+        let mut branch = Self::new(ctx);
         let mut current_position = 0;
         let mut fallback_position = 0;
         let fallback_node = Self::get_fallback_node();
@@ -22,7 +24,7 @@ where
             let slice = &input[current_position..];
             current_position += 1;
             for parser in &maybe_nodes {
-                if let Some(node) = parser(slice) {
+                if let Some(node) = parser(slice, branch.context()) {
                     if fallback_position != current_position - 1 {
                         match &fallback_node {
                             Some(fallback_node) => branch.push(fallback_node(
@@ -48,7 +50,7 @@ where
     }
 }
 
-pub type MaybeNode<BranchNodes> = Box<dyn Fn(&str) -> Option<BranchNodes>>;
+pub type MaybeNode<BranchNodes> = Box<dyn Fn(&str, Option<ContextValues>) -> Option<BranchNodes>>;
 pub type DefinitelyNode<BranchNodes> = Box<dyn Fn(&str) -> BranchNodes>;
 
 pub trait FallbackNode {
@@ -63,17 +65,27 @@ pub trait Node {
     where
         Self: Sized + Deserializer + Into<BranchNodes>,
     {
-        Box::new(|input| {
-            if let Some(node) = Self::deserialize(input) {
+        Box::new(|input, ctx| {
+            if let Some(node) = Self::deserialize(input, ctx) {
                 return Some(node.into());
             }
             None
         })
     }
+
+    fn context(&self) -> Option<ContextValues> {
+        None
+    }
 }
 
 pub trait Deserializer {
-    fn deserialize(input: &str) -> Option<Self>
+    fn deserialize(input: &str, ctx: Option<ContextValues>) -> Option<Self>
     where
         Self: Sized;
+    fn deserialize_without_context(input: &str) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        Self::deserialize(input, None)
+    }
 }

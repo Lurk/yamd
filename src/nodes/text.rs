@@ -1,8 +1,11 @@
 use crate::{
     nodes::bold::BoldNodes,
     nodes::paragraph::ParagraphNodes,
-    sd::deserializer::{DefinitelyNode, Deserializer, FallbackNode, Node},
     sd::serializer::Serializer,
+    sd::{
+        context::ContextValues,
+        deserializer::{DefinitelyNode, Deserializer, FallbackNode, Node},
+    },
 };
 
 /// Representation of a regular text
@@ -36,7 +39,7 @@ impl From<Text> for ParagraphNodes {
 }
 
 impl Deserializer for Text {
-    fn deserialize(input: &str) -> Option<Self> {
+    fn deserialize(input: &str, _: Option<ContextValues>) -> Option<Self> {
         Some(Text::new(input.to_string()))
     }
 }
@@ -76,6 +79,6 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(Text::deserialize("t"), Some(Text::new("t")));
+        assert_eq!(Text::deserialize_without_context("t"), Some(Text::new("t")));
     }
 }

@@ -1,4 +1,5 @@
 use crate::sd::{
+    context::ContextValues,
     deserializer::{Deserializer, Node},
     serializer::Serializer,
     tokenizer::{Pattern::Once, Tokenizer},
@@ -34,7 +35,7 @@ impl Node for Code {
 }
 
 impl Deserializer for Code {
-    fn deserialize(input: &str) -> Option<Self> {
+    fn deserialize(input: &str, _: Option<ContextValues>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(lang_body) =
             tokenizer.get_token_body(vec![Once('`'), Once('`'), Once('`')], vec![Once('\n')])
@@ -82,7 +83,7 @@ mod tests {
     #[test]
     fn deserializer() {
         assert_eq!(
-            Code::deserialize("```rust\nlet a=1;\n```"),
+            Code::deserialize_without_context("```rust\nlet a=1;\n```"),
             Some(Code::new("rust", "let a=1;"))
         );
     }

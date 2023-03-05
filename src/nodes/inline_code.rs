@@ -1,8 +1,8 @@
 use crate::{
     nodes::paragraph::ParagraphNodes,
     sd::deserializer::{Deserializer, Node},
-    sd::serializer::Serializer,
     sd::tokenizer::{Pattern::Once, Tokenizer},
+    sd::{context::ContextValues, serializer::Serializer},
 };
 
 #[derive(Debug, PartialEq)]
@@ -35,7 +35,7 @@ impl Node for InlineCode {
 }
 
 impl Deserializer for InlineCode {
-    fn deserialize(input: &str) -> Option<Self> {
+    fn deserialize(input: &str, _: Option<ContextValues>) -> Option<Self> {
         let mut chars = Tokenizer::new(input);
         if let Some(body) = chars.get_token_body(vec![Once('`')], vec![Once('`')]) {
             return Some(InlineCode::new(body));
@@ -58,11 +58,14 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(InlineCode::deserialize("`1`"), Some(InlineCode::new('1')));
         assert_eq!(
-            InlineCode::deserialize("`const \nfoo='bar'`"),
+            InlineCode::deserialize_without_context("`1`"),
+            Some(InlineCode::new('1'))
+        );
+        assert_eq!(
+            InlineCode::deserialize_without_context("`const \nfoo='bar'`"),
             Some(InlineCode::new("const \nfoo='bar'"))
         );
-        assert_eq!(InlineCode::deserialize("`a"), None);
+        assert_eq!(InlineCode::deserialize_without_context("`a"), None);
     }
 }

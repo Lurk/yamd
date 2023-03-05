@@ -1,4 +1,5 @@
 use crate::sd::{
+    context::ContextValues,
     deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode, Node},
     serializer::Serializer,
     tokenizer::{
@@ -34,8 +35,14 @@ pub struct UnorderedListItem {
 }
 
 impl UnorderedListItem {
-    fn set_level(&mut self, level: usize) {
-        self.level = level;
+    fn get_level_from_context(ctx: &Option<ContextValues>) -> usize {
+        match ctx {
+            Some(value) => match value.get_usize_value() {
+                Some(parrent_level) => parrent_level + 1,
+                None => 0,
+            },
+            None => 0,
+        }
     }
 }
 
@@ -58,9 +65,9 @@ impl Serializer for UnorderedListItemNodes {
 }
 
 impl Branch<UnorderedListItemNodes> for UnorderedListItem {
-    fn new() -> Self {
+    fn new(ctx: &Option<ContextValues>) -> Self {
         Self {
-            level: 0,
+            level: Self::get_level_from_context(ctx),
             nodes: vec![],
         }
     }
@@ -91,6 +98,10 @@ impl Node for UnorderedListItem {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
     }
+
+    fn context(&self) -> Option<ContextValues> {
+        Some(self.level.into())
+    }
 }
 
 impl Serializer for UnorderedListItem {
@@ -108,31 +119,20 @@ impl Serializer for UnorderedListItem {
 }
 
 impl Deserializer for UnorderedListItem {
-    fn deserialize(input: &str) -> Option<Self> {
+    fn deserialize(input: &str, ctx: Option<ContextValues>) -> Option<Self> {
+        let level = Self::get_level_from_context(&ctx);
         let mut tokenizer = Tokenizer::new(input);
-        if let Some(pattern_lenghs) = tokenizer.get_pattern_lenghs(vec![
-            ZerroOrMore('\n'),
-            ZerroOrMore(' '),
-            Once('-'),
-            Once(' '),
-        ]) {
-            let level = *pattern_lenghs.get(1).unwrap_or(&0);
-            let mut tokenizer = Tokenizer::new(input);
-            if let Some(body) = tokenizer.get_token_body_with_options(
-                vec![
-                    ZerroOrMore('\n'),
-                    RepeatTimes(level, ' '),
-                    Once('-'),
-                    Once(' '),
-                ],
-                vec![Once('\n'), RepeatTimes(level, ' '), Once('-'), Once(' ')],
-                true,
-            ) {
-                if let Some(mut instance) = Self::parse_branch(body) {
-                    instance.set_level(level);
-                    return Some(instance);
-                }
-            }
+        if let Some(body) = tokenizer.get_token_body_with_options(
+            vec![
+                ZerroOrMore('\n'),
+                RepeatTimes(level, ' '),
+                Once('-'),
+                Once(' '),
+            ],
+            vec![Once('\n'), RepeatTimes(level, ' '), Once('-'), Once(' ')],
+            true,
+        ) {
+            return Self::parse_branch(body, &ctx);
         }
 
         None
@@ -144,6 +144,7 @@ mod tests {
     use crate::{
         nodes::{paragraph::Paragraph, text::Text},
         sd::{
+            context::ContextValues,
             deserializer::{Branch, Deserializer, Node},
             serializer::Serializer,
         },
@@ -154,26 +155,26 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            UnorderedListItem::deserialize("- foo"),
+            UnorderedListItem::deserialize("- foo", None),
             Some(UnorderedListItem {
                 level: 0,
                 nodes: vec![Paragraph::from_vec(vec![Text::new("foo").into()]).into()]
             })
         );
         assert_eq!(
-            UnorderedListItem::deserialize("    - foo"),
+            UnorderedListItem::deserialize("    - foo", Some(ContextValues::Usize(3))),
             Some(UnorderedListItem {
                 level: 4,
                 nodes: vec![Paragraph::from_vec(vec![Text::new("foo").into()]).into()]
             })
         );
-        assert_eq!(UnorderedListItem::deserialize("  s  - foo"), None);
+        assert_eq!(UnorderedListItem::deserialize("  s  - foo", None), None);
     }
 
     #[test]
     fn deserialize_with_body() {
         assert_eq!(
-            UnorderedListItem::deserialize("- foo\nbla\n- bar"),
+            UnorderedListItem::deserialize("- foo\nbla\n- bar", None),
             Some(UnorderedListItem {
                 level: 0,
                 nodes: vec![Paragraph::from_vec(vec![Text::new("foo\nbla").into()]).into()]
@@ -184,7 +185,7 @@ mod tests {
     #[test]
     fn deserialize_with_nested_list() {
         assert_eq!(
-            UnorderedListItem::deserialize("- foo\n - bar\n - baz"),
+            UnorderedListItem::deserialize("- foo\n - bar\n - baz", None),
             Some(UnorderedListItem {
                 level: 0,
                 nodes: vec![
@@ -207,7 +208,7 @@ mod tests {
     #[test]
     fn deserialize_with_deeply_nested_list() {
         assert_eq!(
-            UnorderedListItem::deserialize("- level 0\n - level 1\n  - level 2\n - level 1"),
+            UnorderedListItem::deserialize("- level 0\n - level 1\n  - level 2\n - level 1", None),
             Some(UnorderedListItem {
                 level: 0,
                 nodes: vec![

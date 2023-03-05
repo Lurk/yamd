@@ -1,9 +1,12 @@
 use crate::{
     nodes::bold::BoldNodes,
     nodes::paragraph::ParagraphNodes,
-    sd::deserializer::{Deserializer, Node},
-    sd::serializer::Serializer,
     sd::tokenizer::{Pattern::Once, Tokenizer},
+    sd::{
+        context::ContextValues,
+        deserializer::{Deserializer, Node},
+        serializer::Serializer,
+    },
 };
 
 /// Representation of an Italic text
@@ -43,7 +46,7 @@ impl Node for Italic {
 }
 
 impl Deserializer for Italic {
-    fn deserialize(input: &str) -> Option<Self> {
+    fn deserialize(input: &str, _: Option<ContextValues>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(body) = tokenizer.get_token_body(vec![Once('_')], vec![Once('_')]) {
             return Some(Italic::new(body));
@@ -76,19 +79,22 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(Italic::deserialize("_italic_"), Some(Italic::new("italic")));
         assert_eq!(
-            Italic::deserialize("_italic_not"),
+            Italic::deserialize_without_context("_italic_"),
             Some(Italic::new("italic"))
         );
         assert_eq!(
-            Italic::deserialize("_it alic_not"),
+            Italic::deserialize_without_context("_italic_not"),
+            Some(Italic::new("italic"))
+        );
+        assert_eq!(
+            Italic::deserialize_without_context("_it alic_not"),
             Some(Italic::new("it alic"))
         );
-        assert_eq!(Italic::deserialize("not italic_not"), None);
-        assert_eq!(Italic::deserialize("*italic not"), None);
+        assert_eq!(Italic::deserialize_without_context("not italic_not"), None);
+        assert_eq!(Italic::deserialize_without_context("*italic not"), None);
         assert_eq!(
-            Italic::deserialize("_ita\nlic_"),
+            Italic::deserialize_without_context("_ita\nlic_"),
             Some(Italic::new("ita\nlic"))
         );
     }

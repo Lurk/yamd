@@ -1,8 +1,8 @@
 use crate::{
     nodes::paragraph::ParagraphNodes,
     sd::deserializer::{Deserializer, Node},
-    sd::serializer::Serializer,
     sd::tokenizer::{Pattern::Once, Tokenizer},
+    sd::{context::ContextValues, serializer::Serializer},
 };
 
 /// Representation of an anchor
@@ -40,7 +40,7 @@ impl Node for Anchor {
 }
 
 impl Deserializer for Anchor {
-    fn deserialize(input: &str) -> Option<Self> {
+    fn deserialize(input: &str, _: Option<ContextValues>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(text_part) = tokenizer.get_token_body(vec![Once('[')], vec![Once(']')]) {
             let text_part = text_part.to_string();
@@ -76,7 +76,10 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(Anchor::deserialize("[1](2)"), Some(Anchor::new("2", "1")))
+        assert_eq!(
+            Anchor::deserialize_without_context("[1](2)"),
+            Some(Anchor::new("2", "1"))
+        )
     }
 
     #[test]
