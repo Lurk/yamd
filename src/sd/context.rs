@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ContextValues {
     Usize(usize),
     Char(char),
@@ -17,7 +17,7 @@ impl From<char> for ContextValues {
         ContextValues::Char(value)
     }
 }
-
+#[derive(Clone)]
 pub struct Context {
     inner: HashMap<String, ContextValues>,
 }

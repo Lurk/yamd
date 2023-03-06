@@ -157,7 +157,7 @@ impl Branch<ListNodes> for List {
 mod tests {
     use crate::{
         nodes::{list_item::ListItem, paragraph::Paragraph, text::Text},
-        sd::{deserializer::Branch, node::Node},
+        sd::{context::Context, deserializer::Branch, node::Node},
     };
 
     use super::{List, ListTypes};
@@ -167,17 +167,30 @@ mod tests {
         let list = List {
             list_type: ListTypes::Unordered,
             level: 0,
-            nodes: vec![ListItem::from_vec_with_context(
-                vec![Paragraph::from_vec_with_context(
-                    vec![Text::new("unordered list item").into()],
-                    None,
-                )
-                .into()],
-                None,
+            nodes: vec![ListItem::from_vec(vec![Paragraph::from_vec(vec![Text::new(
+                "unordered list item",
             )
+            .into()])
+            .into()])
             .into()],
         };
 
         assert_eq!(list.serialize(), "- unordered list item");
+    }
+
+    #[test]
+    fn serialize_ordered() {
+        let mut ctx = Context::new();
+        ctx.add("list_type", '+');
+        let list = List::from_vec_with_context(
+            vec![ListItem::from_vec_with_context(
+                vec![Paragraph::from_vec(vec![Text::new("ordered list item").into()]).into()],
+                Some(ctx.clone()),
+            )
+            .into()],
+            Some(ctx),
+        );
+
+        assert_eq!(list.serialize(), "+ ordered list item");
     }
 }
