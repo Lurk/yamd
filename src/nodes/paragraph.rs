@@ -2,10 +2,10 @@ use crate::nodes::{
     anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic,
     strikethrough::Strikethrough, text::Text, yamd::YamdNodes,
 };
+use crate::sd::node::Node;
 use crate::sd::{
     context::Context,
-    deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode, Node},
-    serializer::Serializer,
+    deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
     tokenizer::{Pattern::Once, Tokenizer},
 };
 
@@ -30,9 +30,6 @@ impl Node for ParagraphNodes {
             ParagraphNodes::InlineCode(node) => node.len(),
         }
     }
-}
-
-impl Serializer for ParagraphNodes {
     fn serialize(&self) -> String {
         match self {
             ParagraphNodes::A(node) => node.serialize(),
@@ -91,16 +88,6 @@ impl Deserializer for Paragraph {
     }
 }
 
-impl Serializer for Paragraph {
-    fn serialize(&self) -> String {
-        self.nodes
-            .iter()
-            .map(|node| node.serialize())
-            .collect::<Vec<String>>()
-            .concat()
-    }
-}
-
 impl Default for Paragraph {
     fn default() -> Self {
         Self::new_with_context(&None)
@@ -116,6 +103,13 @@ impl From<Paragraph> for YamdNodes {
 impl Node for Paragraph {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum()
+    }
+    fn serialize(&self) -> String {
+        self.nodes
+            .iter()
+            .map(|node| node.serialize())
+            .collect::<Vec<String>>()
+            .concat()
     }
 }
 
@@ -138,8 +132,10 @@ mod tests {
         nodes::bold::Bold,
         nodes::inline_code::InlineCode,
         nodes::text::Text,
-        sd::deserializer::{Branch, Deserializer},
-        sd::serializer::Serializer,
+        sd::{
+            deserializer::{Branch, Deserializer},
+            node::Node,
+        },
     };
 
     use super::Paragraph;

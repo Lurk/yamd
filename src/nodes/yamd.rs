@@ -1,9 +1,8 @@
 use crate::{
     nodes::heading::Heading,
     nodes::paragraph::Paragraph,
-    sd::context::Context,
-    sd::deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode, Node},
-    sd::serializer::Serializer,
+    sd::deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
+    sd::{context::Context, node::Node},
 };
 
 use super::{code::Code, image::Image};
@@ -25,9 +24,6 @@ impl Node for YamdNodes {
             YamdNodes::Code(node) => node.len() + 2,
         }
     }
-}
-
-impl Serializer for YamdNodes {
     fn serialize(&self) -> String {
         match self {
             YamdNodes::P(node) => node.serialize(),
@@ -73,16 +69,6 @@ impl Branch<YamdNodes> for Yamd {
     }
 }
 
-impl Serializer for Yamd {
-    fn serialize(&self) -> String {
-        self.nodes
-            .iter()
-            .map(|node| node.serialize())
-            .collect::<Vec<String>>()
-            .join("\n\n")
-    }
-}
-
 impl Deserializer for Yamd {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         Self::parse_branch(input, &None)
@@ -99,6 +85,13 @@ impl Node for Yamd {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum()
     }
+    fn serialize(&self) -> String {
+        self.nodes
+            .iter()
+            .map(|node| node.serialize())
+            .collect::<Vec<String>>()
+            .join("\n\n")
+    }
 }
 
 #[cfg(test)]
@@ -108,7 +101,7 @@ mod tests {
         nodes::paragraph::Paragraph,
         nodes::{bold::Bold, code::Code, image::Image, text::Text},
         sd::deserializer::Branch,
-        sd::{deserializer::Deserializer, serializer::Serializer},
+        sd::{deserializer::Deserializer, node::Node},
     };
 
     use super::Yamd;

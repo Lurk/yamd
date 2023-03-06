@@ -1,7 +1,7 @@
 use crate::sd::{
     context::Context,
-    deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode, Node},
-    serializer::Serializer,
+    deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
+    node::Node,
     tokenizer::{
         Pattern::{Once, ZerroOrMore},
         Tokenizer,
@@ -27,9 +27,6 @@ impl Node for ListNodes {
             ListNodes::ListItem(node) => node.len(),
         }
     }
-}
-
-impl Serializer for ListNodes {
     fn serialize(&self) -> String {
         match self {
             ListNodes::ListItem(node) => node.serialize(),
@@ -88,9 +85,6 @@ impl Node for List {
         ctx.add("level", self.level);
         Some(ctx)
     }
-}
-
-impl Serializer for List {
     fn serialize(&self) -> String {
         self.nodes
             .iter()
@@ -163,7 +157,7 @@ impl Branch<ListNodes> for List {
 mod tests {
     use crate::{
         nodes::{list_item::ListItem, paragraph::Paragraph, text::Text},
-        sd::{deserializer::Branch, serializer::Serializer},
+        sd::{deserializer::Branch, node::Node},
     };
 
     use super::{List, ListTypes};

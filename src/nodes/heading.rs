@@ -2,8 +2,8 @@ use crate::{
     nodes::yamd::YamdNodes,
     sd::{
         context::Context,
-        deserializer::{Deserializer, Node},
-        serializer::Serializer,
+        deserializer::Deserializer,
+        node::Node,
         tokenizer::{Pattern::Once, Pattern::RepeatTimes, Tokenizer},
     },
 };
@@ -54,13 +54,6 @@ impl Deserializer for Heading {
     }
 }
 
-impl Serializer for Heading {
-    fn serialize(&self) -> String {
-        let level = String::from('#').repeat(self.level as usize);
-        format!("{} {}", level, self.text)
-    }
-}
-
 impl From<Heading> for YamdNodes {
     fn from(value: Heading) -> Self {
         YamdNodes::H(value)
@@ -71,14 +64,15 @@ impl Node for Heading {
     fn len(&self) -> usize {
         self.text.len() + self.level as usize + 1
     }
+    fn serialize(&self) -> String {
+        let level = String::from('#').repeat(self.level as usize);
+        format!("{} {}", level, self.text)
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{
-        deserializer::{Deserializer, Node},
-        serializer::Serializer,
-    };
+    use crate::sd::{deserializer::Deserializer, node::Node};
 
     use super::Heading;
 

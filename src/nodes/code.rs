@@ -1,7 +1,7 @@
 use crate::sd::{
     context::Context,
-    deserializer::{Deserializer, Node},
-    serializer::Serializer,
+    deserializer::Deserializer,
+    node::Node,
     tokenizer::{Pattern::Once, Tokenizer},
 };
 
@@ -22,15 +22,12 @@ impl Code {
     }
 }
 
-impl Serializer for Code {
-    fn serialize(&self) -> String {
-        format!("```{}\n{}\n```", self.lang, self.code)
-    }
-}
-
 impl Node for Code {
     fn len(&self) -> usize {
         self.lang.len() + self.code.len() + 8
+    }
+    fn serialize(&self) -> String {
+        format!("```{}\n{}\n```", self.lang, self.code)
     }
 }
 
@@ -61,10 +58,7 @@ impl From<Code> for YamdNodes {
 mod tests {
     use crate::{
         nodes::code::Code,
-        sd::{
-            deserializer::{Deserializer, Node},
-            serializer::Serializer,
-        },
+        sd::{deserializer::Deserializer, node::Node},
     };
 
     #[test]

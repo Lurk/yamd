@@ -1,8 +1,8 @@
 use crate::{
     nodes::paragraph::ParagraphNodes,
-    sd::deserializer::{Deserializer, Node},
+    sd::context::Context,
     sd::tokenizer::{Pattern::Once, Tokenizer},
-    sd::{context::Context, serializer::Serializer},
+    sd::{deserializer::Deserializer, node::Node},
 };
 
 #[derive(Debug, PartialEq)]
@@ -16,12 +16,6 @@ impl InlineCode {
     }
 }
 
-impl Serializer for InlineCode {
-    fn serialize(&self) -> String {
-        format!("`{}`", self.text)
-    }
-}
-
 impl From<InlineCode> for ParagraphNodes {
     fn from(value: InlineCode) -> Self {
         ParagraphNodes::InlineCode(value)
@@ -31,6 +25,9 @@ impl From<InlineCode> for ParagraphNodes {
 impl Node for InlineCode {
     fn len(&self) -> usize {
         self.text.len() + 2
+    }
+    fn serialize(&self) -> String {
+        format!("`{}`", self.text)
     }
 }
 
@@ -46,7 +43,7 @@ impl Deserializer for InlineCode {
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{deserializer::Deserializer, serializer::Serializer};
+    use crate::sd::{deserializer::Deserializer, node::Node};
 
     use super::InlineCode;
 

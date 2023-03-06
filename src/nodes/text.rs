@@ -1,10 +1,10 @@
 use crate::{
     nodes::bold::BoldNodes,
     nodes::paragraph::ParagraphNodes,
-    sd::serializer::Serializer,
     sd::{
         context::Context,
-        deserializer::{DefinitelyNode, Deserializer, FallbackNode, Node},
+        deserializer::{DefinitelyNode, Deserializer, FallbackNode},
+        node::Node,
     },
 };
 
@@ -17,12 +17,6 @@ pub struct Text {
 impl Text {
     pub fn new<S: Into<String>>(text: S) -> Self {
         Text { text: text.into() }
-    }
-}
-
-impl Serializer for Text {
-    fn serialize(&self) -> String {
-        self.text.clone()
     }
 }
 
@@ -48,6 +42,9 @@ impl Node for Text {
     fn len(&self) -> usize {
         self.text.len()
     }
+    fn serialize(&self) -> String {
+        self.text.clone()
+    }
 }
 
 impl FallbackNode for Text {
@@ -61,7 +58,7 @@ impl FallbackNode for Text {
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{deserializer::Deserializer, serializer::Serializer};
+    use crate::sd::{deserializer::Deserializer, node::Node};
 
     use super::Text;
 

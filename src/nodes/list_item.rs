@@ -1,7 +1,7 @@
 use crate::sd::{
     context::Context,
-    deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode, Node},
-    serializer::Serializer,
+    deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
+    node::Node,
     tokenizer::{
         Pattern::{Once, RepeatTimes, ZerroOrMore},
         Tokenizer,
@@ -53,9 +53,6 @@ impl Node for UnorderedListItemNodes {
             UnorderedListItemNodes::List(node) => node.len(),
         }
     }
-}
-
-impl Serializer for UnorderedListItemNodes {
     fn serialize(&self) -> String {
         match self {
             UnorderedListItemNodes::Paragraph(node) => node.serialize(),
@@ -107,9 +104,6 @@ impl Node for ListItem {
         ctx.add("level", self.level);
         Some(ctx)
     }
-}
-
-impl Serializer for ListItem {
     fn serialize(&self) -> String {
         format!(
             "{}- {}",
@@ -150,8 +144,8 @@ mod tests {
         nodes::{list::List, paragraph::Paragraph, text::Text},
         sd::{
             context::Context,
-            deserializer::{Branch, Deserializer, Node},
-            serializer::Serializer,
+            deserializer::{Branch, Deserializer},
+            node::Node,
         },
     };
 

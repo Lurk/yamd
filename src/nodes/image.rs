@@ -1,7 +1,7 @@
 use crate::sd::{
     context::Context,
-    deserializer::{Deserializer, Node},
-    serializer::Serializer,
+    deserializer::Deserializer,
+    node::Node,
     tokenizer::{Pattern::Once, Tokenizer},
 };
 
@@ -22,15 +22,12 @@ impl Image {
     }
 }
 
-impl Serializer for Image {
-    fn serialize(&self) -> String {
-        format!("![{}]({})", self.alt, self.url)
-    }
-}
-
 impl Node for Image {
     fn len(&self) -> usize {
         self.alt.len() + self.url.len() + 5
+    }
+    fn serialize(&self) -> String {
+        format!("![{}]({})", self.alt, self.url)
     }
 }
 
@@ -57,10 +54,7 @@ impl From<Image> for YamdNodes {
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{
-        deserializer::{Deserializer, Node},
-        serializer::Serializer,
-    };
+    use crate::sd::{deserializer::Deserializer, node::Node};
 
     use super::Image;
 

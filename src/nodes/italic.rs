@@ -1,11 +1,10 @@
 use crate::{
     nodes::bold::BoldNodes,
     nodes::paragraph::ParagraphNodes,
-    sd::tokenizer::{Pattern::Once, Tokenizer},
+    sd::{context::Context, deserializer::Deserializer},
     sd::{
-        context::Context,
-        deserializer::{Deserializer, Node},
-        serializer::Serializer,
+        node::Node,
+        tokenizer::{Pattern::Once, Tokenizer},
     },
 };
 
@@ -18,12 +17,6 @@ pub struct Italic {
 impl Italic {
     pub fn new<S: Into<String>>(text: S) -> Self {
         Italic { text: text.into() }
-    }
-}
-
-impl Serializer for Italic {
-    fn serialize(&self) -> String {
-        format!("_{}_", self.text)
     }
 }
 
@@ -43,6 +36,9 @@ impl Node for Italic {
     fn len(&self) -> usize {
         self.text.len() + 2
     }
+    fn serialize(&self) -> String {
+        format!("_{}_", self.text)
+    }
 }
 
 impl Deserializer for Italic {
@@ -58,10 +54,7 @@ impl Deserializer for Italic {
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{
-        deserializer::{Deserializer, Node},
-        serializer::Serializer,
-    };
+    use crate::sd::{deserializer::Deserializer, node::Node};
 
     use super::Italic;
 

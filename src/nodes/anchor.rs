@@ -1,8 +1,11 @@
 use crate::{
     nodes::paragraph::ParagraphNodes,
-    sd::deserializer::{Deserializer, Node},
-    sd::tokenizer::{Pattern::Once, Tokenizer},
-    sd::{context::Context, serializer::Serializer},
+    sd::context::Context,
+    sd::deserializer::Deserializer,
+    sd::{
+        node::Node,
+        tokenizer::{Pattern::Once, Tokenizer},
+    },
 };
 
 /// Representation of an anchor
@@ -21,12 +24,6 @@ impl Anchor {
     }
 }
 
-impl Serializer for Anchor {
-    fn serialize(&self) -> String {
-        format!("[{}]({})", self.text, self.url)
-    }
-}
-
 impl From<Anchor> for ParagraphNodes {
     fn from(value: Anchor) -> Self {
         ParagraphNodes::A(value)
@@ -36,6 +33,9 @@ impl From<Anchor> for ParagraphNodes {
 impl Node for Anchor {
     fn len(&self) -> usize {
         self.text.len() + self.url.len() + 4
+    }
+    fn serialize(&self) -> String {
+        format!("[{}]({})", self.text, self.url)
     }
 }
 
@@ -54,10 +54,7 @@ impl Deserializer for Anchor {
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{
-        deserializer::{Deserializer, Node},
-        serializer::Serializer,
-    };
+    use crate::sd::{deserializer::Deserializer, node::Node};
 
     use super::Anchor;
 

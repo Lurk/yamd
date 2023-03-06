@@ -1,11 +1,10 @@
 use crate::{
     nodes::bold::BoldNodes,
     nodes::paragraph::ParagraphNodes,
-    sd::serializer::Serializer,
-    sd::tokenizer::{Pattern::Once, Tokenizer},
+    sd::{context::Context, deserializer::Deserializer},
     sd::{
-        context::Context,
-        deserializer::{Deserializer, Node},
+        node::Node,
+        tokenizer::{Pattern::Once, Tokenizer},
     },
 };
 
@@ -18,12 +17,6 @@ pub struct Strikethrough {
 impl Strikethrough {
     pub fn new<IS: Into<String>>(text: IS) -> Self {
         Strikethrough { text: text.into() }
-    }
-}
-
-impl Serializer for Strikethrough {
-    fn serialize(&self) -> String {
-        format!("~~{}~~", self.text)
     }
 }
 
@@ -43,6 +36,9 @@ impl Node for Strikethrough {
     fn len(&self) -> usize {
         self.text.len() + 4
     }
+    fn serialize(&self) -> String {
+        format!("~~{}~~", self.text)
+    }
 }
 
 impl Deserializer for Strikethrough {
@@ -59,10 +55,7 @@ impl Deserializer for Strikethrough {
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{
-        deserializer::{Deserializer, Node},
-        serializer::Serializer,
-    };
+    use crate::sd::{deserializer::Deserializer, node::Node};
 
     use super::Strikethrough;
 

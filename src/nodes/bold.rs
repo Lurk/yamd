@@ -5,8 +5,8 @@ use crate::{
     nodes::text::Text,
     sd::{
         context::Context,
-        deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode, Node},
-        serializer::Serializer,
+        deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
+        node::Node,
         tokenizer::{Pattern::Once, Tokenizer},
     },
 };
@@ -26,9 +26,7 @@ impl Node for BoldNodes {
             BoldNodes::S(node) => node.len(),
         }
     }
-}
 
-impl Serializer for BoldNodes {
     fn serialize(&self) -> String {
         match self {
             BoldNodes::Text(v) => v.serialize(),
@@ -46,19 +44,6 @@ pub struct Bold {
 impl From<Bold> for ParagraphNodes {
     fn from(value: Bold) -> Self {
         ParagraphNodes::B(value)
-    }
-}
-
-impl Serializer for Bold {
-    fn serialize(&self) -> String {
-        format!(
-            "**{}**",
-            self.nodes
-                .iter()
-                .map(|element| { element.serialize() })
-                .collect::<Vec<String>>()
-                .concat()
-        )
     }
 }
 
@@ -97,6 +82,16 @@ impl Node for Bold {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
     }
+    fn serialize(&self) -> String {
+        format!(
+            "**{}**",
+            self.nodes
+                .iter()
+                .map(|element| { element.serialize() })
+                .collect::<Vec<String>>()
+                .concat()
+        )
+    }
 }
 
 impl Deserializer for Bold {
@@ -118,8 +113,10 @@ mod tests {
         nodes::italic::Italic,
         nodes::strikethrough::Strikethrough,
         nodes::text::Text,
-        sd::deserializer::{Branch, Deserializer},
-        sd::{deserializer::Node, serializer::Serializer},
+        sd::{
+            deserializer::{Branch, Deserializer},
+            node::Node,
+        },
     };
 
     #[test]
