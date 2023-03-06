@@ -8,7 +8,7 @@ use crate::sd::{
     },
 };
 
-use super::unordered_list_item::ListItem;
+use super::list_item::ListItem;
 
 #[derive(Debug, PartialEq)]
 pub enum ListTypes {
@@ -45,16 +45,16 @@ impl From<ListItem> for ListNodes {
 
 #[derive(Debug, PartialEq)]
 pub struct List {
-    t: ListTypes,
+    list_type: ListTypes,
     level: usize,
     nodes: Vec<ListNodes>,
 }
 
 impl List {
-    fn get_t_from_context(ctx: &Option<Context>) -> ListTypes {
+    fn get_list_tupe_from_context(ctx: &Option<Context>) -> ListTypes {
         if let Some(ctx) = ctx {
-            if let Some(t) = ctx.get_char_value("t") {
-                if t == '+' {
+            if let Some(list_type) = ctx.get_char_value("list_type") {
+                if list_type == '+' {
                     return ListTypes::Ordered;
                 }
             }
@@ -79,8 +79,8 @@ impl Node for List {
     fn context(&self) -> Option<Context> {
         let mut ctx = Context::new();
         ctx.add(
-            "t",
-            match self.t {
+            "list_type",
+            match self.list_type {
                 ListTypes::Unordered => '-',
                 ListTypes::Ordered => '+',
             },
@@ -109,13 +109,13 @@ impl Deserializer for List {
                 .get_body_start_position(vec![ZerroOrMore('\n'), ZerroOrMore(' '), Once('-')])
                 .is_some()
             {
-                ctx.add("t", '-');
+                ctx.add("list_type", '-');
                 return Self::parse_branch(input, &Some(ctx));
             } else if tokenizer
                 .get_body_start_position(vec![ZerroOrMore('\n'), ZerroOrMore(' '), Once('+')])
                 .is_some()
             {
-                ctx.add("t", '+');
+                ctx.add("list_type", '+');
                 return Self::parse_branch(input, &Some(ctx));
             }
         } else {
@@ -128,7 +128,7 @@ impl Deserializer for List {
 impl Branch<ListNodes> for List {
     fn new(ctx: &Option<Context>) -> Self {
         Self {
-            t: Self::get_t_from_context(ctx),
+            list_type: Self::get_list_tupe_from_context(ctx),
             nodes: vec![],
             level: Self::get_level_from_context(ctx),
         }
@@ -140,7 +140,7 @@ impl Branch<ListNodes> for List {
 
     fn from_vec(nodes: Vec<ListNodes>, ctx: Option<Context>) -> Self {
         Self {
-            t: Self::get_t_from_context(&ctx),
+            list_type: Self::get_list_tupe_from_context(&ctx),
             nodes,
             level: Self::get_level_from_context(&ctx),
         }
@@ -162,8 +162,8 @@ impl Branch<ListNodes> for List {
 #[cfg(test)]
 mod tests {
     use crate::{
-        nodes::{paragraph::Paragraph, text::Text, unordered_list_item::ListItem},
-        sd::{context::Context, deserializer::Branch, serializer::Serializer},
+        nodes::{list_item::ListItem, paragraph::Paragraph, text::Text},
+        sd::{deserializer::Branch, serializer::Serializer},
     };
 
     use super::{List, ListTypes};
@@ -171,7 +171,7 @@ mod tests {
     #[test]
     fn serialize_unordered() {
         let list = List {
-            t: ListTypes::Unordered,
+            list_type: ListTypes::Unordered,
             level: 0,
             nodes: vec![ListItem::from_vec(
                 vec![
