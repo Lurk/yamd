@@ -44,11 +44,11 @@ pub struct Yamd {
 }
 
 impl Branch<YamdNodes> for Yamd {
-    fn new(_: &Option<Context>) -> Self {
+    fn new_with_context(_: &Option<Context>) -> Self {
         Self { nodes: vec![] }
     }
 
-    fn from_vec(data: Vec<YamdNodes>, _: Option<Context>) -> Self {
+    fn from_vec_with_context(data: Vec<YamdNodes>, _: Option<Context>) -> Self {
         Self { nodes: data }
     }
 
@@ -84,14 +84,14 @@ impl Serializer for Yamd {
 }
 
 impl Deserializer for Yamd {
-    fn deserialize(input: &str, _: Option<Context>) -> Option<Self> {
+    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         Self::parse_branch(input, &None)
     }
 }
 
 impl Default for Yamd {
     fn default() -> Self {
-        Self::new(&None)
+        Self::new_with_context(&None)
     }
 }
 
@@ -115,22 +115,19 @@ mod tests {
 
     #[test]
     fn push() {
-        let mut t = Yamd::new(&None);
+        let mut t = Yamd::new();
         t.push(Heading::new("header", 1));
-        t.push(Paragraph::from_vec(vec![Text::new("text").into()], None));
+        t.push(Paragraph::from_vec(vec![Text::new("text").into()]));
 
         assert_eq!(t.serialize(), "# header\n\ntext".to_string());
     }
 
     #[test]
     fn from_vec() {
-        let t: String = Yamd::from_vec(
-            vec![
-                Heading::new("header", 1).into(),
-                Paragraph::from_vec(vec![Text::new("text").into()], None).into(),
-            ],
-            None,
-        )
+        let t: String = Yamd::from_vec(vec![
+            Heading::new("header", 1).into(),
+            Paragraph::from_vec(vec![Text::new("text").into()]).into(),
+        ])
         .serialize();
 
         assert_eq!(t, "# header\n\ntext".to_string());
@@ -139,56 +136,39 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Yamd::deserialize_without_context("# hh\n\ntt\n\n![a](u)"),
-            Some(Yamd::from_vec(
-                vec![
-                    Heading::new("hh", 1).into(),
-                    Paragraph::from_vec(vec![Text::new("tt").into()], None).into(),
-                    Image::new("a", "u").into()
-                ],
-                None
-            ))
+            Yamd::deserialize("# hh\n\ntt\n\n![a](u)"),
+            Some(Yamd::from_vec(vec![
+                Heading::new("hh", 1).into(),
+                Paragraph::from_vec(vec![Text::new("tt").into()]).into(),
+                Image::new("a", "u").into()
+            ]))
         );
 
         assert_eq!(
-            Yamd::deserialize_without_context("t**b**\n\n![a](u)\n\n## h"),
-            Some(Yamd::from_vec(
-                vec![
-                    Paragraph::from_vec(
-                        vec![
-                            Text::new("t").into(),
-                            Bold::from_vec(vec![Text::new("b").into()], None).into()
-                        ],
-                        None
-                    )
-                    .into(),
-                    Image::new('a', 'u').into(),
-                    Heading::new("h", 2).into(),
-                ],
-                None
-            ),)
+            Yamd::deserialize("t**b**\n\n![a](u)\n\n## h"),
+            Some(Yamd::from_vec(vec![
+                Paragraph::from_vec(vec![
+                    Text::new("t").into(),
+                    Bold::from_vec(vec![Text::new("b").into()]).into()
+                ])
+                .into(),
+                Image::new('a', 'u').into(),
+                Heading::new("h", 2).into(),
+            ]),)
         );
 
         assert_eq!(
-            Yamd::deserialize_without_context(
-                "```rust\nlet a=1;\n```\n\nt**b**\n\n![a](u)\n\n## h"
-            ),
-            Some(Yamd::from_vec(
-                vec![
-                    Code::new("rust", "let a=1;").into(),
-                    Paragraph::from_vec(
-                        vec![
-                            Text::new("t").into(),
-                            Bold::from_vec(vec![Text::new("b").into()], None).into()
-                        ],
-                        None
-                    )
-                    .into(),
-                    Image::new('a', 'u').into(),
-                    Heading::new("h", 2).into(),
-                ],
-                None
-            ))
+            Yamd::deserialize("```rust\nlet a=1;\n```\n\nt**b**\n\n![a](u)\n\n## h"),
+            Some(Yamd::from_vec(vec![
+                Code::new("rust", "let a=1;").into(),
+                Paragraph::from_vec(vec![
+                    Text::new("t").into(),
+                    Bold::from_vec(vec![Text::new("b").into()]).into()
+                ])
+                .into(),
+                Image::new('a', 'u').into(),
+                Heading::new("h", 2).into(),
+            ]))
         );
     }
 }

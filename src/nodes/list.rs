@@ -101,7 +101,7 @@ impl Serializer for List {
 }
 
 impl Deserializer for List {
-    fn deserialize(input: &str, ctx: Option<Context>) -> Option<Self> {
+    fn deserialize_with_context(input: &str, ctx: Option<Context>) -> Option<Self> {
         if ctx.is_none() {
             let mut ctx = Context::new();
             let tokenizer = Tokenizer::new(input);
@@ -126,7 +126,7 @@ impl Deserializer for List {
 }
 
 impl Branch<ListNodes> for List {
-    fn new(ctx: &Option<Context>) -> Self {
+    fn new_with_context(ctx: &Option<Context>) -> Self {
         Self {
             list_type: Self::get_list_tupe_from_context(ctx),
             nodes: vec![],
@@ -138,7 +138,7 @@ impl Branch<ListNodes> for List {
         self.nodes.push(node.into())
     }
 
-    fn from_vec(nodes: Vec<ListNodes>, ctx: Option<Context>) -> Self {
+    fn from_vec_with_context(nodes: Vec<ListNodes>, ctx: Option<Context>) -> Self {
         Self {
             list_type: Self::get_list_tupe_from_context(&ctx),
             nodes,
@@ -173,10 +173,12 @@ mod tests {
         let list = List {
             list_type: ListTypes::Unordered,
             level: 0,
-            nodes: vec![ListItem::from_vec(
-                vec![
-                    Paragraph::from_vec(vec![Text::new("unordered list item").into()], None).into(),
-                ],
+            nodes: vec![ListItem::from_vec_with_context(
+                vec![Paragraph::from_vec_with_context(
+                    vec![Text::new("unordered list item").into()],
+                    None,
+                )
+                .into()],
                 None,
             )
             .into()],

@@ -63,11 +63,11 @@ impl Serializer for Bold {
 }
 
 impl Branch<BoldNodes> for Bold {
-    fn new(_: &Option<Context>) -> Self {
+    fn new_with_context(_: &Option<Context>) -> Self {
         Self { nodes: vec![] }
     }
 
-    fn from_vec(data: Vec<BoldNodes>, _: Option<Context>) -> Self {
+    fn from_vec_with_context(data: Vec<BoldNodes>, _: Option<Context>) -> Self {
         Self { nodes: data }
     }
 
@@ -89,7 +89,7 @@ impl Branch<BoldNodes> for Bold {
 
 impl Default for Bold {
     fn default() -> Self {
-        Self::new(&None)
+        Self::new_with_context(&None)
     }
 }
 
@@ -100,7 +100,7 @@ impl Node for Bold {
 }
 
 impl Deserializer for Bold {
-    fn deserialize(input: &str, _: Option<Context>) -> Option<Self> {
+    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(body) =
             tokenizer.get_token_body(vec![Once('*'), Once('*')], vec![Once('*'), Once('*')])
@@ -124,7 +124,7 @@ mod tests {
 
     #[test]
     fn only_text() {
-        let mut b = Bold::new(&None);
+        let mut b = Bold::new();
         b.push(Text::new("B as bold"));
         let str = b.serialize();
         assert_eq!(str, "**B as bold**".to_string());
@@ -132,14 +132,11 @@ mod tests {
 
     #[test]
     fn from_vec() {
-        let b: String = Bold::from_vec(
-            vec![
-                Text::new("B as bold ").into(),
-                Italic::new("Italic").into(),
-                Strikethrough::new("Strikethrough").into(),
-            ],
-            None,
-        )
+        let b: String = Bold::from_vec(vec![
+            Text::new("B as bold ").into(),
+            Italic::new("Italic").into(),
+            Strikethrough::new("Strikethrough").into(),
+        ])
         .serialize();
         assert_eq!(b, "**B as bold _Italic_~~Strikethrough~~**".to_string());
     }
@@ -147,33 +144,26 @@ mod tests {
     #[test]
     fn from_string() {
         assert_eq!(
-            Bold::deserialize_without_context("**b**"),
-            Some(Bold::from_vec(vec![Text::new("b").into()], None))
+            Bold::deserialize("**b**"),
+            Some(Bold::from_vec(vec![Text::new("b").into()]))
         );
 
         assert_eq!(
-            Bold::deserialize_without_context("**b ~~st~~ _i t_**"),
-            Some(Bold::from_vec(
-                vec![
-                    Text::new("b ").into(),
-                    Strikethrough::new("st").into(),
-                    Text::new(" ").into(),
-                    Italic::new("i t").into()
-                ],
-                None
-            ))
+            Bold::deserialize("**b ~~st~~ _i t_**"),
+            Some(Bold::from_vec(vec![
+                Text::new("b ").into(),
+                Strikethrough::new("st").into(),
+                Text::new(" ").into(),
+                Italic::new("i t").into()
+            ]))
         );
     }
 
     #[test]
     fn len() {
-        assert_eq!(Bold::from_vec(vec![Text::new("T").into()], None).len(), 5);
+        assert_eq!(Bold::from_vec(vec![Text::new("T").into()]).len(), 5);
         assert_eq!(
-            Bold::from_vec(
-                vec![Text::new("T").into(), Strikethrough::new("S").into()],
-                None
-            )
-            .len(),
+            Bold::from_vec(vec![Text::new("T").into(), Strikethrough::new("S").into()]).len(),
             10
         );
     }

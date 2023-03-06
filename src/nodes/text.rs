@@ -39,7 +39,7 @@ impl From<Text> for ParagraphNodes {
 }
 
 impl Deserializer for Text {
-    fn deserialize(input: &str, _: Option<Context>) -> Option<Self> {
+    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         Some(Text::new(input.to_string()))
     }
 }
@@ -79,6 +79,6 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(Text::deserialize_without_context("t"), Some(Text::new("t")));
+        assert_eq!(Text::deserialize("t"), Some(Text::new("t")));
     }
 }

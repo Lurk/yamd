@@ -40,7 +40,7 @@ impl Node for Anchor {
 }
 
 impl Deserializer for Anchor {
-    fn deserialize(input: &str, _: Option<Context>) -> Option<Self> {
+    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(text_part) = tokenizer.get_token_body(vec![Once('[')], vec![Once(']')]) {
             let text_part = text_part.to_string();
@@ -76,10 +76,7 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(
-            Anchor::deserialize_without_context("[1](2)"),
-            Some(Anchor::new("2", "1"))
-        )
+        assert_eq!(Anchor::deserialize("[1](2)"), Some(Anchor::new("2", "1")))
     }
 
     #[test]

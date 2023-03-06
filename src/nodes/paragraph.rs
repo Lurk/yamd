@@ -51,11 +51,11 @@ pub struct Paragraph {
 }
 
 impl Branch<ParagraphNodes> for Paragraph {
-    fn new(_: &Option<Context>) -> Self {
+    fn new_with_context(_: &Option<Context>) -> Self {
         Self { nodes: vec![] }
     }
 
-    fn from_vec(data: Vec<ParagraphNodes>, _: Option<Context>) -> Self {
+    fn from_vec_with_context(data: Vec<ParagraphNodes>, _: Option<Context>) -> Self {
         Self { nodes: data }
     }
 
@@ -82,7 +82,7 @@ impl Branch<ParagraphNodes> for Paragraph {
 }
 
 impl Deserializer for Paragraph {
-    fn deserialize(input: &str, _: Option<Context>) -> Option<Self> {
+    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         let body = tokenizer
             .get_token_body_with_options(vec![], vec![Once('\n'), Once('\n')], true)
@@ -103,7 +103,7 @@ impl Serializer for Paragraph {
 
 impl Default for Paragraph {
     fn default() -> Self {
-        Self::new(&None)
+        Self::new_with_context(&None)
     }
 }
 
@@ -125,8 +125,8 @@ impl FallbackNode for Paragraph {
         Self: Into<BranchNodes>,
     {
         Box::new(|input| {
-            Paragraph::deserialize_without_context(input)
-                .unwrap_or(Paragraph::new(&None))
+            Paragraph::deserialize(input)
+                .unwrap_or(Paragraph::new_with_context(&None))
                 .into()
         })
     }
@@ -146,9 +146,9 @@ mod tests {
 
     #[test]
     fn push() {
-        let mut p = Paragraph::new(&None);
+        let mut p = Paragraph::new();
         p.push(Text::new("simple text "));
-        p.push(Bold::from_vec(vec![Text::new("bold text").into()], None));
+        p.push(Bold::from_vec(vec![Text::new("bold text").into()]));
         p.push(InlineCode::new("let foo='bar';"));
 
         assert_eq!(
@@ -159,14 +159,11 @@ mod tests {
 
     #[test]
     fn from_vec() {
-        let p: String = Paragraph::from_vec(
-            vec![
-                Text::new("simple text ").into(),
-                Bold::from_vec(vec![Text::new("bold text").into()], None).into(),
-                InlineCode::new("let foo='bar';").into(),
-            ],
-            None,
-        )
+        let p: String = Paragraph::from_vec(vec![
+            Text::new("simple text ").into(),
+            Bold::from_vec_with_context(vec![Text::new("bold text").into()], None).into(),
+            InlineCode::new("let foo='bar';").into(),
+        ])
         .serialize();
 
         assert_eq!(p, "simple text **bold text**`let foo='bar';`".to_string());
@@ -175,19 +172,16 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Paragraph::deserialize_without_context("simple text **bold text**`let foo='bar';`"),
-            Some(Paragraph::from_vec(
-                vec![
-                    Text::new("simple text ").into(),
-                    Bold::from_vec(vec![Text::new("bold text").into()], None).into(),
-                    InlineCode::new("let foo='bar';").into(),
-                ],
-                None
-            ))
+            Paragraph::deserialize("simple text **bold text**`let foo='bar';`"),
+            Some(Paragraph::from_vec(vec![
+                Text::new("simple text ").into(),
+                Bold::from_vec(vec![Text::new("bold text").into()]).into(),
+                InlineCode::new("let foo='bar';").into(),
+            ]))
         );
         assert_eq!(
-            Paragraph::deserialize_without_context("1 2\n\n3"),
-            Some(Paragraph::from_vec(vec![Text::new("1 2").into()], None))
+            Paragraph::deserialize("1 2\n\n3"),
+            Some(Paragraph::from_vec(vec![Text::new("1 2").into()]))
         );
     }
 }

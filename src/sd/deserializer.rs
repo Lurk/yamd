@@ -4,18 +4,32 @@ pub trait Branch<BranchNodes>
 where
     BranchNodes: Node,
 {
-    fn new(ctx: &Option<Context>) -> Self;
+    fn new_with_context(ctx: &Option<Context>) -> Self;
     fn push<CanBeNode: Into<BranchNodes>>(&mut self, node: CanBeNode);
-    fn from_vec(nodes: Vec<BranchNodes>, ctx: Option<Context>) -> Self;
+    fn from_vec_with_context(nodes: Vec<BranchNodes>, ctx: Option<Context>) -> Self;
     fn get_maybe_nodes() -> Vec<MaybeNode<BranchNodes>>;
     fn get_fallback_node() -> Option<DefinitelyNode<BranchNodes>>;
     fn get_outer_token_length(&self) -> usize;
+
+    fn new() -> Self
+    where
+        Self: Sized,
+    {
+        Self::new_with_context(&None)
+    }
+
+    fn from_vec(nodes: Vec<BranchNodes>) -> Self
+    where
+        Self: Sized,
+    {
+        Self::from_vec_with_context(nodes, None)
+    }
 
     fn parse_branch(input: &str, ctx: &Option<Context>) -> Option<Self>
     where
         Self: Sized + Deserializer + Node,
     {
-        let mut branch = Self::new(ctx);
+        let mut branch = Self::new_with_context(ctx);
         let mut current_position = 0;
         let mut fallback_position = 0;
         let fallback_node = Self::get_fallback_node();
@@ -66,7 +80,7 @@ pub trait Node {
         Self: Sized + Deserializer + Into<BranchNodes>,
     {
         Box::new(|input, ctx| {
-            if let Some(node) = Self::deserialize(input, ctx) {
+            if let Some(node) = Self::deserialize_with_context(input, ctx) {
                 return Some(node.into());
             }
             None
@@ -79,13 +93,14 @@ pub trait Node {
 }
 
 pub trait Deserializer {
-    fn deserialize(input: &str, ctx: Option<Context>) -> Option<Self>
+    fn deserialize_with_context(input: &str, ctx: Option<Context>) -> Option<Self>
     where
         Self: Sized;
-    fn deserialize_without_context(input: &str) -> Option<Self>
+
+    fn deserialize(input: &str) -> Option<Self>
     where
         Self: Sized,
     {
-        Self::deserialize(input, None)
+        Self::deserialize_with_context(input, None)
     }
 }

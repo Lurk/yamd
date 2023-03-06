@@ -65,7 +65,7 @@ impl Serializer for UnorderedListItemNodes {
 }
 
 impl Branch<UnorderedListItemNodes> for ListItem {
-    fn new(ctx: &Option<Context>) -> Self {
+    fn new_with_context(ctx: &Option<Context>) -> Self {
         Self {
             level: Self::get_level_from_context(ctx),
             nodes: vec![],
@@ -76,7 +76,7 @@ impl Branch<UnorderedListItemNodes> for ListItem {
         self.nodes.push(node.into());
     }
 
-    fn from_vec(nodes: Vec<UnorderedListItemNodes>, ctx: Option<Context>) -> Self {
+    fn from_vec_with_context(nodes: Vec<UnorderedListItemNodes>, ctx: Option<Context>) -> Self {
         Self {
             level: Self::get_level_from_context(&ctx),
             nodes,
@@ -124,7 +124,7 @@ impl Serializer for ListItem {
 }
 
 impl Deserializer for ListItem {
-    fn deserialize(input: &str, ctx: Option<Context>) -> Option<Self> {
+    fn deserialize_with_context(input: &str, ctx: Option<Context>) -> Option<Self> {
         let level = Self::get_level_from_context(&ctx);
         let mut tokenizer = Tokenizer::new(input);
         if let Some(body) = tokenizer.get_token_body_with_options(
@@ -160,31 +160,31 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            ListItem::deserialize("- foo", None),
+            ListItem::deserialize("- foo"),
             Some(ListItem {
                 level: 0,
-                nodes: vec![Paragraph::from_vec(vec![Text::new("foo").into()], None).into()]
+                nodes: vec![Paragraph::from_vec(vec![Text::new("foo").into()]).into()]
             })
         );
         let mut ctx = Context::new();
         ctx.add("level", 3);
         assert_eq!(
-            ListItem::deserialize("    - foo", Some(ctx)),
+            ListItem::deserialize_with_context("    - foo", Some(ctx)),
             Some(ListItem {
                 level: 4,
-                nodes: vec![Paragraph::from_vec(vec![Text::new("foo").into()], None).into()]
+                nodes: vec![Paragraph::from_vec(vec![Text::new("foo").into()]).into()]
             })
         );
-        assert_eq!(ListItem::deserialize("  s  - foo", None), None);
+        assert_eq!(ListItem::deserialize("  s  - foo"), None);
     }
 
     #[test]
     fn deserialize_with_body() {
         assert_eq!(
-            ListItem::deserialize("- foo\nbla\n- bar", None),
+            ListItem::deserialize("- foo\nbla\n- bar"),
             Some(ListItem {
                 level: 0,
-                nodes: vec![Paragraph::from_vec(vec![Text::new("foo\nbla").into()], None).into()]
+                nodes: vec![Paragraph::from_vec(vec![Text::new("foo\nbla").into()]).into()]
             })
         )
     }
@@ -192,34 +192,23 @@ mod tests {
     #[test]
     fn deserialize_with_nested_list() {
         assert_eq!(
-            ListItem::deserialize("- foo\n - bar\n - baz", None),
+            ListItem::deserialize("- foo\n - bar\n - baz"),
             Some(ListItem {
                 level: 0,
                 nodes: vec![
-                    Paragraph::from_vec(vec![Text::new("foo").into()], None).into(),
-                    List::from_vec(
-                        vec![
-                            ListItem {
-                                level: 1,
-                                nodes: vec![Paragraph::from_vec(
-                                    vec![Text::new("bar").into()],
-                                    None
-                                )
-                                .into()]
-                            }
-                            .into(),
-                            ListItem {
-                                level: 1,
-                                nodes: vec![Paragraph::from_vec(
-                                    vec![Text::new("baz").into()],
-                                    None
-                                )
-                                .into()]
-                            }
-                            .into()
-                        ],
-                        None
-                    )
+                    Paragraph::from_vec(vec![Text::new("foo").into()]).into(),
+                    List::from_vec(vec![
+                        ListItem {
+                            level: 1,
+                            nodes: vec![Paragraph::from_vec(vec![Text::new("bar").into()]).into()]
+                        }
+                        .into(),
+                        ListItem {
+                            level: 1,
+                            nodes: vec![Paragraph::from_vec(vec![Text::new("baz").into()]).into()]
+                        }
+                        .into()
+                    ])
                     .into()
                 ]
             })
@@ -236,46 +225,40 @@ mod tests {
         ctx_for_level_1.add("level", 1);
 
         assert_eq!(
-            ListItem::deserialize("- level 0\n - level 1\n  - level 2\n - level 1", None),
+            ListItem::deserialize("- level 0\n - level 1\n  - level 2\n - level 1"),
             Some(ListItem {
                 level: 0,
                 nodes: vec![
-                    Paragraph::from_vec(vec![Text::new("level 0").into()], None).into(),
-                    List::from_vec(
-                        vec![
-                            ListItem {
-                                level: 1,
-                                nodes: vec![
-                                    Paragraph::from_vec(vec![Text::new("level 1").into()], None)
-                                        .into(),
-                                    List::from_vec(
-                                        vec![ListItem {
-                                            level: 2,
-                                            nodes: vec![Paragraph::from_vec(
-                                                vec![Text::new("level 2").into()],
-                                                Some(ctx_for_level_2)
-                                            )
-                                            .into()]
-                                        }
-                                        .into()],
-                                        Some(ctx_for_level_1)
-                                    )
-                                    .into()
-                                ]
-                            }
-                            .into(),
-                            ListItem {
-                                level: 1,
-                                nodes: vec![Paragraph::from_vec(
-                                    vec![Text::new("level 1").into()],
-                                    None
+                    Paragraph::from_vec(vec![Text::new("level 0").into()]).into(),
+                    List::from_vec(vec![
+                        ListItem {
+                            level: 1,
+                            nodes: vec![
+                                Paragraph::from_vec(vec![Text::new("level 1").into()]).into(),
+                                List::from_vec_with_context(
+                                    vec![ListItem {
+                                        level: 2,
+                                        nodes: vec![Paragraph::from_vec(vec![Text::new(
+                                            "level 2"
+                                        )
+                                        .into()])
+                                        .into()]
+                                    }
+                                    .into()],
+                                    Some(ctx_for_level_1)
                                 )
-                                .into()]
-                            }
-                            .into()
-                        ],
-                        None
-                    )
+                                .into()
+                            ]
+                        }
+                        .into(),
+                        ListItem {
+                            level: 1,
+                            nodes: vec![
+                                Paragraph::from_vec(vec![Text::new("level 1").into()]).into()
+                            ]
+                        }
+                        .into()
+                    ])
                     .into()
                 ]
             })
@@ -287,7 +270,7 @@ mod tests {
         assert_eq!(
             ListItem {
                 level: 0,
-                nodes: vec![Paragraph::from_vec(vec![Text::new("foo").into()], None).into()]
+                nodes: vec![Paragraph::from_vec(vec![Text::new("foo").into()]).into()]
             }
             .serialize(),
             String::from("- foo")
@@ -295,7 +278,7 @@ mod tests {
         assert_eq!(
             ListItem {
                 level: 6,
-                nodes: vec![Paragraph::from_vec(vec![Text::new("foo").into()], None).into()]
+                nodes: vec![Paragraph::from_vec(vec![Text::new("foo").into()]).into()]
             }
             .serialize(),
             String::from("      - foo")
@@ -307,7 +290,7 @@ mod tests {
         assert_eq!(
             ListItem {
                 level: 0,
-                nodes: vec![Paragraph::from_vec(vec![Text::new("foo").into()], None).into()]
+                nodes: vec![Paragraph::from_vec(vec![Text::new("foo").into()]).into()]
             }
             .len(),
             5
@@ -315,7 +298,7 @@ mod tests {
         assert_eq!(
             ListItem {
                 level: 3,
-                nodes: vec![Paragraph::from_vec(vec![Text::new("foo").into()], None).into()]
+                nodes: vec![Paragraph::from_vec(vec![Text::new("foo").into()]).into()]
             }
             .len(),
             9

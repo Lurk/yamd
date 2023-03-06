@@ -35,7 +35,7 @@ impl Node for Image {
 }
 
 impl Deserializer for Image {
-    fn deserialize(input: &str, _: Option<Context>) -> Option<Self> {
+    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(alt_body) =
             tokenizer.get_token_body(vec![Once('!'), Once('[')], vec![Once(']')])
@@ -77,10 +77,10 @@ mod tests {
     #[test]
     fn deserializer() {
         assert_eq!(
-            Image::deserialize_without_context("![alt](url)"),
+            Image::deserialize("![alt](url)"),
             Some(Image::new("alt", "url"))
         );
-        assert_eq!(Image::deserialize_without_context("![alt](url"), None);
-        assert_eq!(Image::deserialize_without_context("[alt](url)"), None);
+        assert_eq!(Image::deserialize("![alt](url"), None);
+        assert_eq!(Image::deserialize("[alt](url)"), None);
     }
 }

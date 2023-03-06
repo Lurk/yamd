@@ -29,7 +29,7 @@ impl Heading {
 }
 
 impl Deserializer for Heading {
-    fn deserialize(input: &str, _: Option<Context>) -> Option<Self> {
+    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let start_tokens = [
             vec![Once('#'), Once(' ')],
             vec![RepeatTimes(2, '#'), Once(' ')],
@@ -111,23 +111,20 @@ mod tests {
     #[test]
     fn from_string() {
         assert_eq!(
-            Heading::deserialize_without_context("## Header"),
+            Heading::deserialize("## Header"),
             Some(Heading::new("Header", 2))
         );
         assert_eq!(
-            Heading::deserialize_without_context("### Head"),
+            Heading::deserialize("### Head"),
             Some(Heading::new("Head", 3))
         );
         assert_eq!(
-            Heading::deserialize_without_context("### Head\n\nsome other thing"),
+            Heading::deserialize("### Head\n\nsome other thing"),
             Some(Heading::new("Head", 3))
         );
-        assert_eq!(Heading::deserialize_without_context("not a header"), None);
-        assert_eq!(Heading::deserialize_without_context("######"), None);
-        assert_eq!(
-            Heading::deserialize_without_context("######also not a header"),
-            None
-        );
+        assert_eq!(Heading::deserialize("not a header"), None);
+        assert_eq!(Heading::deserialize("######"), None);
+        assert_eq!(Heading::deserialize("######also not a header"), None);
     }
 
     #[test]
