@@ -48,7 +48,7 @@ pub struct List {
 }
 
 impl List {
-    fn get_list_tupe_from_context(ctx: &Option<Context>) -> ListTypes {
+    fn get_list_type_from_context(ctx: &Option<Context>) -> ListTypes {
         if let Some(ctx) = ctx {
             if let Some(list_type) = ctx.get_char_value("list_type") {
                 if list_type == '+' {
@@ -122,7 +122,7 @@ impl Deserializer for List {
 impl Branch<ListNodes> for List {
     fn new_with_context(ctx: &Option<Context>) -> Self {
         Self {
-            list_type: Self::get_list_tupe_from_context(ctx),
+            list_type: Self::get_list_type_from_context(ctx),
             nodes: vec![],
             level: Self::get_level_from_context(ctx),
         }
@@ -134,7 +134,7 @@ impl Branch<ListNodes> for List {
 
     fn from_vec_with_context(nodes: Vec<ListNodes>, ctx: Option<Context>) -> Self {
         Self {
-            list_type: Self::get_list_tupe_from_context(&ctx),
+            list_type: Self::get_list_type_from_context(&ctx),
             nodes,
             level: Self::get_level_from_context(&ctx),
         }
