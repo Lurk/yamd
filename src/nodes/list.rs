@@ -67,6 +67,21 @@ impl List {
         }
         0
     }
+
+    pub fn create_context(level: Option<usize>, list_type: &ListTypes) -> Context {
+        let mut ctx = Context::new();
+        ctx.add(
+            "list_type",
+            match list_type {
+                ListTypes::Unordered => '-',
+                ListTypes::Ordered => '+',
+            },
+        );
+        if let Some(level) = level {
+            ctx.add("level", level);
+        }
+        ctx
+    }
 }
 
 impl Node for List {
@@ -74,16 +89,7 @@ impl Node for List {
         self.nodes.iter().map(|node| node.len()).sum()
     }
     fn context(&self) -> Option<Context> {
-        let mut ctx = Context::new();
-        ctx.add(
-            "list_type",
-            match self.list_type {
-                ListTypes::Unordered => '-',
-                ListTypes::Ordered => '+',
-            },
-        );
-        ctx.add("level", self.level);
-        Some(ctx)
+        Some(Self::create_context(Some(self.level), &self.list_type))
     }
     fn serialize(&self) -> String {
         self.nodes
@@ -97,20 +103,23 @@ impl Node for List {
 impl Deserializer for List {
     fn deserialize_with_context(input: &str, ctx: Option<Context>) -> Option<Self> {
         if ctx.is_none() {
-            let mut ctx = Context::new();
             let tokenizer = Tokenizer::new(input);
             if tokenizer
                 .get_body_start_position(vec![ZerroOrMore('\n'), ZerroOrMore(' '), Once('-')])
                 .is_some()
             {
-                ctx.add("list_type", '-');
-                return Self::parse_branch(input, &Some(ctx));
+                return Self::parse_branch(
+                    input,
+                    &Some(Self::create_context(None, &ListTypes::Unordered)),
+                );
             } else if tokenizer
                 .get_body_start_position(vec![ZerroOrMore('\n'), ZerroOrMore(' '), Once('+')])
                 .is_some()
             {
-                ctx.add("list_type", '+');
-                return Self::parse_branch(input, &Some(ctx));
+                return Self::parse_branch(
+                    input,
+                    &Some(Self::create_context(None, &ListTypes::Ordered)),
+                );
             }
         } else {
             return Self::parse_branch(input, &ctx);
@@ -157,7 +166,7 @@ impl Branch<ListNodes> for List {
 mod tests {
     use crate::{
         nodes::{list_item::ListItem, paragraph::Paragraph, text::Text},
-        sd::{context::Context, deserializer::Branch, node::Node},
+        sd::{deserializer::Branch, node::Node},
     };
 
     use super::{List, ListTypes};
@@ -180,15 +189,13 @@ mod tests {
 
     #[test]
     fn serialize_ordered() {
-        let mut ctx = Context::new();
-        ctx.add("list_type", '+');
         let list = List::from_vec_with_context(
             vec![ListItem::from_vec_with_context(
                 vec![Paragraph::from_vec(vec![Text::new("ordered list item").into()]).into()],
-                Some(ctx.clone()),
+                Some(List::create_context(None, &ListTypes::Ordered)),
             )
             .into()],
-            Some(ctx),
+            Some(List::create_context(None, &ListTypes::Ordered)),
         );
 
         assert_eq!(list.serialize(), "+ ordered list item");

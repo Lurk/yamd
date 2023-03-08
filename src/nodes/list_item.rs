@@ -163,9 +163,12 @@ impl Deserializer for ListItem {
 #[cfg(test)]
 mod tests {
     use crate::{
-        nodes::{list::List, paragraph::Paragraph, text::Text},
+        nodes::{
+            list::{List, ListTypes},
+            paragraph::Paragraph,
+            text::Text,
+        },
         sd::{
-            context::Context,
             deserializer::{Branch, Deserializer},
             node::Node,
         },
@@ -182,13 +185,14 @@ mod tests {
             ])
             .into()]))
         );
-        let mut ctx = Context::new();
-        ctx.add("level", 3);
         assert_eq!(
-            ListItem::deserialize_with_context("    - foo", Some(ctx.clone())),
+            ListItem::deserialize_with_context(
+                "    - foo",
+                Some(List::create_context(Some(3), &ListTypes::Unordered))
+            ),
             Some(ListItem::from_vec_with_context(
                 vec![Paragraph::from_vec(vec![Text::new("foo").into()]).into()],
-                Some(ctx.clone())
+                Some(List::create_context(Some(3), &ListTypes::Unordered))
             ))
         );
         assert_eq!(ListItem::deserialize("  s  - foo"), None);
@@ -207,9 +211,6 @@ mod tests {
 
     #[test]
     fn deserialize_with_nested_list() {
-        let mut ctx = Context::new();
-        ctx.add("level", 0);
-
         assert_eq!(
             ListItem::deserialize("- foo\n - bar\n - baz"),
             Some(ListItem::from_vec(vec![
@@ -217,12 +218,12 @@ mod tests {
                 List::from_vec(vec![
                     ListItem::from_vec_with_context(
                         vec![Paragraph::from_vec(vec![Text::new("bar").into()]).into()],
-                        Some(ctx.clone())
+                        Some(List::create_context(Some(0), &ListTypes::Unordered))
                     )
                     .into(),
                     ListItem::from_vec_with_context(
                         vec![Paragraph::from_vec(vec![Text::new("baz").into()]).into()],
-                        Some(ctx)
+                        Some(List::create_context(Some(0), &ListTypes::Unordered))
                     )
                     .into()
                 ])
@@ -233,16 +234,6 @@ mod tests {
 
     #[test]
     fn deserialize_with_deeply_nested_list() {
-        let mut ctx_for_level_2 = Context::new();
-        ctx_for_level_2.add("list_type", '-');
-        ctx_for_level_2.add("level", 2);
-        let mut ctx_for_level_1 = Context::new();
-        ctx_for_level_1.add("list_type", '-');
-        ctx_for_level_1.add("level", 1);
-        let mut ctx_for_level_0 = Context::new();
-        ctx_for_level_0.add("list_type", '-');
-        ctx_for_level_0.add("level", 0);
-
         assert_eq!(
             ListItem::deserialize("- level 0\n - level 1\n  - level 2\n - level 1"),
             Some(ListItem::from_vec(vec![
@@ -255,19 +246,19 @@ mod tests {
                                 vec![ListItem::from_vec_with_context(
                                     vec![Paragraph::from_vec(vec![Text::new("level 2").into()])
                                         .into()],
-                                    Some(ctx_for_level_1.clone())
+                                    Some(List::create_context(Some(1), &ListTypes::Unordered))
                                 )
                                 .into()],
-                                Some(ctx_for_level_1.clone())
+                                Some(List::create_context(Some(1), &ListTypes::Unordered))
                             )
                             .into()
                         ],
-                        Some(ctx_for_level_0.clone())
+                        Some(List::create_context(Some(0), &ListTypes::Unordered))
                     )
                     .into(),
                     ListItem::from_vec_with_context(
                         vec![Paragraph::from_vec(vec![Text::new("level 1").into()]).into()],
-                        Some(ctx_for_level_0.clone())
+                        Some(List::create_context(Some(0), &ListTypes::Unordered))
                     )
                     .into()
                 ])
@@ -285,13 +276,11 @@ mod tests {
             .serialize(),
             String::from("- foo")
         );
-        let mut ctx = Context::new();
-        ctx.add("level", 5);
 
         assert_eq!(
             ListItem::from_vec_with_context(
                 vec![Paragraph::from_vec(vec![Text::new("foo").into()]).into()],
-                Some(ctx)
+                Some(List::create_context(Some(5), &ListTypes::Unordered))
             )
             .serialize(),
             String::from("      - foo")
@@ -307,13 +296,11 @@ mod tests {
             .len(),
             5
         );
-        let mut ctx = Context::new();
-        ctx.add("level", 2);
 
         assert_eq!(
             ListItem::from_vec_with_context(
                 vec![Paragraph::from_vec(vec![Text::new("foo").into()]).into()],
-                Some(ctx)
+                Some(List::create_context(Some(2), &ListTypes::Unordered))
             )
             .len(),
             9
