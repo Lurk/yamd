@@ -16,12 +16,6 @@ impl InlineCode {
     }
 }
 
-impl From<InlineCode> for ParagraphNodes {
-    fn from(value: InlineCode) -> Self {
-        ParagraphNodes::InlineCode(value)
-    }
-}
-
 impl Node for InlineCode {
     fn len(&self) -> usize {
         self.text.len() + 2

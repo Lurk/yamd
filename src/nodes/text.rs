@@ -26,12 +26,6 @@ impl From<Text> for BoldNodes {
     }
 }
 
-impl From<Text> for ParagraphNodes {
-    fn from(value: Text) -> Self {
-        ParagraphNodes::Text(value)
-    }
-}
-
 impl Deserializer for Text {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         Some(Text::new(input.to_string()))

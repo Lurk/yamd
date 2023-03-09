@@ -41,12 +41,6 @@ pub struct Bold {
     nodes: Vec<BoldNodes>,
 }
 
-impl From<Bold> for ParagraphNodes {
-    fn from(value: Bold) -> Self {
-        ParagraphNodes::B(value)
-    }
-}
-
 impl Branch<BoldNodes> for Bold {
     fn new_with_context(_: &Option<Context>) -> Self {
         Self { nodes: vec![] }

@@ -26,12 +26,6 @@ impl From<Italic> for BoldNodes {
     }
 }
 
-impl From<Italic> for ParagraphNodes {
-    fn from(value: Italic) -> Self {
-        ParagraphNodes::I(value)
-    }
-}
-
 impl Node for Italic {
     fn len(&self) -> usize {
         self.text.len() + 2

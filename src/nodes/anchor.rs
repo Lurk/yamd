@@ -24,12 +24,6 @@ impl Anchor {
     }
 }
 
-impl From<Anchor> for ParagraphNodes {
-    fn from(value: Anchor) -> Self {
-        ParagraphNodes::A(value)
-    }
-}
-
 impl Node for Anchor {
     fn len(&self) -> usize {
         self.text.len() + self.url.len() + 4

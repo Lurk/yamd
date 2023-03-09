@@ -19,6 +19,42 @@ pub enum ParagraphNodes {
     InlineCode(InlineCode),
 }
 
+impl From<Anchor> for ParagraphNodes {
+    fn from(value: Anchor) -> Self {
+        ParagraphNodes::A(value)
+    }
+}
+
+impl From<Bold> for ParagraphNodes {
+    fn from(value: Bold) -> Self {
+        ParagraphNodes::B(value)
+    }
+}
+
+impl From<Italic> for ParagraphNodes {
+    fn from(value: Italic) -> Self {
+        ParagraphNodes::I(value)
+    }
+}
+
+impl From<Strikethrough> for ParagraphNodes {
+    fn from(value: Strikethrough) -> Self {
+        ParagraphNodes::S(value)
+    }
+}
+
+impl From<Text> for ParagraphNodes {
+    fn from(value: Text) -> Self {
+        ParagraphNodes::Text(value)
+    }
+}
+
+impl From<InlineCode> for ParagraphNodes {
+    fn from(value: InlineCode) -> Self {
+        ParagraphNodes::InlineCode(value)
+    }
+}
+
 impl Node for ParagraphNodes {
     fn len(&self) -> usize {
         match self {

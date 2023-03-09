@@ -26,12 +26,6 @@ impl From<Strikethrough> for BoldNodes {
     }
 }
 
-impl From<Strikethrough> for ParagraphNodes {
-    fn from(value: Strikethrough) -> Self {
-        ParagraphNodes::S(value)
-    }
-}
-
 impl Node for Strikethrough {
     fn len(&self) -> usize {
         self.text.len() + 4
