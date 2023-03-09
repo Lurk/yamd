@@ -1,11 +1,7 @@
-use crate::{
-    nodes::bold::BoldNodes,
-    nodes::paragraph::ParagraphNodes,
-    sd::{
-        context::Context,
-        deserializer::{DefinitelyNode, Deserializer, FallbackNode},
-        node::Node,
-    },
+use crate::sd::{
+    context::Context,
+    deserializer::{DefinitelyNode, Deserializer, FallbackNode},
+    node::Node,
 };
 
 /// Representation of a regular text
@@ -17,12 +13,6 @@ pub struct Text {
 impl Text {
     pub fn new<S: Into<String>>(text: S) -> Self {
         Text { text: text.into() }
-    }
-}
-
-impl From<Text> for BoldNodes {
-    fn from(value: Text) -> Self {
-        BoldNodes::Text(value)
     }
 }
 

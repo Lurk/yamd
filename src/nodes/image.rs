@@ -5,8 +5,6 @@ use crate::sd::{
     tokenizer::{Pattern::Once, Tokenizer},
 };
 
-use super::yamd::YamdNodes;
-
 #[derive(Debug, PartialEq)]
 pub struct Image {
     alt: String,

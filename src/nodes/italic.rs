@@ -1,6 +1,4 @@
 use crate::{
-    nodes::bold::BoldNodes,
-    nodes::paragraph::ParagraphNodes,
     sd::{context::Context, deserializer::Deserializer},
     sd::{
         node::Node,
@@ -17,12 +15,6 @@ pub struct Italic {
 impl Italic {
     pub fn new<S: Into<String>>(text: S) -> Self {
         Italic { text: text.into() }
-    }
-}
-
-impl From<Italic> for BoldNodes {
-    fn from(value: Italic) -> Self {
-        BoldNodes::I(value)
     }
 }
 

@@ -1,6 +1,6 @@
 use crate::nodes::{
     anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic,
-    strikethrough::Strikethrough, text::Text, yamd::YamdNodes,
+    strikethrough::Strikethrough, text::Text,
 };
 use crate::sd::node::Node;
 use crate::sd::{

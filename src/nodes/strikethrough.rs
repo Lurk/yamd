@@ -1,6 +1,4 @@
 use crate::{
-    nodes::bold::BoldNodes,
-    nodes::paragraph::ParagraphNodes,
     sd::{context::Context, deserializer::Deserializer},
     sd::{
         node::Node,
@@ -17,12 +15,6 @@ pub struct Strikethrough {
 impl Strikethrough {
     pub fn new<IS: Into<String>>(text: IS) -> Self {
         Strikethrough { text: text.into() }
-    }
-}
-
-impl From<Strikethrough> for BoldNodes {
-    fn from(value: Strikethrough) -> Self {
-        BoldNodes::S(value)
     }
 }
 

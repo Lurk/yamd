@@ -1,6 +1,5 @@
 use crate::{
     nodes::italic::Italic,
-    nodes::paragraph::ParagraphNodes,
     nodes::strikethrough::Strikethrough,
     nodes::text::Text,
     sd::{
@@ -16,6 +15,24 @@ pub enum BoldNodes {
     Text(Text),
     I(Italic),
     S(Strikethrough),
+}
+
+impl From<Text> for BoldNodes {
+    fn from(value: Text) -> Self {
+        BoldNodes::Text(value)
+    }
+}
+
+impl From<Italic> for BoldNodes {
+    fn from(value: Italic) -> Self {
+        BoldNodes::I(value)
+    }
+}
+
+impl From<Strikethrough> for BoldNodes {
+    fn from(value: Strikethrough) -> Self {
+        BoldNodes::S(value)
+    }
 }
 
 impl Node for BoldNodes {
