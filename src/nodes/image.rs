@@ -46,12 +46,6 @@ impl Deserializer for Image {
     }
 }
 
-impl From<Image> for YamdNodes {
-    fn from(value: Image) -> Self {
-        YamdNodes::Image(value)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::sd::{deserializer::Deserializer, node::Node};

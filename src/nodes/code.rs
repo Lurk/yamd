@@ -48,12 +48,6 @@ impl Deserializer for Code {
     }
 }
 
-impl From<Code> for YamdNodes {
-    fn from(value: Code) -> Self {
-        YamdNodes::Code(value)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{

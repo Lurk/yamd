@@ -54,12 +54,6 @@ impl Deserializer for Heading {
     }
 }
 
-impl From<Heading> for YamdNodes {
-    fn from(value: Heading) -> Self {
-        YamdNodes::H(value)
-    }
-}
-
 impl Node for Heading {
     fn len(&self) -> usize {
         self.text.len() + self.level as usize + 1

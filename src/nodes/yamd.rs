@@ -5,7 +5,7 @@ use crate::{
     sd::{context::Context, node::Node},
 };
 
-use super::{code::Code, image::Image};
+use super::{code::Code, image::Image, list::List};
 
 #[derive(Debug, PartialEq)]
 pub enum YamdNodes {
@@ -13,16 +13,49 @@ pub enum YamdNodes {
     H(Heading),
     Image(Image),
     Code(Code),
+    List(List),
+}
+
+impl From<Paragraph> for YamdNodes {
+    fn from(value: Paragraph) -> Self {
+        YamdNodes::P(value)
+    }
+}
+
+impl From<Heading> for YamdNodes {
+    fn from(value: Heading) -> Self {
+        YamdNodes::H(value)
+    }
+}
+
+impl From<Image> for YamdNodes {
+    fn from(value: Image) -> Self {
+        YamdNodes::Image(value)
+    }
+}
+
+impl From<Code> for YamdNodes {
+    fn from(value: Code) -> Self {
+        YamdNodes::Code(value)
+    }
+}
+
+impl From<List> for YamdNodes {
+    fn from(value: List) -> Self {
+        YamdNodes::List(value)
+    }
 }
 
 impl Node for YamdNodes {
     fn len(&self) -> usize {
-        match self {
-            YamdNodes::P(node) => node.len() + 2,
-            YamdNodes::H(node) => node.len() + 2,
-            YamdNodes::Image(node) => node.len() + 2,
-            YamdNodes::Code(node) => node.len() + 2,
-        }
+        let len = match self {
+            YamdNodes::P(node) => node.len(),
+            YamdNodes::H(node) => node.len(),
+            YamdNodes::Image(node) => node.len(),
+            YamdNodes::Code(node) => node.len(),
+            YamdNodes::List(node) => node.len(),
+        };
+        len + 2
     }
     fn serialize(&self) -> String {
         match self {
@@ -30,6 +63,7 @@ impl Node for YamdNodes {
             YamdNodes::H(node) => node.serialize(),
             YamdNodes::Image(node) => node.serialize(),
             YamdNodes::Code(node) => node.serialize(),
+            YamdNodes::List(node) => node.serialize(),
         }
     }
 }
@@ -57,6 +91,7 @@ impl Branch<YamdNodes> for Yamd {
             Heading::maybe_node(),
             Image::maybe_node(),
             Code::maybe_node(),
+            List::maybe_node(),
         ]
     }
 

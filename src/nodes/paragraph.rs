@@ -94,12 +94,6 @@ impl Default for Paragraph {
     }
 }
 
-impl From<Paragraph> for YamdNodes {
-    fn from(value: Paragraph) -> Self {
-        YamdNodes::P(value)
-    }
-}
-
 impl Node for Paragraph {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum()
