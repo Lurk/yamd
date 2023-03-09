@@ -82,7 +82,7 @@ impl Deserializer for Paragraph {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         let body = tokenizer
-            .get_token_body_with_options(vec![], vec![Once('\n'), Once('\n')], true)
+            .get_token_body_with_end_of_input(vec![], vec![Once('\n'), Once('\n')], true)
             .unwrap_or(input);
         Self::parse_branch(body, &None)
     }

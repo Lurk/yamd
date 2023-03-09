@@ -41,7 +41,7 @@ impl Deserializer for Heading {
 
         for (i, start_token) in start_tokens.iter().enumerate() {
             let mut tokenizer = Tokenizer::new(input);
-            if let Some(body) = tokenizer.get_token_body_with_options(
+            if let Some(body) = tokenizer.get_token_body_with_end_of_input(
                 start_token.to_vec(),
                 vec![Once('\n'), Once('\n')],
                 true,

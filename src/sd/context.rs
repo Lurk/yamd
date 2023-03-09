@@ -17,7 +17,7 @@ impl From<char> for ContextValues {
         ContextValues::Char(value)
     }
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Context {
     inner: HashMap<String, ContextValues>,
 }

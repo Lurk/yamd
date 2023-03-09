@@ -1,4 +1,4 @@
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Pattern {
     Once(char),
     ZerroOrMore(char),
@@ -109,10 +109,10 @@ impl<'input> Tokenizer<'input> {
         start_token: Vec<Pattern>,
         end_token: Vec<Pattern>,
     ) -> Option<&str> {
-        self.get_token_body_with_options(start_token, end_token, false)
+        self.get_token_body_with_end_of_input(start_token, end_token, false)
     }
 
-    pub fn get_token_body_with_options(
+    pub fn get_token_body_with_end_of_input(
         &mut self,
         start_token: Vec<Pattern>,
         end_token: Vec<Pattern>,
