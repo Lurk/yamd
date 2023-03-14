@@ -2,7 +2,10 @@ use crate::sd::{
     context::Context,
     deserializer::Deserializer,
     node::Node,
-    tokenizer::{Pattern::Once, Tokenizer},
+    tokenizer::{
+        Pattern::{Once, ZerroOrMore},
+        Tokenizer,
+    },
 };
 
 #[derive(Debug, PartialEq)]
@@ -32,9 +35,10 @@ impl Node for Image {
 impl Deserializer for Image {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
-        if let Some(alt_body) =
-            tokenizer.get_token_body(vec![Once('!'), Once('[')], vec![Once(']')])
-        {
+        if let Some(alt_body) = tokenizer.get_token_body(
+            vec![ZerroOrMore('\n'), Once('!'), Once('[')],
+            vec![Once(']')],
+        ) {
             let alt_body = alt_body.to_string();
             if let Some(url_body) = tokenizer.get_token_body(vec![Once('(')], vec![Once(')')]) {
                 return Some(Self::new(alt_body, url_body.to_string()));

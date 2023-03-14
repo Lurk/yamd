@@ -5,7 +5,7 @@ use crate::{
     sd::{context::Context, node::Node},
 };
 
-use super::{code::Code, image::Image, list::List};
+use super::{code::Code, image::Image, image_gallery::ImageGalery, list::List};
 
 #[derive(Debug, PartialEq)]
 pub enum YamdNodes {
@@ -14,6 +14,7 @@ pub enum YamdNodes {
     Image(Image),
     Code(Code),
     List(List),
+    ImageGalery(ImageGalery),
 }
 
 impl From<Paragraph> for YamdNodes {
@@ -46,6 +47,12 @@ impl From<List> for YamdNodes {
     }
 }
 
+impl From<ImageGalery> for YamdNodes {
+    fn from(value: ImageGalery) -> Self {
+        YamdNodes::ImageGalery(value)
+    }
+}
+
 impl Node for YamdNodes {
     fn len(&self) -> usize {
         let len = match self {
@@ -54,6 +61,7 @@ impl Node for YamdNodes {
             YamdNodes::Image(node) => node.len(),
             YamdNodes::Code(node) => node.len(),
             YamdNodes::List(node) => node.len(),
+            YamdNodes::ImageGalery(node) => node.len(),
         };
         len + 2
     }
@@ -64,10 +72,12 @@ impl Node for YamdNodes {
             YamdNodes::Image(node) => node.serialize(),
             YamdNodes::Code(node) => node.serialize(),
             YamdNodes::List(node) => node.serialize(),
+            YamdNodes::ImageGalery(node) => node.serialize(),
         }
     }
 }
 
+/// Yamd is a parrent node for every node.
 #[derive(Debug, PartialEq)]
 pub struct Yamd {
     nodes: Vec<YamdNodes>,
@@ -92,6 +102,7 @@ impl Branch<YamdNodes> for Yamd {
             Image::maybe_node(),
             Code::maybe_node(),
             List::maybe_node(),
+            ImageGalery::maybe_node(),
         ]
     }
 
@@ -134,7 +145,7 @@ mod tests {
     use crate::{
         nodes::heading::Heading,
         nodes::paragraph::Paragraph,
-        nodes::{bold::Bold, code::Code, image::Image, text::Text},
+        nodes::{bold::Bold, code::Code, image::Image, image_gallery::ImageGalery, text::Text},
         sd::deserializer::Branch,
         sd::{deserializer::Deserializer, node::Node},
     };
@@ -186,7 +197,7 @@ mod tests {
         );
 
         assert_eq!(
-            Yamd::deserialize("```rust\nlet a=1;\n```\n\nt**b**\n\n![a](u)\n\n## h"),
+            Yamd::deserialize("```rust\nlet a=1;\n```\n\nt**b**\n\n![a](u)\n\n## h\n\n!!!\n![a](u)\n![a2](u2)\n!!!"),
             Some(Yamd::from_vec(vec![
                 Code::new("rust", "let a=1;").into(),
                 Paragraph::from_vec(vec![
@@ -196,6 +207,7 @@ mod tests {
                 .into(),
                 Image::new('a', 'u').into(),
                 Heading::new("h", 2).into(),
+                ImageGalery::from_vec(vec![Image::new("a", "u").into(), Image::new("a2", "u2").into()]).into()
             ]))
         );
     }
