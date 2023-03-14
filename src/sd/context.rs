@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+/// Context allows to pass arbitary amount of key/value pairs between nodes in a type safe way
+///
 #[derive(Debug, Clone)]
 pub enum ContextValues {
     Usize(usize),
@@ -17,6 +19,7 @@ impl From<char> for ContextValues {
         ContextValues::Char(value)
     }
 }
+
 #[derive(Clone, Debug)]
 pub struct Context {
     inner: HashMap<String, ContextValues>,
