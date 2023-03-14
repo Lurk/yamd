@@ -3,6 +3,7 @@ pub mod bold;
 pub mod code;
 pub mod heading;
 pub mod image;
+pub mod image_gallery;
 pub mod inline_code;
 pub mod italic;
 pub mod list;

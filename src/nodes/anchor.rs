@@ -15,7 +15,7 @@ pub struct Anchor {
 }
 
 impl Anchor {
-    pub fn new<S: Into<String>>(url: S, text: S) -> Self {
+    pub fn new<S: Into<String>>(text: S, url: S) -> Self {
         Anchor {
             text: text.into(),
             url: url.into(),
@@ -38,7 +38,7 @@ impl Deserializer for Anchor {
         if let Some(text_part) = tokenizer.get_token_body(vec![Once('[')], vec![Once(']')]) {
             let text_part = text_part.to_string();
             if let Some(url_part) = tokenizer.get_token_body(vec![Once('(')], vec![Once(')')]) {
-                return Some(Anchor::new(url_part.to_string(), text_part));
+                return Some(Anchor::new(text_part, url_part.to_string()));
             }
         }
         None
@@ -53,20 +53,20 @@ mod tests {
 
     #[test]
     fn happy_path() {
-        let a = Anchor::new("https://test.io", "nice link");
+        let a = Anchor::new("nice link", "https://test.io");
         assert_eq!(a.text, "nice link");
         assert_eq!(a.url, "https://test.io");
     }
 
     #[test]
     fn to_string_with_text() {
-        let a: String = Anchor::new("https://test.io", "nice link").serialize();
+        let a: String = Anchor::new("nice link", "https://test.io").serialize();
         assert_eq!(a, "[nice link](https://test.io)".to_string());
     }
 
     #[test]
     fn from_string() {
-        assert_eq!(Anchor::deserialize("[1](2)"), Some(Anchor::new("2", "1")))
+        assert_eq!(Anchor::deserialize("[1](2)"), Some(Anchor::new("1", "2")))
     }
 
     #[test]

@@ -39,7 +39,7 @@ impl<'token> Matcher<'token> {
             }
             Some(Pattern::ZerroOrMore(p)) if p != c => self.new_index(c, index + 1),
             Some(Pattern::RepeatTimes(length, p))
-                if (p == c && current_pattern_length < length) =>
+                if (p == c && current_pattern_length + 1 < *length) =>
             {
                 if let Some(count) = self.pattern_lengths.get_mut(index) {
                     *count += 1;
@@ -48,10 +48,11 @@ impl<'token> Matcher<'token> {
                 Some(index)
             }
             Some(Pattern::RepeatTimes(length, p))
-                if (p != c && current_pattern_length == length) =>
+                if (p == c && current_pattern_length + 1 == *length) =>
             {
-                self.new_index(c, index + 1)
+                Some(index + 1)
             }
+            Some(Pattern::RepeatTimes(length, _)) if (*length == 0) => self.new_index(c, index + 1),
             _ => None,
         };
     }
@@ -221,12 +222,21 @@ mod tests {
     }
 
     #[test]
+    fn pattern_starts_with_0_exact_repeat() {
+        let token = &vec![RepeatTimes(0, ' '), Once('-')];
+        let mut m = Matcher::new(token);
+        assert_eq!(m.is_match(&'-'), true);
+        assert_eq!(m.is_done(), true);
+    }
+
+    #[test]
     fn pattern_ends_with_exact_repeat() {
         let token = &vec![Once('-'), RepeatTimes(2, ' ')];
         let mut m = Matcher::new(token);
         assert_eq!(m.is_match(&'-'), true);
         assert_eq!(m.is_match(&' '), true);
         assert_eq!(m.is_match(&' '), true);
+        assert_eq!(m.is_done(), true);
         assert_eq!(m.is_match(&' '), false);
     }
 

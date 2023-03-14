@@ -161,7 +161,7 @@ mod tests {
     use crate::{
         nodes::bold::Bold,
         nodes::inline_code::InlineCode,
-        nodes::text::Text,
+        nodes::{anchor::Anchor, text::Text},
         sd::{
             deserializer::{Branch, Deserializer},
             node::Node,
@@ -198,11 +198,12 @@ mod tests {
     #[test]
     fn deserialize() {
         assert_eq!(
-            Paragraph::deserialize("simple text **bold text**`let foo='bar';`"),
+            Paragraph::deserialize("simple text **bold text**`let foo='bar';`[t](u)"),
             Some(Paragraph::from_vec(vec![
                 Text::new("simple text ").into(),
                 Bold::from_vec(vec![Text::new("bold text").into()]).into(),
                 InlineCode::new("let foo='bar';").into(),
+                Anchor::new("t", "u").into()
             ]))
         );
         assert_eq!(
