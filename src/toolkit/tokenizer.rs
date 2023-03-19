@@ -87,7 +87,7 @@ impl<'input> Tokenizer<'input> {
         Self { input, position: 0 }
     }
 
-    pub fn get_body_start_position<const START_TOKEN_SIZE: usize>(
+    pub fn get_node_body_start_position<const START_TOKEN_SIZE: usize>(
         &self,
         start_token: &'input [Pattern; START_TOKEN_SIZE],
     ) -> Option<usize> {
@@ -108,15 +108,15 @@ impl<'input> Tokenizer<'input> {
         None
     }
 
-    pub fn get_token_body<const START_TOKEN_SIZE: usize, const END_TOKEN_SIZE: usize>(
+    pub fn get_node_body<const START_TOKEN_SIZE: usize, const END_TOKEN_SIZE: usize>(
         &mut self,
         start_token: &'input [Pattern; START_TOKEN_SIZE],
         end_token: &'input [Pattern; END_TOKEN_SIZE],
     ) -> Option<&str> {
-        self.get_token_body_with_end_of_input(start_token, end_token, false)
+        self.get_node_body_with_end_of_input(start_token, end_token, false)
     }
 
-    pub fn get_token_body_with_end_of_input<
+    pub fn get_node_body_with_end_of_input<
         const START_TOKEN_SIZE: usize,
         const END_TOKEN_SIZE: usize,
     >(
@@ -125,7 +125,7 @@ impl<'input> Tokenizer<'input> {
         end_token: &'input [Pattern; END_TOKEN_SIZE],
         match_end_of_input: bool,
     ) -> Option<&str> {
-        if let Some(body_start) = self.get_body_start_position(start_token) {
+        if let Some(body_start) = self.get_node_body_start_position(start_token) {
             let mut end_matcher = Matcher::new(end_token);
             for (index, char) in self.input.chars().enumerate().skip(body_start) {
                 self.position = index;
@@ -151,9 +151,9 @@ mod tests {
     #[test]
     fn parse_part() {
         let mut c = Tokenizer::new("*italic**one more* statement");
-        assert_eq!(c.get_token_body(&[Once('*')], &[Once('*')]), Some("italic"));
+        assert_eq!(c.get_node_body(&[Once('*')], &[Once('*')]), Some("italic"));
         assert_eq!(
-            c.get_token_body(&[Once('*')], &[Once('*')]),
+            c.get_node_body(&[Once('*')], &[Once('*')]),
             Some("one more")
         );
     }

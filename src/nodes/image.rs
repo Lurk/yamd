@@ -36,10 +36,10 @@ impl Deserializer for Image {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(alt_body) =
-            tokenizer.get_token_body(&[ZerroOrMore('\n'), Once('!'), Once('[')], &[Once(']')])
+            tokenizer.get_node_body(&[ZerroOrMore('\n'), Once('!'), Once('[')], &[Once(']')])
         {
             let alt_body = alt_body.to_string();
-            if let Some(url_body) = tokenizer.get_token_body(&[Once('(')], &[Once(')')]) {
+            if let Some(url_body) = tokenizer.get_node_body(&[Once('(')], &[Once(')')]) {
                 return Some(Self::new(alt_body, url_body.to_string()));
             }
         }

@@ -106,7 +106,7 @@ impl Deserializer for List {
         };
         let tokenizer = Tokenizer::new(input);
         if tokenizer
-            .get_body_start_position(&[
+            .get_node_body_start_position(&[
                 ZerroOrMore('\n'),
                 RepeatTimes(level, ' '),
                 Once('-'),
@@ -119,7 +119,7 @@ impl Deserializer for List {
                 &Some(Self::create_context(level, &ListTypes::Unordered)),
             );
         } else if tokenizer
-            .get_body_start_position(&[
+            .get_node_body_start_position(&[
                 ZerroOrMore('\n'),
                 RepeatTimes(level, ' '),
                 Once('+'),

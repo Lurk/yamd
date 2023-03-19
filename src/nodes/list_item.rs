@@ -144,7 +144,7 @@ impl Deserializer for ListItem {
             ListTypes::Ordered => Once('+'),
         };
         let mut tokenizer = Tokenizer::new(input);
-        if let Some(body) = tokenizer.get_token_body_with_end_of_input(
+        if let Some(body) = tokenizer.get_node_body_with_end_of_input(
             &[
                 ZerroOrMore('\n'),
                 RepeatTimes(level, ' '),

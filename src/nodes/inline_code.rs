@@ -27,7 +27,7 @@ impl Node for InlineCode {
 impl Deserializer for InlineCode {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut chars = Tokenizer::new(input);
-        if let Some(body) = chars.get_token_body(&[Once('`')], &[Once('`')]) {
+        if let Some(body) = chars.get_node_body(&[Once('`')], &[Once('`')]) {
             return Some(InlineCode::new(body));
         }
         None

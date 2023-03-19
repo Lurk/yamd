@@ -62,7 +62,7 @@ impl Deserializer for ImageGalery {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         println!("{input}");
-        if let Some(body) = tokenizer.get_token_body(
+        if let Some(body) = tokenizer.get_node_body(
             &[RepeatTimes(3, '!'), Once('\n')],
             &[Once('\n'), Once('!'), Once('!'), Once('!')],
         ) {
