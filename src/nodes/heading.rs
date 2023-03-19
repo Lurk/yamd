@@ -28,19 +28,19 @@ impl Heading {
 impl Deserializer for Heading {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let start_tokens = [
-            vec![Once('#'), Once(' ')],
-            vec![RepeatTimes(2, '#'), Once(' ')],
-            vec![RepeatTimes(3, '#'), Once(' ')],
-            vec![RepeatTimes(4, '#'), Once(' ')],
-            vec![RepeatTimes(5, '#'), Once(' ')],
-            vec![RepeatTimes(6, '#'), Once(' ')],
+            [Once('#'), Once(' ')],
+            [RepeatTimes(2, '#'), Once(' ')],
+            [RepeatTimes(3, '#'), Once(' ')],
+            [RepeatTimes(4, '#'), Once(' ')],
+            [RepeatTimes(5, '#'), Once(' ')],
+            [RepeatTimes(6, '#'), Once(' ')],
         ];
 
         for (i, start_token) in start_tokens.iter().enumerate() {
             let mut tokenizer = Tokenizer::new(input);
             if let Some(body) = tokenizer.get_token_body_with_end_of_input(
-                start_token.to_vec(),
-                vec![Once('\n'), Once('\n')],
+                start_token,
+                &[Once('\n'), Once('\n')],
                 true,
             ) {
                 return Some(Self::new(body, (i + 1).try_into().unwrap_or(1)));

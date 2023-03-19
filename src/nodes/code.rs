@@ -33,11 +33,11 @@ impl Deserializer for Code {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(lang_body) =
-            tokenizer.get_token_body(vec![Once('`'), Once('`'), Once('`')], vec![Once('\n')])
+            tokenizer.get_token_body(&[Once('`'), Once('`'), Once('`')], &[Once('\n')])
         {
             let lang_body = lang_body.to_string();
             if let Some(code_boy) =
-                tokenizer.get_token_body(vec![], vec![Once('\n'), Once('`'), Once('`'), Once('`')])
+                tokenizer.get_token_body(&[], &[Once('\n'), Once('`'), Once('`'), Once('`')])
             {
                 return Some(Self::new(lang_body, code_boy.to_string()));
             }

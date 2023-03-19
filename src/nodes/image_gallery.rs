@@ -63,8 +63,8 @@ impl Deserializer for ImageGalery {
         let mut tokenizer = Tokenizer::new(input);
         println!("{input}");
         if let Some(body) = tokenizer.get_token_body(
-            vec![RepeatTimes(3, '!'), Once('\n')],
-            vec![Once('\n'), Once('!'), Once('!'), Once('!')],
+            &[RepeatTimes(3, '!'), Once('\n')],
+            &[Once('\n'), Once('!'), Once('!'), Once('!')],
         ) {
             println!("aaaaaa: '{body}'");
             return Self::parse_branch(body, &None);
