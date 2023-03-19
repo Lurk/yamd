@@ -78,4 +78,13 @@ mod tests {
         assert_eq!(ctx.get_char_value("char_value"), Some('c'));
         assert_eq!(ctx.get_char_value("not_char_value"), None);
     }
+
+    #[test]
+    fn default() {
+        let mut ctx = Context::default();
+        ctx.add("char_value", 'c');
+
+        assert_eq!(ctx.get_char_value("char_value"), Some('c'));
+        assert_eq!(ctx.get_char_value("not_char_value"), None);
+    }
 }
