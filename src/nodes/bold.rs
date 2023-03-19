@@ -2,7 +2,7 @@ use crate::{
     nodes::italic::Italic,
     nodes::strikethrough::Strikethrough,
     nodes::text::Text,
-    sd::{
+    toolkit::{
         context::Context,
         deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
         node::Node,
@@ -109,7 +109,7 @@ impl Deserializer for Bold {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(body) =
-            tokenizer.get_token_body(vec![Once('*'), Once('*')], vec![Once('*'), Once('*')])
+            tokenizer.get_node_body(&[Once('*'), Once('*')], &[Once('*'), Once('*')])
         {
             return Self::parse_branch(body, &None);
         }
@@ -124,7 +124,7 @@ mod tests {
         nodes::italic::Italic,
         nodes::strikethrough::Strikethrough,
         nodes::text::Text,
-        sd::{
+        toolkit::{
             deserializer::{Branch, Deserializer},
             node::Node,
         },

@@ -1,4 +1,4 @@
-use crate::sd::{
+use crate::toolkit::{
     context::Context,
     deserializer::Deserializer,
     node::Node,
@@ -35,12 +35,11 @@ impl Node for Image {
 impl Deserializer for Image {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
-        if let Some(alt_body) = tokenizer.get_token_body(
-            vec![ZerroOrMore('\n'), Once('!'), Once('[')],
-            vec![Once(']')],
-        ) {
+        if let Some(alt_body) =
+            tokenizer.get_node_body(&[ZerroOrMore('\n'), Once('!'), Once('[')], &[Once(']')])
+        {
             let alt_body = alt_body.to_string();
-            if let Some(url_body) = tokenizer.get_token_body(vec![Once('(')], vec![Once(')')]) {
+            if let Some(url_body) = tokenizer.get_node_body(&[Once('(')], &[Once(')')]) {
                 return Some(Self::new(alt_body, url_body.to_string()));
             }
         }
@@ -50,7 +49,7 @@ impl Deserializer for Image {
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{deserializer::Deserializer, node::Node};
+    use crate::toolkit::{deserializer::Deserializer, node::Node};
 
     use super::Image;
 

@@ -1,6 +1,6 @@
 use crate::{
-    sd::{context::Context, deserializer::Deserializer},
-    sd::{
+    toolkit::{context::Context, deserializer::Deserializer},
+    toolkit::{
         node::Node,
         tokenizer::{Pattern::Once, Tokenizer},
     },
@@ -31,7 +31,7 @@ impl Deserializer for Strikethrough {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         if let Some(body) =
-            tokenizer.get_token_body(vec![Once('~'), Once('~')], vec![Once('~'), Once('~')])
+            tokenizer.get_node_body(&[Once('~'), Once('~')], &[Once('~'), Once('~')])
         {
             return Some(Strikethrough::new(body));
         }
@@ -41,7 +41,7 @@ impl Deserializer for Strikethrough {
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{deserializer::Deserializer, node::Node};
+    use crate::toolkit::{deserializer::Deserializer, node::Node};
 
     use super::Strikethrough;
 

@@ -1,7 +1,7 @@
 use crate::{
-    sd::context::Context,
-    sd::tokenizer::{Pattern::Once, Tokenizer},
-    sd::{deserializer::Deserializer, node::Node},
+    toolkit::context::Context,
+    toolkit::tokenizer::{Pattern::Once, Tokenizer},
+    toolkit::{deserializer::Deserializer, node::Node},
 };
 
 #[derive(Debug, PartialEq)]
@@ -27,7 +27,7 @@ impl Node for InlineCode {
 impl Deserializer for InlineCode {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut chars = Tokenizer::new(input);
-        if let Some(body) = chars.get_token_body(vec![Once('`')], vec![Once('`')]) {
+        if let Some(body) = chars.get_node_body(&[Once('`')], &[Once('`')]) {
             return Some(InlineCode::new(body));
         }
         None
@@ -36,7 +36,7 @@ impl Deserializer for InlineCode {
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{deserializer::Deserializer, node::Node};
+    use crate::toolkit::{deserializer::Deserializer, node::Node};
 
     use super::InlineCode;
 

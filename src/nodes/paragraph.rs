@@ -2,8 +2,8 @@ use crate::nodes::{
     anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic,
     strikethrough::Strikethrough, text::Text,
 };
-use crate::sd::node::Node;
-use crate::sd::{
+use crate::toolkit::node::Node;
+use crate::toolkit::{
     context::Context,
     deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
     tokenizer::{Pattern::Once, Tokenizer},
@@ -118,7 +118,7 @@ impl Deserializer for Paragraph {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         let body = tokenizer
-            .get_token_body_with_end_of_input(vec![], vec![Once('\n'), Once('\n')], true)
+            .get_node_body_with_end_of_input(&[], &[Once('\n'), Once('\n')], true)
             .unwrap_or(input);
         Self::parse_branch(body, &None)
     }
@@ -162,7 +162,7 @@ mod tests {
         nodes::bold::Bold,
         nodes::inline_code::InlineCode,
         nodes::{anchor::Anchor, text::Text},
-        sd::{
+        toolkit::{
             deserializer::{Branch, Deserializer},
             node::Node,
         },

@@ -1,4 +1,4 @@
-use crate::sd::{
+use crate::toolkit::{
     context::Context,
     deserializer::{DefinitelyNode, Deserializer, FallbackNode},
     node::Node,
@@ -42,7 +42,7 @@ impl FallbackNode for Text {
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{deserializer::Deserializer, node::Node};
+    use crate::toolkit::{deserializer::Deserializer, node::Node};
 
     use super::Text;
 

@@ -1,4 +1,4 @@
-use crate::sd::{
+use crate::toolkit::{
     context::Context,
     deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
     node::Node,
@@ -62,9 +62,9 @@ impl Deserializer for ImageGalery {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
         println!("{input}");
-        if let Some(body) = tokenizer.get_token_body(
-            vec![RepeatTimes(3, '!'), Once('\n')],
-            vec![Once('\n'), Once('!'), Once('!'), Once('!')],
+        if let Some(body) = tokenizer.get_node_body(
+            &[RepeatTimes(3, '!'), Once('\n')],
+            &[Once('\n'), Once('!'), Once('!'), Once('!')],
         ) {
             println!("aaaaaa: '{body}'");
             return Self::parse_branch(body, &None);
@@ -103,7 +103,7 @@ impl Branch<ImageGaleryNodes> for ImageGalery {
 mod tests {
     use crate::{
         nodes::image::Image,
-        sd::{
+        toolkit::{
             deserializer::{Branch, Deserializer},
             node::Node,
         },

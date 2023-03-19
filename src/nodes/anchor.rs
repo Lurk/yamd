@@ -1,7 +1,7 @@
 use crate::{
-    sd::context::Context,
-    sd::deserializer::Deserializer,
-    sd::{
+    toolkit::context::Context,
+    toolkit::deserializer::Deserializer,
+    toolkit::{
         node::Node,
         tokenizer::{Pattern::Once, Tokenizer},
     },
@@ -35,9 +35,9 @@ impl Node for Anchor {
 impl Deserializer for Anchor {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
-        if let Some(text_part) = tokenizer.get_token_body(vec![Once('[')], vec![Once(']')]) {
+        if let Some(text_part) = tokenizer.get_node_body(&[Once('[')], &[Once(']')]) {
             let text_part = text_part.to_string();
-            if let Some(url_part) = tokenizer.get_token_body(vec![Once('(')], vec![Once(')')]) {
+            if let Some(url_part) = tokenizer.get_node_body(&[Once('(')], &[Once(')')]) {
                 return Some(Anchor::new(text_part, url_part.to_string()));
             }
         }
@@ -47,7 +47,7 @@ impl Deserializer for Anchor {
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{deserializer::Deserializer, node::Node};
+    use crate::toolkit::{deserializer::Deserializer, node::Node};
 
     use super::Anchor;
 

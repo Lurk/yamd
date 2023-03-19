@@ -51,6 +51,12 @@ impl Context {
     }
 }
 
+impl Default for Context {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Context;
@@ -67,6 +73,15 @@ mod tests {
     #[test]
     fn char_value() {
         let mut ctx = Context::new();
+        ctx.add("char_value", 'c');
+
+        assert_eq!(ctx.get_char_value("char_value"), Some('c'));
+        assert_eq!(ctx.get_char_value("not_char_value"), None);
+    }
+
+    #[test]
+    fn default() {
+        let mut ctx = Context::default();
         ctx.add("char_value", 'c');
 
         assert_eq!(ctx.get_char_value("char_value"), Some('c'));
