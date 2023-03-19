@@ -2,7 +2,7 @@ use crate::{
     nodes::italic::Italic,
     nodes::strikethrough::Strikethrough,
     nodes::text::Text,
-    sd::{
+    toolkit::{
         context::Context,
         deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
         node::Node,
@@ -124,7 +124,7 @@ mod tests {
         nodes::italic::Italic,
         nodes::strikethrough::Strikethrough,
         nodes::text::Text,
-        sd::{
+        toolkit::{
             deserializer::{Branch, Deserializer},
             node::Node,
         },

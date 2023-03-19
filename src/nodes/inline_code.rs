@@ -1,7 +1,7 @@
 use crate::{
-    sd::context::Context,
-    sd::tokenizer::{Pattern::Once, Tokenizer},
-    sd::{deserializer::Deserializer, node::Node},
+    toolkit::context::Context,
+    toolkit::tokenizer::{Pattern::Once, Tokenizer},
+    toolkit::{deserializer::Deserializer, node::Node},
 };
 
 #[derive(Debug, PartialEq)]
@@ -36,7 +36,7 @@ impl Deserializer for InlineCode {
 
 #[cfg(test)]
 mod tests {
-    use crate::sd::{deserializer::Deserializer, node::Node};
+    use crate::toolkit::{deserializer::Deserializer, node::Node};
 
     use super::InlineCode;
 

@@ -1,8 +1,8 @@
 use crate::{
     nodes::heading::Heading,
     nodes::paragraph::Paragraph,
-    sd::deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
-    sd::{context::Context, node::Node},
+    toolkit::deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
+    toolkit::{context::Context, node::Node},
 };
 
 use super::{code::Code, image::Image, image_gallery::ImageGalery, list::List};
@@ -146,8 +146,8 @@ mod tests {
         nodes::heading::Heading,
         nodes::paragraph::Paragraph,
         nodes::{bold::Bold, code::Code, image::Image, image_gallery::ImageGalery, text::Text},
-        sd::deserializer::Branch,
-        sd::{deserializer::Deserializer, node::Node},
+        toolkit::deserializer::Branch,
+        toolkit::{deserializer::Deserializer, node::Node},
     };
 
     use super::Yamd;

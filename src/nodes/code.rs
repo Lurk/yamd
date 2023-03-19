@@ -1,4 +1,4 @@
-use crate::sd::{
+use crate::toolkit::{
     context::Context,
     deserializer::Deserializer,
     node::Node,
@@ -50,7 +50,7 @@ impl Deserializer for Code {
 mod tests {
     use crate::{
         nodes::code::Code,
-        sd::{deserializer::Deserializer, node::Node},
+        toolkit::{deserializer::Deserializer, node::Node},
     };
 
     #[test]

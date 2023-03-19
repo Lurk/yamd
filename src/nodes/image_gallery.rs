@@ -1,4 +1,4 @@
-use crate::sd::{
+use crate::toolkit::{
     context::Context,
     deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
     node::Node,
@@ -103,7 +103,7 @@ impl Branch<ImageGaleryNodes> for ImageGalery {
 mod tests {
     use crate::{
         nodes::image::Image,
-        sd::{
+        toolkit::{
             deserializer::{Branch, Deserializer},
             node::Node,
         },

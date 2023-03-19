@@ -136,7 +136,7 @@ impl<'input> Tokenizer<'input> {
 }
 #[cfg(test)]
 mod tests {
-    use crate::sd::tokenizer::{
+    use crate::toolkit::tokenizer::{
         Matcher,
         Pattern::{Once, RepeatTimes, ZerroOrMore},
         Tokenizer,

@@ -2,8 +2,8 @@ use crate::nodes::{
     anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic,
     strikethrough::Strikethrough, text::Text,
 };
-use crate::sd::node::Node;
-use crate::sd::{
+use crate::toolkit::node::Node;
+use crate::toolkit::{
     context::Context,
     deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
     tokenizer::{Pattern::Once, Tokenizer},
@@ -162,7 +162,7 @@ mod tests {
         nodes::bold::Bold,
         nodes::inline_code::InlineCode,
         nodes::{anchor::Anchor, text::Text},
-        sd::{
+        toolkit::{
             deserializer::{Branch, Deserializer},
             node::Node,
         },
