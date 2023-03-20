@@ -226,6 +226,17 @@ mod tests {
     }
 
     #[test]
+    fn deserialize_wrong_level() {
+        assert_eq!(
+            List::deserialize_with_context(
+                "- level 0\n- level 0",
+                Some(List::create_context(1, &ListTypes::Unordered))
+            ),
+            None
+        );
+    }
+
+    #[test]
     fn deserialize_unordered() {
         let list = List::new_with_nodes(
             ListTypes::Unordered,

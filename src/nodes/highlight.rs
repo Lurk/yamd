@@ -53,14 +53,8 @@ impl Highlight {
         nodes: Vec<HighlightNodes>,
     ) -> Self {
         Self {
-            header: match header {
-                Some(header) => Some(header.into()),
-                None => None,
-            },
-            icon: match icon {
-                Some(icon) => Some(icon.into()),
-                None => None,
-            },
+            header: header.map(|header| header.into()),
+            icon: icon.map(|icon| icon.into()),
             nodes,
         }
     }
@@ -128,16 +122,13 @@ impl Deserializer for Highlight {
             &[Once('\n'), RepeatTimes(3, '>')],
         ) {
             let mut tokenizer = Tokenizer::new(body);
-            let header =
-                match tokenizer.get_node_body(&[RepeatTimes(2, '>'), Once(' ')], &[Once('\n')]) {
-                    Some(header) => Some(header.to_string()),
-                    None => None,
-                };
+            let header = tokenizer
+                .get_node_body(&[RepeatTimes(2, '>'), Once(' ')], &[Once('\n')])
+                .map(|header| header.to_string());
 
-            let icon = match tokenizer.get_node_body(&[Once('>'), Once(' ')], &[Once('\n')]) {
-                Some(icon) => Some(icon.to_string()),
-                None => None,
-            };
+            let icon = tokenizer
+                .get_node_body(&[Once('>'), Once(' ')], &[Once('\n')])
+                .map(|icon| icon.to_string());
 
             return Self::parse_branch(tokenizer.get_rest(), Self::new(header, icon));
         }

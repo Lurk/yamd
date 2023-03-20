@@ -125,7 +125,6 @@ impl Branch<ParagraphNodes> for Paragraph {
 
 impl Deserializer for Paragraph {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        println!("'{input}'");
         let mut tokenizer = Tokenizer::new(input);
         if let Some(body) =
             tokenizer.get_node_body_with_end_of_input(&[], &[Once('\n'), Once('\n')], true)

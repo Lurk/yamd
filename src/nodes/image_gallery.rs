@@ -51,9 +51,22 @@ impl ImageGalery {
     }
 }
 
+impl Default for ImageGalery {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Node for ImageGalery {
     fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.nodes.len() - 1
+        let spacing_len = if self.nodes.is_empty() {
+            0
+        } else {
+            self.nodes.len() - 1
+        };
+
+        self.nodes.iter().map(|node| node.len()).sum::<usize>()
+            + spacing_len
             + self.get_outer_token_length()
     }
     fn serialize(&self) -> String {
@@ -71,12 +84,10 @@ impl Node for ImageGalery {
 impl Deserializer for ImageGalery {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
-        println!("{input}");
         if let Some(body) = tokenizer.get_node_body(
             &[RepeatTimes(3, '!'), Once('\n')],
             &[Once('\n'), Once('!'), Once('!'), Once('!')],
         ) {
-            println!("aaaaaa: '{body}'");
             return Self::parse_branch(body, Self::new());
         }
         None
@@ -143,5 +154,10 @@ mod tests {
                 Image::new("a2", "u2").into()
             ]))
         );
+    }
+
+    #[test]
+    fn default() {
+        assert_eq!(ImageGalery::default().len(), 8)
     }
 }
