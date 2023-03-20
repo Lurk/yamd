@@ -48,15 +48,16 @@ pub struct List {
 }
 
 impl List {
-    fn get_list_type_from_context(ctx: &Option<Context>) -> ListTypes {
-        if let Some(ctx) = ctx {
-            if let Some(list_type) = ctx.get_char_value("list_type") {
-                if list_type == '+' {
-                    return ListTypes::Ordered;
-                }
-            }
+    pub fn new(list_type: ListTypes, level: usize) -> Self {
+        Self::new_with_nodes(list_type, level, vec![])
+    }
+
+    pub fn new_with_nodes(list_type: ListTypes, level: usize, nodes: Vec<ListNodes>) -> Self {
+        Self {
+            list_type,
+            level,
+            nodes,
         }
-        ListTypes::Unordered
     }
 
     fn get_level_from_context(ctx: &Option<Context>) -> usize {
@@ -114,10 +115,7 @@ impl Deserializer for List {
             ])
             .is_some()
         {
-            return Self::parse_branch(
-                input,
-                &Some(Self::create_context(level, &ListTypes::Unordered)),
-            );
+            return Self::parse_branch(input, Self::new(ListTypes::Unordered, level));
         } else if tokenizer
             .get_node_body_start_position(&[
                 ZerroOrMore('\n'),
@@ -127,34 +125,15 @@ impl Deserializer for List {
             ])
             .is_some()
         {
-            return Self::parse_branch(
-                input,
-                &Some(Self::create_context(level, &ListTypes::Ordered)),
-            );
+            return Self::parse_branch(input, Self::new(ListTypes::Ordered, level));
         }
         None
     }
 }
 
 impl Branch<ListNodes> for List {
-    fn new_with_context(ctx: &Option<Context>) -> Self {
-        Self {
-            list_type: Self::get_list_type_from_context(ctx),
-            nodes: vec![],
-            level: Self::get_level_from_context(ctx),
-        }
-    }
-
     fn push<CanBeNode: Into<ListNodes>>(&mut self, node: CanBeNode) {
         self.nodes.push(node.into())
-    }
-
-    fn from_vec_with_context(nodes: Vec<ListNodes>, ctx: Option<Context>) -> Self {
-        Self {
-            list_type: Self::get_list_type_from_context(&ctx),
-            nodes,
-            level: Self::get_level_from_context(&ctx),
-        }
     }
 
     fn get_maybe_nodes() -> Vec<MaybeNode<ListNodes>> {
@@ -174,10 +153,7 @@ impl Branch<ListNodes> for List {
 mod tests {
     use crate::{
         nodes::{list_item::ListItem, paragraph::Paragraph, text::Text},
-        toolkit::{
-            deserializer::{Branch, Deserializer},
-            node::Node,
-        },
+        toolkit::{deserializer::Deserializer, node::Node},
     };
 
     use super::{List, ListTypes};
@@ -188,17 +164,25 @@ mod tests {
             list_type: ListTypes::Unordered,
             level: 0,
             nodes: vec![
-                ListItem::from_vec(vec![Paragraph::from_vec(vec![Text::new(
-                    "unordered list item",
+                ListItem::new_with_nodes(
+                    ListTypes::Unordered,
+                    0,
+                    vec![Paragraph::new_with_nodes(
+                        true,
+                        vec![Text::new("unordered list item").into()],
+                    )
+                    .into()],
                 )
-                .into()])
-                .into()])
                 .into(),
-                ListItem::from_vec(vec![Paragraph::from_vec(vec![Text::new(
-                    "unordered list item",
+                ListItem::new_with_nodes(
+                    ListTypes::Unordered,
+                    0,
+                    vec![Paragraph::new_with_nodes(
+                        true,
+                        vec![Text::new("unordered list item").into()],
+                    )
+                    .into()],
                 )
-                .into()])
-                .into()])
                 .into(),
             ],
         };
@@ -211,41 +195,66 @@ mod tests {
 
     #[test]
     fn serialize_ordered() {
-        let list = List::from_vec_with_context(
+        let list = List::new_with_nodes(
+            ListTypes::Ordered,
+            0,
             vec![
-                ListItem::from_vec_with_context(
-                    vec![Paragraph::from_vec(vec![Text::new("ordered list item").into()]).into()],
-                    Some(List::create_context(0, &ListTypes::Ordered)),
+                ListItem::new_with_nodes(
+                    ListTypes::Ordered,
+                    0,
+                    vec![Paragraph::new_with_nodes(
+                        true,
+                        vec![Text::new("ordered list item").into()],
+                    )
+                    .into()],
                 )
                 .into(),
-                ListItem::from_vec_with_context(
-                    vec![Paragraph::from_vec(vec![Text::new("ordered list item").into()]).into()],
-                    Some(List::create_context(0, &ListTypes::Ordered)),
+                ListItem::new_with_nodes(
+                    ListTypes::Ordered,
+                    0,
+                    vec![Paragraph::new_with_nodes(
+                        true,
+                        vec![Text::new("ordered list item").into()],
+                    )
+                    .into()],
                 )
                 .into(),
             ],
-            Some(List::create_context(0, &ListTypes::Ordered)),
         );
 
         assert_eq!(list.serialize(), "+ ordered list item\n+ ordered list item");
     }
 
     #[test]
+    fn deserialize_wrong_level() {
+        assert_eq!(
+            List::deserialize_with_context(
+                "- level 0\n- level 0",
+                Some(List::create_context(1, &ListTypes::Unordered))
+            ),
+            None
+        );
+    }
+
+    #[test]
     fn deserialize_unordered() {
-        let list = List::from_vec_with_context(
+        let list = List::new_with_nodes(
+            ListTypes::Unordered,
+            0,
             vec![
-                ListItem::from_vec_with_context(
-                    vec![Paragraph::from_vec(vec![Text::new("level 0").into()]).into()],
-                    Some(List::create_context(0, &ListTypes::Unordered)),
+                ListItem::new_with_nodes(
+                    ListTypes::Unordered,
+                    0,
+                    vec![Paragraph::new_with_nodes(true, vec![Text::new("level 0").into()]).into()],
                 )
                 .into(),
-                ListItem::from_vec_with_context(
-                    vec![Paragraph::from_vec(vec![Text::new("level 0").into()]).into()],
-                    Some(List::create_context(0, &ListTypes::Unordered)),
+                ListItem::new_with_nodes(
+                    ListTypes::Unordered,
+                    0,
+                    vec![Paragraph::new_with_nodes(true, vec![Text::new("level 0").into()]).into()],
                 )
                 .into(),
             ],
-            Some(List::create_context(0, &ListTypes::Unordered)),
         );
 
         assert_eq!(List::deserialize("- level 0\n- level 0"), Some(list));
@@ -253,20 +262,23 @@ mod tests {
 
     #[test]
     fn deserialize_ordered() {
-        let list = List::from_vec_with_context(
+        let list = List::new_with_nodes(
+            ListTypes::Ordered,
+            0,
             vec![
-                ListItem::from_vec_with_context(
-                    vec![Paragraph::from_vec(vec![Text::new("level 0").into()]).into()],
-                    Some(List::create_context(0, &ListTypes::Ordered)),
+                ListItem::new_with_nodes(
+                    ListTypes::Ordered,
+                    0,
+                    vec![Paragraph::new_with_nodes(true, vec![Text::new("level 0").into()]).into()],
                 )
                 .into(),
-                ListItem::from_vec_with_context(
-                    vec![Paragraph::from_vec(vec![Text::new("level 0").into()]).into()],
-                    Some(List::create_context(0, &ListTypes::Ordered)),
+                ListItem::new_with_nodes(
+                    ListTypes::Ordered,
+                    0,
+                    vec![Paragraph::new_with_nodes(true, vec![Text::new("level 0").into()]).into()],
                 )
                 .into(),
             ],
-            Some(List::create_context(0, &ListTypes::Ordered)),
         );
 
         assert_eq!(List::deserialize("+ level 0\n+ level 0"), Some(list));
@@ -274,24 +286,32 @@ mod tests {
 
     #[test]
     fn deserialize_mixed() {
-        let list = List::from_vec_with_context(
-            vec![ListItem::from_vec_with_context(
+        let list = List::new_with_nodes(
+            ListTypes::Ordered,
+            0,
+            vec![ListItem::new_with_nodes(
+                ListTypes::Ordered,
+                0,
                 vec![
-                    Paragraph::from_vec(vec![Text::new("level 0").into()]).into(),
-                    List::from_vec_with_context(
-                        vec![ListItem::from_vec_with_context(
-                            vec![Paragraph::from_vec(vec![Text::new("level 0").into()]).into()],
-                            Some(List::create_context(1, &ListTypes::Unordered)),
+                    Paragraph::new_with_nodes(true, vec![Text::new("level 0").into()]).into(),
+                    List::new_with_nodes(
+                        ListTypes::Unordered,
+                        1,
+                        vec![ListItem::new_with_nodes(
+                            ListTypes::Unordered,
+                            1,
+                            vec![Paragraph::new_with_nodes(
+                                true,
+                                vec![Text::new("level 0").into()],
+                            )
+                            .into()],
                         )
                         .into()],
-                        Some(List::create_context(1, &ListTypes::Unordered)),
                     )
                     .into(),
                 ],
-                Some(List::create_context(0, &ListTypes::Ordered)),
             )
             .into()],
-            Some(List::create_context(0, &ListTypes::Ordered)),
         );
 
         assert_eq!(List::deserialize("+ level 0\n - level 0"), Some(list));
@@ -299,20 +319,23 @@ mod tests {
 
     #[test]
     fn len() {
-        let list = List::from_vec_with_context(
+        let list = List::new_with_nodes(
+            ListTypes::Ordered,
+            0,
             vec![
-                ListItem::from_vec_with_context(
-                    vec![Paragraph::from_vec(vec![Text::new("l").into()]).into()],
-                    Some(List::create_context(0, &ListTypes::Ordered)),
+                ListItem::new_with_nodes(
+                    ListTypes::Ordered,
+                    0,
+                    vec![Paragraph::new_with_nodes(true, vec![Text::new("l").into()]).into()],
                 )
                 .into(),
-                ListItem::from_vec_with_context(
-                    vec![Paragraph::from_vec(vec![Text::new("l").into()]).into()],
-                    Some(List::create_context(0, &ListTypes::Ordered)),
+                ListItem::new_with_nodes(
+                    ListTypes::Ordered,
+                    0,
+                    vec![Paragraph::new_with_nodes(true, vec![Text::new("l").into()]).into()],
                 )
                 .into(),
             ],
-            Some(List::create_context(0, &ListTypes::Ordered)),
         );
 
         assert_eq!(list.len(), 7);

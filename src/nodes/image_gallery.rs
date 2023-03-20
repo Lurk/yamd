@@ -41,9 +41,32 @@ pub struct ImageGalery {
     nodes: Vec<ImageGaleryNodes>,
 }
 
+impl ImageGalery {
+    pub fn new() -> Self {
+        Self::new_with_nodes(vec![])
+    }
+
+    pub fn new_with_nodes(nodes: Vec<ImageGaleryNodes>) -> Self {
+        Self { nodes }
+    }
+}
+
+impl Default for ImageGalery {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Node for ImageGalery {
     fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.nodes.len() - 1
+        let spacing_len = if self.nodes.is_empty() {
+            0
+        } else {
+            self.nodes.len() - 1
+        };
+
+        self.nodes.iter().map(|node| node.len()).sum::<usize>()
+            + spacing_len
             + self.get_outer_token_length()
     }
     fn serialize(&self) -> String {
@@ -61,29 +84,19 @@ impl Node for ImageGalery {
 impl Deserializer for ImageGalery {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut tokenizer = Tokenizer::new(input);
-        println!("{input}");
         if let Some(body) = tokenizer.get_node_body(
             &[RepeatTimes(3, '!'), Once('\n')],
             &[Once('\n'), Once('!'), Once('!'), Once('!')],
         ) {
-            println!("aaaaaa: '{body}'");
-            return Self::parse_branch(body, &None);
+            return Self::parse_branch(body, Self::new());
         }
         None
     }
 }
 
 impl Branch<ImageGaleryNodes> for ImageGalery {
-    fn new_with_context(_: &Option<Context>) -> Self {
-        Self { nodes: vec![] }
-    }
-
     fn push<CanBeNode: Into<ImageGaleryNodes>>(&mut self, node: CanBeNode) {
         self.nodes.push(node.into())
-    }
-
-    fn from_vec_with_context(nodes: Vec<ImageGaleryNodes>, _: Option<Context>) -> Self {
-        Self { nodes }
     }
 
     fn get_maybe_nodes() -> Vec<MaybeNode<ImageGaleryNodes>> {
@@ -103,10 +116,7 @@ impl Branch<ImageGaleryNodes> for ImageGalery {
 mod tests {
     use crate::{
         nodes::image::Image,
-        toolkit::{
-            deserializer::{Branch, Deserializer},
-            node::Node,
-        },
+        toolkit::{deserializer::Deserializer, node::Node},
     };
 
     use super::ImageGalery;
@@ -114,7 +124,7 @@ mod tests {
     #[test]
     fn serialize() {
         assert_eq!(
-            ImageGalery::from_vec(vec![
+            ImageGalery::new_with_nodes(vec![
                 Image::new("a", "u").into(),
                 Image::new("a2", "u2").into()
             ])
@@ -126,7 +136,7 @@ mod tests {
     #[test]
     fn len() {
         assert_eq!(
-            ImageGalery::from_vec(vec![
+            ImageGalery::new_with_nodes(vec![
                 Image::new("a", "u").into(),
                 Image::new("a2", "u2").into()
             ])
@@ -139,10 +149,15 @@ mod tests {
     fn deserialize() {
         assert_eq!(
             ImageGalery::deserialize("!!!\n![a](u)\n![a2](u2)\n!!!"),
-            Some(ImageGalery::from_vec(vec![
+            Some(ImageGalery::new_with_nodes(vec![
                 Image::new("a", "u").into(),
                 Image::new("a2", "u2").into()
             ]))
         );
+    }
+
+    #[test]
+    fn default() {
+        assert_eq!(ImageGalery::default().len(), 8)
     }
 }

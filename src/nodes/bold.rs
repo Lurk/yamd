@@ -58,15 +58,17 @@ pub struct Bold {
     nodes: Vec<BoldNodes>,
 }
 
+impl Bold {
+    pub fn new() -> Self {
+        Self::new_with_nodes(vec![])
+    }
+
+    pub fn new_with_nodes(nodes: Vec<BoldNodes>) -> Self {
+        Self { nodes }
+    }
+}
+
 impl Branch<BoldNodes> for Bold {
-    fn new_with_context(_: &Option<Context>) -> Self {
-        Self { nodes: vec![] }
-    }
-
-    fn from_vec_with_context(data: Vec<BoldNodes>, _: Option<Context>) -> Self {
-        Self { nodes: data }
-    }
-
     fn push<BC: Into<BoldNodes>>(&mut self, element: BC) {
         self.nodes.push(element.into());
     }
@@ -85,7 +87,7 @@ impl Branch<BoldNodes> for Bold {
 
 impl Default for Bold {
     fn default() -> Self {
-        Self::new_with_context(&None)
+        Self::new()
     }
 }
 
@@ -111,7 +113,7 @@ impl Deserializer for Bold {
         if let Some(body) =
             tokenizer.get_node_body(&[Once('*'), Once('*')], &[Once('*'), Once('*')])
         {
-            return Self::parse_branch(body, &None);
+            return Self::parse_branch(body, Self::new());
         }
         None
     }
@@ -140,7 +142,7 @@ mod tests {
 
     #[test]
     fn from_vec() {
-        let b: String = Bold::from_vec(vec![
+        let b: String = Bold::new_with_nodes(vec![
             Text::new("B as bold ").into(),
             Italic::new("Italic").into(),
             Strikethrough::new("Strikethrough").into(),
@@ -153,12 +155,12 @@ mod tests {
     fn from_string() {
         assert_eq!(
             Bold::deserialize("**b**"),
-            Some(Bold::from_vec(vec![Text::new("b").into()]))
+            Some(Bold::new_with_nodes(vec![Text::new("b").into()]))
         );
 
         assert_eq!(
             Bold::deserialize("**b ~~st~~ _i t_**"),
-            Some(Bold::from_vec(vec![
+            Some(Bold::new_with_nodes(vec![
                 Text::new("b ").into(),
                 Strikethrough::new("st").into(),
                 Text::new(" ").into(),
@@ -169,9 +171,9 @@ mod tests {
 
     #[test]
     fn len() {
-        assert_eq!(Bold::from_vec(vec![Text::new("T").into()]).len(), 5);
+        assert_eq!(Bold::new_with_nodes(vec![Text::new("T").into()]).len(), 5);
         assert_eq!(
-            Bold::from_vec(vec![Text::new("T").into(), Strikethrough::new("S").into()]).len(),
+            Bold::new_with_nodes(vec![Text::new("T").into(), Strikethrough::new("S").into()]).len(),
             10
         );
     }

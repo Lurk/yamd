@@ -4,32 +4,15 @@ pub trait Branch<BranchNodes>
 where
     BranchNodes: Node,
 {
-    fn new_with_context(ctx: &Option<Context>) -> Self;
     fn push<CanBeNode: Into<BranchNodes>>(&mut self, node: CanBeNode);
-    fn from_vec_with_context(nodes: Vec<BranchNodes>, ctx: Option<Context>) -> Self;
     fn get_maybe_nodes() -> Vec<MaybeNode<BranchNodes>>;
     fn get_fallback_node() -> Option<DefinitelyNode<BranchNodes>>;
     fn get_outer_token_length(&self) -> usize;
 
-    fn new() -> Self
-    where
-        Self: Sized,
-    {
-        Self::new_with_context(&None)
-    }
-
-    fn from_vec(nodes: Vec<BranchNodes>) -> Self
-    where
-        Self: Sized,
-    {
-        Self::from_vec_with_context(nodes, None)
-    }
-
-    fn parse_branch(input: &str, ctx: &Option<Context>) -> Option<Self>
+    fn parse_branch(input: &str, mut branch: Self) -> Option<Self>
     where
         Self: Sized + Deserializer + Node,
     {
-        let mut branch = Self::new_with_context(ctx);
         let mut current_position = 0;
         let mut fallback_position = 0;
         let fallback_node = Self::get_fallback_node();
