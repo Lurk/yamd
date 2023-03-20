@@ -80,18 +80,23 @@ impl Node for ParagraphNodes {
 
 #[derive(Debug, PartialEq)]
 pub struct Paragraph {
+    consumed_all_input: bool,
     nodes: Vec<ParagraphNodes>,
 }
 
+impl Paragraph {
+    pub fn new(consumed_all_input: bool) -> Self {
+        Self::new_with_nodes(consumed_all_input, vec![])
+    }
+    pub fn new_with_nodes(consumed_all_input: bool, nodes: Vec<ParagraphNodes>) -> Self {
+        Self {
+            consumed_all_input,
+            nodes,
+        }
+    }
+}
+
 impl Branch<ParagraphNodes> for Paragraph {
-    fn new_with_context(_: &Option<Context>) -> Self {
-        Self { nodes: vec![] }
-    }
-
-    fn from_vec_with_context(data: Vec<ParagraphNodes>, _: Option<Context>) -> Self {
-        Self { nodes: data }
-    }
-
     fn push<TP: Into<ParagraphNodes>>(&mut self, element: TP) {
         self.nodes.push(element.into());
     }
@@ -110,36 +115,46 @@ impl Branch<ParagraphNodes> for Paragraph {
         Some(Text::fallback_node())
     }
     fn get_outer_token_length(&self) -> usize {
-        0
+        if self.consumed_all_input {
+            0
+        } else {
+            2
+        }
     }
 }
 
 impl Deserializer for Paragraph {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+        println!("'{input}'");
         let mut tokenizer = Tokenizer::new(input);
-        let body = tokenizer
-            .get_node_body_with_end_of_input(&[], &[Once('\n'), Once('\n')], true)
-            .unwrap_or(input);
-        Self::parse_branch(body, &None)
-    }
-}
-
-impl Default for Paragraph {
-    fn default() -> Self {
-        Self::new_with_context(&None)
+        if let Some(body) =
+            tokenizer.get_node_body_with_end_of_input(&[], &[Once('\n'), Once('\n')], true)
+        {
+            return Self::parse_branch(body, Self::new(input.len() == body.len()));
+        }
+        None
     }
 }
 
 impl Node for Paragraph {
     fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum()
+        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
     }
+
     fn serialize(&self) -> String {
-        self.nodes
-            .iter()
-            .map(|node| node.serialize())
-            .collect::<Vec<String>>()
-            .concat()
+        let end_token = match self.consumed_all_input {
+            true => "",
+            false => "\n\n",
+        };
+        format!(
+            "{}{}",
+            self.nodes
+                .iter()
+                .map(|node| node.serialize())
+                .collect::<Vec<String>>()
+                .concat(),
+            end_token
+        )
     }
 }
 
@@ -150,7 +165,7 @@ impl FallbackNode for Paragraph {
     {
         Box::new(|input| {
             Paragraph::deserialize(input)
-                .unwrap_or(Paragraph::new_with_context(&None))
+                .unwrap_or(Paragraph::new(true))
                 .into()
         })
     }
@@ -172,9 +187,9 @@ mod tests {
 
     #[test]
     fn push() {
-        let mut p = Paragraph::new();
+        let mut p = Paragraph::new(true);
         p.push(Text::new("simple text "));
-        p.push(Bold::from_vec(vec![Text::new("bold text").into()]));
+        p.push(Bold::new_with_nodes(vec![Text::new("bold text").into()]));
         p.push(InlineCode::new("let foo='bar';"));
 
         assert_eq!(
@@ -185,30 +200,47 @@ mod tests {
 
     #[test]
     fn from_vec() {
-        let p: String = Paragraph::from_vec(vec![
-            Text::new("simple text ").into(),
-            Bold::from_vec_with_context(vec![Text::new("bold text").into()], None).into(),
-            InlineCode::new("let foo='bar';").into(),
-        ])
+        let p: String = Paragraph::new_with_nodes(
+            true,
+            vec![
+                Text::new("simple text ").into(),
+                Bold::new_with_nodes(vec![Text::new("bold text").into()]).into(),
+                InlineCode::new("let foo='bar';").into(),
+            ],
+        )
         .serialize();
 
         assert_eq!(p, "simple text **bold text**`let foo='bar';`".to_string());
     }
 
     #[test]
+    fn serialize() {
+        assert_eq!(
+            Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).serialize(),
+            "t\n\n".to_string()
+        )
+    }
+
+    #[test]
     fn deserialize() {
         assert_eq!(
             Paragraph::deserialize("simple text **bold text**`let foo='bar';`[t](u)"),
-            Some(Paragraph::from_vec(vec![
-                Text::new("simple text ").into(),
-                Bold::from_vec(vec![Text::new("bold text").into()]).into(),
-                InlineCode::new("let foo='bar';").into(),
-                Anchor::new("t", "u").into()
-            ]))
+            Some(Paragraph::new_with_nodes(
+                true,
+                vec![
+                    Text::new("simple text ").into(),
+                    Bold::new_with_nodes(vec![Text::new("bold text").into()]).into(),
+                    InlineCode::new("let foo='bar';").into(),
+                    Anchor::new("t", "u").into()
+                ]
+            ))
         );
         assert_eq!(
             Paragraph::deserialize("1 2\n\n3"),
-            Some(Paragraph::from_vec(vec![Text::new("1 2").into()]))
+            Some(Paragraph::new_with_nodes(
+                false,
+                vec![Text::new("1 2").into()]
+            ))
         );
     }
 }

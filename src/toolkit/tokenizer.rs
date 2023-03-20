@@ -128,16 +128,21 @@ impl<'input> Tokenizer<'input> {
         if let Some(body_start) = self.get_node_body_start_position(start_token) {
             let mut end_matcher = Matcher::new(end_token);
             for (index, char) in self.input.chars().enumerate().skip(body_start) {
-                self.position = index;
                 if end_matcher.is_match(&char) && end_matcher.is_done() {
+                    self.position = index;
                     return Some(&self.input[body_start..index - (end_matcher.length - 1)]);
                 } else if match_end_of_input && index == self.input.len() - 1 {
+                    self.position = index;
                     return Some(&self.input[body_start..]);
                 }
             }
         }
 
         None
+    }
+
+    pub fn get_rest(&self) -> &'input str {
+        &self.input[self.position + 1..]
     }
 }
 #[cfg(test)]
@@ -156,6 +161,7 @@ mod tests {
             c.get_node_body(&[Once('*')], &[Once('*')]),
             Some("one more")
         );
+        assert_eq!(c.get_rest(), " statement");
     }
 
     #[test]
