@@ -23,11 +23,11 @@ impl Deserializer for Text {
 }
 
 impl Node for Text {
-    fn len(&self) -> usize {
-        self.text.len()
-    }
     fn serialize(&self) -> String {
         self.text.clone()
+    }
+    fn len(&self) -> usize {
+        self.text.len()
     }
 }
 

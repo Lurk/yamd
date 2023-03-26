@@ -3,7 +3,7 @@ use crate::{
     toolkit::deserializer::Deserializer,
     toolkit::{
         node::Node,
-        tokenizer::{Pattern::Once, Tokenizer},
+        tokenizer::{Quantifiers::Once, Matcher},
     },
 };
 
@@ -24,20 +24,20 @@ impl Anchor {
 }
 
 impl Node for Anchor {
-    fn len(&self) -> usize {
-        self.text.len() + self.url.len() + 4
-    }
     fn serialize(&self) -> String {
         format!("[{}]({})", self.text, self.url)
+    }
+    fn len(&self) -> usize {
+        self.text.len() + self.url.len() + 4
     }
 }
 
 impl Deserializer for Anchor {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut tokenizer = Tokenizer::new(input);
-        if let Some(text_part) = tokenizer.get_node_body(&[Once('[')], &[Once(']')]) {
+        let mut matcher = Matcher::new(input);
+        if let Some(text_part) = matcher.get_node_body(&[Once('[')], &[Once(']')]) {
             let text_part = text_part.to_string();
-            if let Some(url_part) = tokenizer.get_node_body(&[Once('(')], &[Once(')')]) {
+            if let Some(url_part) = matcher.get_node_body(&[Once('(')], &[Once(')')]) {
                 return Some(Anchor::new(text_part, url_part.to_string()));
             }
         }

@@ -2,7 +2,7 @@ use crate::toolkit::{
     context::Context,
     deserializer::Deserializer,
     node::Node,
-    tokenizer::{Pattern::Once, Pattern::RepeatTimes, Tokenizer},
+    tokenizer::{Quantifiers::Once, Quantifiers::RepeatTimes, Matcher},
 };
 
 #[derive(Debug, PartialEq)]
@@ -37,8 +37,8 @@ impl Deserializer for Heading {
         ];
 
         for (i, start_token) in start_tokens.iter().enumerate() {
-            let mut tokenizer = Tokenizer::new(input);
-            if let Some(body) = tokenizer.get_node_body_with_end_of_input(
+            let mut matcher = Matcher::new(input);
+            if let Some(body) = matcher.get_node_body_with_end_of_input(
                 start_token,
                 &[Once('\n'), Once('\n')],
                 true,
@@ -52,12 +52,12 @@ impl Deserializer for Heading {
 }
 
 impl Node for Heading {
-    fn len(&self) -> usize {
-        self.text.len() + self.level as usize + 1
-    }
     fn serialize(&self) -> String {
         let level = String::from('#').repeat(self.level as usize);
         format!("{} {}", level, self.text)
+    }
+    fn len(&self) -> usize {
+        self.text.len() + self.level as usize + 1
     }
 }
 

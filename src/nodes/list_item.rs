@@ -3,8 +3,8 @@ use crate::toolkit::{
     deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
     node::Node,
     tokenizer::{
-        Pattern::{Once, RepeatTimes, ZerroOrMore},
-        Tokenizer,
+        Quantifiers::{Once, RepeatTimes, ZeroOrMore},
+        Matcher,
     },
 };
 
@@ -70,16 +70,16 @@ impl ListItem {
 }
 
 impl Node for ListItemNodes {
-    fn len(&self) -> usize {
-        match self {
-            ListItemNodes::Paragraph(node) => node.len(),
-            ListItemNodes::List(node) => node.len(),
-        }
-    }
     fn serialize(&self) -> String {
         match self {
             ListItemNodes::Paragraph(node) => node.serialize(),
             ListItemNodes::List(node) => node.serialize(),
+        }
+    }
+    fn len(&self) -> usize {
+        match self {
+            ListItemNodes::Paragraph(node) => node.len(),
+            ListItemNodes::List(node) => node.len(),
         }
     }
 }
@@ -104,15 +104,6 @@ impl Branch<ListItemNodes> for ListItem {
 }
 
 impl Node for ListItem {
-    fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
-    }
-
-    fn context(&self) -> Option<Context> {
-        let mut ctx = Context::new();
-        ctx.add("level", self.level);
-        Some(ctx)
-    }
     fn serialize(&self) -> String {
         let list_type = match self.list_type {
             ListTypes::Unordered => '-',
@@ -129,6 +120,15 @@ impl Node for ListItem {
                 .join("\n")
         )
     }
+
+    fn len(&self) -> usize {
+        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
+    }
+    fn context(&self) -> Option<Context> {
+        let mut ctx = Context::new();
+        ctx.add("level", self.level);
+        Some(ctx)
+    }
 }
 
 impl Deserializer for ListItem {
@@ -138,10 +138,10 @@ impl Deserializer for ListItem {
             ListTypes::Unordered => Once('-'),
             ListTypes::Ordered => Once('+'),
         };
-        let mut tokenizer = Tokenizer::new(input);
-        if let Some(body) = tokenizer.get_node_body_with_end_of_input(
+        let mut matcher = Matcher::new(input);
+        if let Some(body) = matcher.get_node_body_with_end_of_input(
             &[
-                ZerroOrMore('\n'),
+                ZeroOrMore('\n'),
                 RepeatTimes(level, ' '),
                 list_type.clone(),
                 Once(' '),

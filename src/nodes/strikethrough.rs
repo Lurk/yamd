@@ -2,7 +2,7 @@ use crate::{
     toolkit::{context::Context, deserializer::Deserializer},
     toolkit::{
         node::Node,
-        tokenizer::{Pattern::Once, Tokenizer},
+        tokenizer::{Quantifiers::Once, Matcher},
     },
 };
 
@@ -19,19 +19,19 @@ impl Strikethrough {
 }
 
 impl Node for Strikethrough {
-    fn len(&self) -> usize {
-        self.text.len() + 4
-    }
     fn serialize(&self) -> String {
         format!("~~{}~~", self.text)
+    }
+    fn len(&self) -> usize {
+        self.text.len() + 4
     }
 }
 
 impl Deserializer for Strikethrough {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut tokenizer = Tokenizer::new(input);
+        let mut matcher = Matcher::new(input);
         if let Some(body) =
-            tokenizer.get_node_body(&[Once('~'), Once('~')], &[Once('~'), Once('~')])
+            matcher.get_node_body(&[Once('~'), Once('~')], &[Once('~'), Once('~')])
         {
             return Some(Strikethrough::new(body));
         }

@@ -6,7 +6,7 @@ use crate::{
         context::Context,
         deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
         node::Node,
-        tokenizer::{Pattern::Once, Tokenizer},
+        tokenizer::{Quantifiers::Once, Matcher},
     },
 };
 
@@ -36,19 +36,19 @@ impl From<Strikethrough> for BoldNodes {
 }
 
 impl Node for BoldNodes {
-    fn len(&self) -> usize {
-        match self {
-            BoldNodes::Text(node) => node.len(),
-            BoldNodes::I(node) => node.len(),
-            BoldNodes::S(node) => node.len(),
-        }
-    }
-
     fn serialize(&self) -> String {
         match self {
             BoldNodes::Text(v) => v.serialize(),
             BoldNodes::I(v) => v.serialize(),
             BoldNodes::S(v) => v.serialize(),
+        }
+    }
+
+    fn len(&self) -> usize {
+        match self {
+            BoldNodes::Text(node) => node.len(),
+            BoldNodes::I(node) => node.len(),
+            BoldNodes::S(node) => node.len(),
         }
     }
 }
@@ -92,9 +92,6 @@ impl Default for Bold {
 }
 
 impl Node for Bold {
-    fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
-    }
     fn serialize(&self) -> String {
         format!(
             "**{}**",
@@ -105,13 +102,16 @@ impl Node for Bold {
                 .concat()
         )
     }
+    fn len(&self) -> usize {
+        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
+    }
 }
 
 impl Deserializer for Bold {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut tokenizer = Tokenizer::new(input);
+        let mut matcher = Matcher::new(input);
         if let Some(body) =
-            tokenizer.get_node_body(&[Once('*'), Once('*')], &[Once('*'), Once('*')])
+            matcher.get_node_body(&[Once('*'), Once('*')], &[Once('*'), Once('*')])
         {
             return Self::parse_branch(body, Self::new());
         }

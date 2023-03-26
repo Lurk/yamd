@@ -3,8 +3,8 @@ use crate::toolkit::{
     deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
     node::Node,
     tokenizer::{
-        Pattern::{Once, RepeatTimes},
-        Tokenizer,
+        Quantifiers::{Once, RepeatTimes},
+        Matcher,
     },
 };
 
@@ -116,21 +116,21 @@ impl Branch<HighlightNodes> for Highlight {
 
 impl Deserializer for Highlight {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut tokenizer = Tokenizer::new(input);
-        if let Some(body) = tokenizer.get_node_body(
+        let mut matcher = Matcher::new(input);
+        if let Some(body) = matcher.get_node_body(
             &[RepeatTimes(3, '>'), Once('\n')],
             &[Once('\n'), RepeatTimes(3, '>')],
         ) {
-            let mut tokenizer = Tokenizer::new(body);
-            let header = tokenizer
+            let mut macther = Matcher::new(body);
+            let header = macther
                 .get_node_body(&[RepeatTimes(2, '>'), Once(' ')], &[Once('\n')])
                 .map(|header| header.to_string());
 
-            let icon = tokenizer
+            let icon = macther
                 .get_node_body(&[Once('>'), Once(' ')], &[Once('\n')])
                 .map(|icon| icon.to_string());
 
-            return Self::parse_branch(tokenizer.get_rest(), Self::new(header, icon));
+            return Self::parse_branch(macther.get_rest(), Self::new(header, icon));
         }
 
         None

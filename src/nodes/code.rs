@@ -2,7 +2,7 @@ use crate::toolkit::{
     context::Context,
     deserializer::Deserializer,
     node::Node,
-    tokenizer::{Pattern::Once, Tokenizer},
+    tokenizer::{Quantifiers::Once, Matcher},
 };
 
 #[derive(Debug, PartialEq)]
@@ -21,23 +21,23 @@ impl Code {
 }
 
 impl Node for Code {
-    fn len(&self) -> usize {
-        self.lang.len() + self.code.len() + 8
-    }
     fn serialize(&self) -> String {
         format!("```{}\n{}\n```", self.lang, self.code)
+    }
+    fn len(&self) -> usize {
+        self.lang.len() + self.code.len() + 8
     }
 }
 
 impl Deserializer for Code {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut tokenizer = Tokenizer::new(input);
+        let mut matcher = Matcher::new(input);
         if let Some(lang_body) =
-            tokenizer.get_node_body(&[Once('`'), Once('`'), Once('`')], &[Once('\n')])
+            matcher.get_node_body(&[Once('`'), Once('`'), Once('`')], &[Once('\n')])
         {
             let lang_body = lang_body.to_string();
             if let Some(code_boy) =
-                tokenizer.get_node_body(&[], &[Once('\n'), Once('`'), Once('`'), Once('`')])
+                matcher.get_node_body(&[], &[Once('\n'), Once('`'), Once('`'), Once('`')])
             {
                 return Some(Self::new(lang_body, code_boy.to_string()));
             }
