@@ -3,8 +3,8 @@ use crate::toolkit::{
     deserializer::Deserializer,
     node::Node,
     tokenizer::{
-        Quantifiers::{Once, ZeroOrMore},
         Matcher,
+        Quantifiers::{Once, ZeroOrMore},
     },
 };
 
@@ -35,12 +35,13 @@ impl Node for Image {
 impl Deserializer for Image {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(alt_body) =
-            matcher.get_node_body(&[ZeroOrMore('\n'), Once('!'), Once('[')], &[Once(']')])
-        {
-            let alt_body = alt_body.to_string();
-            if let Some(url_body) = matcher.get_node_body(&[Once('(')], &[Once(')')]) {
-                return Some(Self::new(alt_body, url_body.to_string()));
+        if let Some(alt) = matcher.get_match(
+            &[ZeroOrMore('\n'), Once('!'), Once('[')],
+            &[Once(']')],
+            false,
+        ) {
+            if let Some(url) = matcher.get_match(&[Once('(')], &[Once(')')], false) {
+                return Some(Self::new(alt.body, url.body));
             }
         }
         None

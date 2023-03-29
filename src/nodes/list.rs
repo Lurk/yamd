@@ -3,8 +3,8 @@ use crate::toolkit::{
     deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
     node::Node,
     tokenizer::{
-        Quantifiers::{Once, RepeatTimes, ZeroOrMore},
         Matcher,
+        Quantifiers::{Once, RepeatTimes, ZeroOrMore},
     },
 };
 
@@ -105,27 +105,35 @@ impl Deserializer for List {
             Some(_) => Self::get_level_from_context(&ctx) + 1,
             None => 0,
         };
-        let matcher = Matcher::new(input);
-        if matcher
-            .get_node_body_start_position(&[
+        let mut matcher = Matcher::new(input);
+        if let Some(unordered_list) = matcher.get_match(
+            &[
                 ZeroOrMore('\n'),
                 RepeatTimes(level, ' '),
                 Once('-'),
                 Once(' '),
-            ])
-            .is_some()
-        {
-            return Self::parse_branch(input, Self::new(ListTypes::Unordered, level));
-        } else if matcher
-            .get_node_body_start_position(&[
+            ],
+            &[RepeatTimes(2, '\n')],
+            true,
+        ) {
+            return Self::parse_branch(
+                &input[..unordered_list.start_token.len() + unordered_list.body.len()],
+                Self::new(ListTypes::Unordered, level),
+            );
+        } else if let Some(ordered_list) = matcher.get_match(
+            &[
                 ZeroOrMore('\n'),
                 RepeatTimes(level, ' '),
                 Once('+'),
                 Once(' '),
-            ])
-            .is_some()
-        {
-            return Self::parse_branch(input, Self::new(ListTypes::Ordered, level));
+            ],
+            &[RepeatTimes(2, '\n')],
+            true,
+        ) {
+            return Self::parse_branch(
+                &input[..ordered_list.start_token.len() + ordered_list.body.len()],
+                Self::new(ListTypes::Ordered, level),
+            );
         }
         None
     }

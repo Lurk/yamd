@@ -6,7 +6,7 @@ use crate::{
         context::Context,
         deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
         node::Node,
-        tokenizer::{Quantifiers::Once, Matcher},
+        tokenizer::{Matcher, Quantifiers::Once},
     },
 };
 
@@ -110,10 +110,10 @@ impl Node for Bold {
 impl Deserializer for Bold {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(body) =
-            matcher.get_node_body(&[Once('*'), Once('*')], &[Once('*'), Once('*')])
+        if let Some(bold) =
+            matcher.get_match(&[Once('*'), Once('*')], &[Once('*'), Once('*')], false)
         {
-            return Self::parse_branch(body, Self::new());
+            return Self::parse_branch(bold.body, Self::new());
         }
         None
     }

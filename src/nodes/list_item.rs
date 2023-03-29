@@ -3,8 +3,8 @@ use crate::toolkit::{
     deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
     node::Node,
     tokenizer::{
-        Quantifiers::{Once, RepeatTimes, ZeroOrMore},
         Matcher,
+        Quantifiers::{Once, RepeatTimes, ZeroOrMore},
     },
 };
 
@@ -139,7 +139,7 @@ impl Deserializer for ListItem {
             ListTypes::Ordered => Once('+'),
         };
         let mut matcher = Matcher::new(input);
-        if let Some(body) = matcher.get_node_body_with_end_of_input(
+        if let Some(list_item) = matcher.get_match(
             &[
                 ZeroOrMore('\n'),
                 RepeatTimes(level, ' '),
@@ -150,7 +150,7 @@ impl Deserializer for ListItem {
             true,
         ) {
             return Self::parse_branch(
-                body,
+                list_item.body,
                 Self::new(
                     Self::get_list_type_from_context(&ctx),
                     Self::get_level_from_context(&ctx),

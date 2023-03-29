@@ -3,8 +3,8 @@ use crate::toolkit::{
     deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
     node::Node,
     tokenizer::{
-        Quantifiers::{Once, RepeatTimes},
         Matcher,
+        Quantifiers::{Once, RepeatTimes},
     },
 };
 
@@ -117,18 +117,19 @@ impl Branch<HighlightNodes> for Highlight {
 impl Deserializer for Highlight {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(body) = matcher.get_node_body(
+        if let Some(highlight) = matcher.get_match(
             &[RepeatTimes(3, '>'), Once('\n')],
             &[Once('\n'), RepeatTimes(3, '>')],
+            false,
         ) {
-            let mut macther = Matcher::new(body);
+            let mut macther = Matcher::new(highlight.body);
             let header = macther
-                .get_node_body(&[RepeatTimes(2, '>'), Once(' ')], &[Once('\n')])
-                .map(|header| header.to_string());
+                .get_match(&[RepeatTimes(2, '>'), Once(' ')], &[Once('\n')], false)
+                .map(|header| header.body);
 
             let icon = macther
-                .get_node_body(&[Once('>'), Once(' ')], &[Once('\n')])
-                .map(|icon| icon.to_string());
+                .get_match(&[Once('>'), Once(' ')], &[Once('\n')], false)
+                .map(|icon| icon.body);
 
             return Self::parse_branch(macther.get_rest(), Self::new(header, icon));
         }

@@ -159,8 +159,8 @@ mod tests {
         nodes::heading::Heading,
         nodes::paragraph::Paragraph,
         nodes::{
-            bold::Bold, code::Code, highlight::Highlight, image::Image, image_gallery::ImageGallery,
-            strikethrough::Strikethrough, text::Text,
+            bold::Bold, code::Code, highlight::Highlight, image::Image,
+            image_gallery::ImageGallery, strikethrough::Strikethrough, text::Text,
         },
         toolkit::deserializer::Branch,
         toolkit::{deserializer::Deserializer, node::Node},

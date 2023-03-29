@@ -3,8 +3,8 @@ use crate::toolkit::{
     deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
     node::Node,
     tokenizer::{
-        Quantifiers::{Once, RepeatTimes},
         Matcher,
+        Quantifiers::{Once, RepeatTimes},
     },
 };
 
@@ -84,11 +84,12 @@ impl Node for ImageGallery {
 impl Deserializer for ImageGallery {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(body) = matcher.get_node_body(
+        if let Some(image_gallery) = matcher.get_match(
             &[RepeatTimes(3, '!'), Once('\n')],
             &[Once('\n'), Once('!'), Once('!'), Once('!')],
+            false,
         ) {
-            return Self::parse_branch(body, Self::new());
+            return Self::parse_branch(image_gallery.body, Self::new());
         }
         None
     }

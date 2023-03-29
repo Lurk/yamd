@@ -3,7 +3,7 @@ use crate::{
     toolkit::deserializer::Deserializer,
     toolkit::{
         node::Node,
-        tokenizer::{Quantifiers::Once, Matcher},
+        tokenizer::{Matcher, Quantifiers::Once},
     },
 };
 
@@ -35,10 +35,9 @@ impl Node for Anchor {
 impl Deserializer for Anchor {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(text_part) = matcher.get_node_body(&[Once('[')], &[Once(']')]) {
-            let text_part = text_part.to_string();
-            if let Some(url_part) = matcher.get_node_body(&[Once('(')], &[Once(')')]) {
-                return Some(Anchor::new(text_part, url_part.to_string()));
+        if let Some(text) = matcher.get_match(&[Once('[')], &[Once(']')], false) {
+            if let Some(url) = matcher.get_match(&[Once('(')], &[Once(')')], false) {
+                return Some(Anchor::new(text.body, url.body));
             }
         }
         None

@@ -2,7 +2,7 @@ use crate::toolkit::{
     context::Context,
     deserializer::Deserializer,
     node::Node,
-    tokenizer::{Quantifiers::Once, Matcher},
+    tokenizer::{Matcher, Quantifiers::Once},
 };
 
 #[derive(Debug, PartialEq)]
@@ -32,14 +32,13 @@ impl Node for Code {
 impl Deserializer for Code {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(lang_body) =
-            matcher.get_node_body(&[Once('`'), Once('`'), Once('`')], &[Once('\n')])
+        if let Some(lang) =
+            matcher.get_match(&[Once('`'), Once('`'), Once('`')], &[Once('\n')], false)
         {
-            let lang_body = lang_body.to_string();
-            if let Some(code_boy) =
-                matcher.get_node_body(&[], &[Once('\n'), Once('`'), Once('`'), Once('`')])
+            if let Some(code) =
+                matcher.get_match(&[], &[Once('\n'), Once('`'), Once('`'), Once('`')], false)
             {
-                return Some(Self::new(lang_body, code_boy.to_string()));
+                return Some(Self::new(lang.body, code.body));
             }
         }
         None

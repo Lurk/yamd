@@ -84,10 +84,11 @@ pub struct Matcher<'input> {
     position: usize,
 }
 
-pub struct Match<'input>{
-    start_token:&'input str,
-    body:&'input str,
-    end_token: &'input str
+#[derive(Debug, PartialEq)]
+pub struct Match<'input> {
+    pub start_token: &'input str,
+    pub body: &'input str,
+    pub end_token: &'input str,
 }
 
 impl<'input> Matcher<'input> {
@@ -95,81 +96,124 @@ impl<'input> Matcher<'input> {
         Self { input, position: 0 }
     }
 
-    pub fn get_node_body_start_position<const START_SEQUENCE_SIZE: usize>(
-        &self,
-        start_token: &'input [Quantifiers; START_SEQUENCE_SIZE],
-    ) -> Option<usize> {
-        let add = if self.position == 0 { 0 } else { 1 };
-        if start_token.is_empty() {
-            return Some(self.position + add);
-        } else {
-            let mut pattern = Pattern::new(start_token);
-            for char in self.input.chars().skip(self.position + add) {
-                if !pattern.check_character(&char) {
-                    break;
-                }
-                if pattern.is_end_of_sequence() {
-                    return Some(pattern.length + self.position + add);
-                }
-            }
-        }
-        None
-    }
-
-    pub fn get_node_body<const START_SEQUENCE_SIZE: usize, const END_SEQUENCE_SIZE: usize>(
-        &mut self,
-        start_sequence: &'input [Quantifiers; START_SEQUENCE_SIZE],
-        end_sequence: &'input [Quantifiers; END_SEQUENCE_SIZE],
-    ) -> Option<&str> {
-        self.get_node_body_with_end_of_input(start_sequence, end_sequence, false)
-    }
-
-    pub fn get_node_body_with_end_of_input<
-        const START_SEQUENCE_SIZE: usize,
-        const END_SEQUENCE_SIZE: usize,
-    >(
+    pub fn get_match<const START_SEQUENCE_SIZE: usize, const END_SEQUENCE_SIZE: usize>(
         &mut self,
         start_sequence: &'input [Quantifiers; START_SEQUENCE_SIZE],
         end_sequence: &'input [Quantifiers; END_SEQUENCE_SIZE],
         match_end_of_input: bool,
-    ) -> Option<&str> {
-        if let Some(body_start) = self.get_node_body_start_position(start_sequence) {
-            let mut end_matcher = Pattern::new(end_sequence);
-            for (index, char) in self.input.chars().enumerate().skip(body_start) {
-                if end_matcher.check_character(&char) && end_matcher.is_end_of_sequence() {
-                    self.position = index;
-                    return Some(&self.input[body_start..index - (end_matcher.length - 1)]);
+    ) -> Option<Match<'input>> {
+        if let Some((start_token_end_index, start_sequence_length)) =
+            self.iterate(start_sequence, self.position, true, false)
+        {
+            if let Some((end_token_end_index, end_sequence_length)) = self.iterate(
+                end_sequence,
+                start_token_end_index,
+                false,
+                match_end_of_input,
+            ) {
+                self.position = end_token_end_index;
+                return Some(Match {
+                    start_token: &self.input
+                        [(start_token_end_index - start_sequence_length)..start_token_end_index],
+                    body: &self.input
+                        [start_token_end_index..end_token_end_index - end_sequence_length],
+                    end_token: &self.input
+                        [(end_token_end_index - end_sequence_length)..end_token_end_index],
+                });
+            }
+        }
+        None
+    }
+
+    fn iterate<const SEQUENCE_SIZE: usize>(
+        &self,
+        sequence: &[Quantifiers; SEQUENCE_SIZE],
+        start_position: usize,
+        fail_fast: bool,
+        match_end_of_input: bool,
+    ) -> Option<(usize, usize)> {
+        if sequence.is_empty() {
+            return Some((start_position, 0));
+        } else {
+            let mut pattern = Pattern::new(sequence);
+            for (index, char) in self.input.chars().enumerate().skip(start_position) {
+                let is_character_in_pattern = pattern.check_character(&char);
+                if is_character_in_pattern && pattern.is_end_of_sequence() {
+                    return Some((index + 1, pattern.length));
                 } else if match_end_of_input && index == self.input.len() - 1 {
-                    self.position = index;
-                    return Some(&self.input[body_start..]);
+                    return Some((index + 1, 0));
+                } else if fail_fast && !is_character_in_pattern {
+                    break;
                 }
             }
         }
-
         None
     }
 
     pub fn get_rest(&self) -> &'input str {
-        &self.input[self.position + 1..]
+        &self.input[self.position..]
     }
 }
 #[cfg(test)]
 mod tests {
     use crate::toolkit::tokenizer::{
-        Pattern,
+        Match, Matcher, Pattern,
         Quantifiers::{Once, RepeatTimes, ZeroOrMore},
-        Matcher,
     };
 
     #[test]
-    fn parse_part() {
-        let mut c = Matcher::new("*italic**one more* statement");
-        assert_eq!(c.get_node_body(&[Once('*')], &[Once('*')]), Some("italic"));
+    fn get_match() {
+        let mut matcher = Matcher::new("*italic*~~one more~~ statement");
         assert_eq!(
-            c.get_node_body(&[Once('*')], &[Once('*')]),
-            Some("one more")
+            matcher.get_match(&[Once('*')], &[Once('*')], false),
+            Some(Match {
+                start_token: "*",
+                body: "italic",
+                end_token: "*"
+            })
         );
-        assert_eq!(c.get_rest(), " statement");
+        assert_eq!(
+            matcher.get_match(&[RepeatTimes(2, '~')], &[RepeatTimes(2, '~')], false),
+            Some(Match {
+                start_token: "~~",
+                body: "one more",
+                end_token: "~~",
+            })
+        );
+    }
+
+    #[test]
+    fn get_match_with_end_of_input() {
+        let mut matcher = Matcher::new("*italic*~~one more");
+        assert_eq!(
+            matcher.get_match(&[Once('*')], &[Once('*')], false),
+            Some(Match {
+                start_token: "*",
+                body: "italic",
+                end_token: "*"
+            })
+        );
+        assert_eq!(
+            matcher.get_match(&[RepeatTimes(2, '~')], &[RepeatTimes(2, '~')], true),
+            Some(Match {
+                start_token: "~~",
+                body: "one more",
+                end_token: "",
+            })
+        );
+    }
+
+    #[test]
+    fn get_match_with() {
+        let mut matcher = Matcher::new("t");
+        assert_eq!(
+            matcher.get_match(&[], &[RepeatTimes(2, '\n')], true),
+            Some(Match {
+                start_token: "",
+                body: "t",
+                end_token: ""
+            })
+        )
     }
 
     #[test]
@@ -243,6 +287,15 @@ mod tests {
     fn pattern_ends_with_exact_repeat() {
         let mut m = Pattern::new(&[Once('-'), RepeatTimes(2, ' ')]);
         assert_eq!(m.check_character(&'-'), true);
+        assert_eq!(m.check_character(&' '), true);
+        assert_eq!(m.check_character(&' '), true);
+        assert_eq!(m.is_end_of_sequence(), true);
+        assert_eq!(m.check_character(&' '), false);
+    }
+
+    #[test]
+    fn repeat_times_pattern() {
+        let mut m = Pattern::new(&[RepeatTimes(2, ' ')]);
         assert_eq!(m.check_character(&' '), true);
         assert_eq!(m.check_character(&' '), true);
         assert_eq!(m.is_end_of_sequence(), true);
