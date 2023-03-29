@@ -3,8 +3,8 @@ use crate::toolkit::{
     deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
     node::Node,
     tokenizer::{
-        Pattern::{Once, RepeatTimes, ZerroOrMore},
-        Tokenizer,
+        Matcher,
+        Quantifiers::{Once, RepeatTimes, ZeroOrMore},
     },
 };
 
@@ -22,14 +22,14 @@ pub enum ListNodes {
 }
 
 impl Node for ListNodes {
-    fn len(&self) -> usize {
-        match self {
-            ListNodes::ListItem(node) => node.len(),
-        }
-    }
     fn serialize(&self) -> String {
         match self {
             ListNodes::ListItem(node) => node.serialize(),
+        }
+    }
+    fn len(&self) -> usize {
+        match self {
+            ListNodes::ListItem(node) => node.len(),
         }
     }
 }
@@ -84,18 +84,18 @@ impl List {
 }
 
 impl Node for List {
-    fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.nodes.len() - 1
-    }
-    fn context(&self) -> Option<Context> {
-        Some(Self::create_context(self.level, &self.list_type))
-    }
     fn serialize(&self) -> String {
         self.nodes
             .iter()
             .map(|node| node.serialize())
             .collect::<Vec<String>>()
             .join("\n")
+    }
+    fn len(&self) -> usize {
+        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.nodes.len() - 1
+    }
+    fn context(&self) -> Option<Context> {
+        Some(Self::create_context(self.level, &self.list_type))
     }
 }
 
@@ -105,27 +105,35 @@ impl Deserializer for List {
             Some(_) => Self::get_level_from_context(&ctx) + 1,
             None => 0,
         };
-        let tokenizer = Tokenizer::new(input);
-        if tokenizer
-            .get_node_body_start_position(&[
-                ZerroOrMore('\n'),
+        let mut matcher = Matcher::new(input);
+        if let Some(unordered_list) = matcher.get_match(
+            &[
+                ZeroOrMore('\n'),
                 RepeatTimes(level, ' '),
                 Once('-'),
                 Once(' '),
-            ])
-            .is_some()
-        {
-            return Self::parse_branch(input, Self::new(ListTypes::Unordered, level));
-        } else if tokenizer
-            .get_node_body_start_position(&[
-                ZerroOrMore('\n'),
+            ],
+            &[RepeatTimes(2, '\n')],
+            true,
+        ) {
+            return Self::parse_branch(
+                &input[..unordered_list.start_token.len() + unordered_list.body.len()],
+                Self::new(ListTypes::Unordered, level),
+            );
+        } else if let Some(ordered_list) = matcher.get_match(
+            &[
+                ZeroOrMore('\n'),
                 RepeatTimes(level, ' '),
                 Once('+'),
                 Once(' '),
-            ])
-            .is_some()
-        {
-            return Self::parse_branch(input, Self::new(ListTypes::Ordered, level));
+            ],
+            &[RepeatTimes(2, '\n')],
+            true,
+        ) {
+            return Self::parse_branch(
+                &input[..ordered_list.start_token.len() + ordered_list.body.len()],
+                Self::new(ListTypes::Ordered, level),
+            );
         }
         None
     }

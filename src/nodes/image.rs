@@ -3,8 +3,8 @@ use crate::toolkit::{
     deserializer::Deserializer,
     node::Node,
     tokenizer::{
-        Pattern::{Once, ZerroOrMore},
-        Tokenizer,
+        Matcher,
+        Quantifiers::{Once, ZeroOrMore},
     },
 };
 
@@ -24,23 +24,24 @@ impl Image {
 }
 
 impl Node for Image {
-    fn len(&self) -> usize {
-        self.alt.len() + self.url.len() + 5
-    }
     fn serialize(&self) -> String {
         format!("![{}]({})", self.alt, self.url)
+    }
+    fn len(&self) -> usize {
+        self.alt.len() + self.url.len() + 5
     }
 }
 
 impl Deserializer for Image {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut tokenizer = Tokenizer::new(input);
-        if let Some(alt_body) =
-            tokenizer.get_node_body(&[ZerroOrMore('\n'), Once('!'), Once('[')], &[Once(']')])
-        {
-            let alt_body = alt_body.to_string();
-            if let Some(url_body) = tokenizer.get_node_body(&[Once('(')], &[Once(')')]) {
-                return Some(Self::new(alt_body, url_body.to_string()));
+        let mut matcher = Matcher::new(input);
+        if let Some(alt) = matcher.get_match(
+            &[ZeroOrMore('\n'), Once('!'), Once('[')],
+            &[Once(']')],
+            false,
+        ) {
+            if let Some(url) = matcher.get_match(&[Once('(')], &[Once(')')], false) {
+                return Some(Self::new(alt.body, url.body));
             }
         }
         None

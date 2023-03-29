@@ -1,6 +1,6 @@
 use crate::{
     toolkit::context::Context,
-    toolkit::tokenizer::{Pattern::Once, Tokenizer},
+    toolkit::tokenizer::{Matcher, Quantifiers::Once},
     toolkit::{deserializer::Deserializer, node::Node},
 };
 
@@ -16,19 +16,19 @@ impl InlineCode {
 }
 
 impl Node for InlineCode {
-    fn len(&self) -> usize {
-        self.text.len() + 2
-    }
     fn serialize(&self) -> String {
         format!("`{}`", self.text)
+    }
+    fn len(&self) -> usize {
+        self.text.len() + 2
     }
 }
 
 impl Deserializer for InlineCode {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut chars = Tokenizer::new(input);
-        if let Some(body) = chars.get_node_body(&[Once('`')], &[Once('`')]) {
-            return Some(InlineCode::new(body));
+        let mut matcher = Matcher::new(input);
+        if let Some(inline_code) = matcher.get_match(&[Once('`')], &[Once('`')], false) {
+            return Some(InlineCode::new(inline_code.body));
         }
         None
     }

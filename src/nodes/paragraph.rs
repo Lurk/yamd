@@ -6,7 +6,7 @@ use crate::toolkit::node::Node;
 use crate::toolkit::{
     context::Context,
     deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
-    tokenizer::{Pattern::Once, Tokenizer},
+    tokenizer::{Matcher, Quantifiers::RepeatTimes},
 };
 
 #[derive(Debug, PartialEq)]
@@ -56,16 +56,6 @@ impl From<InlineCode> for ParagraphNodes {
 }
 
 impl Node for ParagraphNodes {
-    fn len(&self) -> usize {
-        match self {
-            ParagraphNodes::A(node) => node.len(),
-            ParagraphNodes::B(node) => node.len(),
-            ParagraphNodes::I(node) => node.len(),
-            ParagraphNodes::S(node) => node.len(),
-            ParagraphNodes::Text(node) => node.len(),
-            ParagraphNodes::InlineCode(node) => node.len(),
-        }
-    }
     fn serialize(&self) -> String {
         match self {
             ParagraphNodes::A(node) => node.serialize(),
@@ -74,6 +64,16 @@ impl Node for ParagraphNodes {
             ParagraphNodes::S(node) => node.serialize(),
             ParagraphNodes::Text(node) => node.serialize(),
             ParagraphNodes::InlineCode(node) => node.serialize(),
+        }
+    }
+    fn len(&self) -> usize {
+        match self {
+            ParagraphNodes::A(node) => node.len(),
+            ParagraphNodes::B(node) => node.len(),
+            ParagraphNodes::I(node) => node.len(),
+            ParagraphNodes::S(node) => node.len(),
+            ParagraphNodes::Text(node) => node.len(),
+            ParagraphNodes::InlineCode(node) => node.len(),
         }
     }
 }
@@ -125,21 +125,15 @@ impl Branch<ParagraphNodes> for Paragraph {
 
 impl Deserializer for Paragraph {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut tokenizer = Tokenizer::new(input);
-        if let Some(body) =
-            tokenizer.get_node_body_with_end_of_input(&[], &[Once('\n'), Once('\n')], true)
-        {
-            return Self::parse_branch(body, Self::new(input.len() == body.len()));
+        let mut matcher = Matcher::new(input);
+        if let Some(paragraph) = matcher.get_match(&[], &[RepeatTimes(2, '\n')], true) {
+            return Self::parse_branch(paragraph.body, Self::new(paragraph.end_token.is_empty()));
         }
         None
     }
 }
 
 impl Node for Paragraph {
-    fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
-    }
-
     fn serialize(&self) -> String {
         let end_token = match self.consumed_all_input {
             true => "",
@@ -154,6 +148,10 @@ impl Node for Paragraph {
                 .concat(),
             end_token
         )
+    }
+
+    fn len(&self) -> usize {
+        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
     }
 }
 

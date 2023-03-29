@@ -6,7 +6,7 @@ use crate::{
 };
 
 use super::{
-    code::Code, highlight::Highlight, image::Image, image_gallery::ImageGalery, list::List,
+    code::Code, highlight::Highlight, image::Image, image_gallery::ImageGallery, list::List,
 };
 
 #[derive(Debug, PartialEq)]
@@ -16,7 +16,7 @@ pub enum YamdNodes {
     Image(Image),
     Code(Code),
     List(List),
-    ImageGalery(ImageGalery),
+    ImageGallery(ImageGallery),
     Highlight(Highlight),
 }
 
@@ -50,9 +50,9 @@ impl From<List> for YamdNodes {
     }
 }
 
-impl From<ImageGalery> for YamdNodes {
-    fn from(value: ImageGalery) -> Self {
-        YamdNodes::ImageGalery(value)
+impl From<ImageGallery> for YamdNodes {
+    fn from(value: ImageGallery) -> Self {
+        YamdNodes::ImageGallery(value)
     }
 }
 
@@ -63,18 +63,6 @@ impl From<Highlight> for YamdNodes {
 }
 
 impl Node for YamdNodes {
-    fn len(&self) -> usize {
-        let len = match self {
-            YamdNodes::P(node) => node.len(),
-            YamdNodes::H(node) => node.len(),
-            YamdNodes::Image(node) => node.len(),
-            YamdNodes::Code(node) => node.len(),
-            YamdNodes::List(node) => node.len(),
-            YamdNodes::ImageGalery(node) => node.len(),
-            YamdNodes::Highlight(node) => node.len(),
-        };
-        len + 2
-    }
     fn serialize(&self) -> String {
         match self {
             YamdNodes::P(node) => node.serialize(),
@@ -82,13 +70,25 @@ impl Node for YamdNodes {
             YamdNodes::Image(node) => node.serialize(),
             YamdNodes::Code(node) => node.serialize(),
             YamdNodes::List(node) => node.serialize(),
-            YamdNodes::ImageGalery(node) => node.serialize(),
+            YamdNodes::ImageGallery(node) => node.serialize(),
             YamdNodes::Highlight(node) => node.serialize(),
         }
     }
+    fn len(&self) -> usize {
+        let len = match self {
+            YamdNodes::P(node) => node.len(),
+            YamdNodes::H(node) => node.len(),
+            YamdNodes::Image(node) => node.len(),
+            YamdNodes::Code(node) => node.len(),
+            YamdNodes::List(node) => node.len(),
+            YamdNodes::ImageGallery(node) => node.len(),
+            YamdNodes::Highlight(node) => node.len(),
+        };
+        len + 2
+    }
 }
 
-/// Yamd is a parrent node for every node.
+/// Yamd is a parent node for every node.
 #[derive(Debug, PartialEq)]
 pub struct Yamd {
     nodes: Vec<YamdNodes>,
@@ -114,7 +114,7 @@ impl Branch<YamdNodes> for Yamd {
             Image::maybe_node(),
             Code::maybe_node(),
             List::maybe_node(),
-            ImageGalery::maybe_node(),
+            ImageGallery::maybe_node(),
             Highlight::maybe_node(),
         ]
     }
@@ -141,15 +141,15 @@ impl Default for Yamd {
 }
 
 impl Node for Yamd {
-    fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum()
-    }
     fn serialize(&self) -> String {
         self.nodes
             .iter()
             .map(|node| node.serialize())
             .collect::<Vec<String>>()
             .join("\n\n")
+    }
+    fn len(&self) -> usize {
+        self.nodes.iter().map(|node| node.len()).sum()
     }
 }
 
@@ -159,8 +159,8 @@ mod tests {
         nodes::heading::Heading,
         nodes::paragraph::Paragraph,
         nodes::{
-            bold::Bold, code::Code, highlight::Highlight, image::Image, image_gallery::ImageGalery,
-            strikethrough::Strikethrough, text::Text,
+            bold::Bold, code::Code, highlight::Highlight, image::Image,
+            image_gallery::ImageGallery, strikethrough::Strikethrough, text::Text,
         },
         toolkit::deserializer::Branch,
         toolkit::{deserializer::Deserializer, node::Node},
@@ -229,7 +229,7 @@ mod tests {
                 .into(),
                 Image::new('a', 'u').into(),
                 Heading::new("h", 2).into(),
-                ImageGalery::new_with_nodes(vec![Image::new("a", "u").into(), Image::new("a2", "u2").into()]).into(),
+                ImageGallery::new_with_nodes(vec![Image::new("a", "u").into(), Image::new("a2", "u2").into()]).into(),
                 Highlight::new_with_nodes(Some("H"), Some("I"), vec![Paragraph::new_with_nodes(true, vec![Strikethrough::new("s").into()]).into()]).into()
             ]))
         );

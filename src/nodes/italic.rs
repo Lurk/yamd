@@ -2,7 +2,7 @@ use crate::{
     toolkit::{context::Context, deserializer::Deserializer},
     toolkit::{
         node::Node,
-        tokenizer::{Pattern::Once, Tokenizer},
+        tokenizer::{Matcher, Quantifiers::Once},
     },
 };
 
@@ -19,19 +19,19 @@ impl Italic {
 }
 
 impl Node for Italic {
-    fn len(&self) -> usize {
-        self.text.len() + 2
-    }
     fn serialize(&self) -> String {
         format!("_{}_", self.text)
+    }
+    fn len(&self) -> usize {
+        self.text.len() + 2
     }
 }
 
 impl Deserializer for Italic {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut tokenizer = Tokenizer::new(input);
-        if let Some(body) = tokenizer.get_node_body(&[Once('_')], &[Once('_')]) {
-            return Some(Italic::new(body));
+        let mut matcher = Matcher::new(input);
+        if let Some(italic) = matcher.get_match(&[Once('_')], &[Once('_')], false) {
+            return Some(Italic::new(italic.body));
         }
 
         None
