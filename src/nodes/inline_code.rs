@@ -36,9 +36,9 @@ impl Deserializer for InlineCode {
 
 #[cfg(test)]
 mod tests {
-    use crate::toolkit::{deserializer::Deserializer, node::Node};
-
     use super::InlineCode;
+    use crate::toolkit::{deserializer::Deserializer, node::Node};
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn to_string() {

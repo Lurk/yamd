@@ -40,22 +40,29 @@ pub struct Highlight {
     header: Option<String>,
     icon: Option<String>,
     nodes: Vec<HighlightNodes>,
+    consumed_all_input: bool,
 }
 
 impl Highlight {
-    pub fn new<H: Into<String>, I: Into<String>>(header: Option<H>, icon: Option<I>) -> Self {
-        Self::new_with_nodes(header, icon, vec![])
+    pub fn new<H: Into<String>, I: Into<String>>(
+        header: Option<H>,
+        icon: Option<I>,
+        consumed_all_input: bool,
+    ) -> Self {
+        Self::new_with_nodes(header, icon, consumed_all_input, vec![])
     }
 
     pub fn new_with_nodes<H: Into<String>, I: Into<String>>(
         header: Option<H>,
         icon: Option<I>,
+        consumed_all_input: bool,
         nodes: Vec<HighlightNodes>,
     ) -> Self {
         Self {
             header: header.map(|header| header.into()),
             icon: icon.map(|icon| icon.into()),
             nodes,
+            consumed_all_input,
         }
     }
 }
@@ -70,8 +77,9 @@ impl Node for Highlight {
             Some(icon) => format!("> {icon}\n"),
             None => String::new(),
         };
+        let end = if self.consumed_all_input { "" } else { "\n\n" };
         format!(
-            ">>>\n{header}{icon}{}\n>>>",
+            ">>>\n{header}{icon}{}\n>>>{end}",
             self.nodes
                 .iter()
                 .map(|node| node.serialize())
@@ -109,29 +117,37 @@ impl Branch<HighlightNodes> for Highlight {
             Some(icon) => icon.len() + 3,
             None => 0,
         };
+        let end = if self.consumed_all_input { 0 } else { 2 };
 
-        8 + icon + header
+        8 + icon + header + end
     }
 }
 
 impl Deserializer for Highlight {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut matcher = Matcher::new(input);
-        if let Some(highlight) = matcher.get_match(
+        let mut outer_matcher = Matcher::new(input);
+        if let Some(highlight) = outer_matcher.get_match(
             &[RepeatTimes(3, '>'), Once('\n')],
             &[Once('\n'), RepeatTimes(3, '>')],
             false,
         ) {
-            let mut macther = Matcher::new(highlight.body);
-            let header = macther
+            let mut matcher = Matcher::new(highlight.body);
+            let header = matcher
                 .get_match(&[RepeatTimes(2, '>'), Once(' ')], &[Once('\n')], false)
                 .map(|header| header.body);
 
-            let icon = macther
+            let icon = matcher
                 .get_match(&[Once('>'), Once(' ')], &[Once('\n')], false)
                 .map(|icon| icon.body);
+            let consumed_all_input = outer_matcher
+                .get_match(&[RepeatTimes(2, '\n')], &[], false)
+                .is_none();
 
-            return Self::parse_branch(macther.get_rest(), Self::new(header, icon));
+            println!("++++++\n{}\n+++++++++++", matcher.get_rest());
+            return Self::parse_branch(
+                matcher.get_rest(),
+                Self::new(header, icon, consumed_all_input),
+            );
         }
 
         None
@@ -144,6 +160,7 @@ mod tests {
         nodes::{highlight::Highlight, paragraph::Paragraph, text::Text},
         toolkit::{deserializer::Deserializer, node::Node},
     };
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn len() {
@@ -151,6 +168,7 @@ mod tests {
             Highlight::new_with_nodes(
                 Some("h"),
                 Some("i"),
+                true,
                 vec![
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
@@ -159,6 +177,19 @@ mod tests {
             .len(),
             21
         );
+        assert_eq!(
+            Highlight::new_with_nodes(
+                Some("h"),
+                Some("i"),
+                false,
+                vec![
+                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into(),
+                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
+                ]
+            )
+            .len(),
+            23
+        );
     }
     #[test]
     fn serialize() {
@@ -166,6 +197,7 @@ mod tests {
             Highlight::new_with_nodes(
                 Some("h"),
                 Some("i"),
+                true,
                 vec![
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
@@ -173,6 +205,19 @@ mod tests {
             )
             .serialize(),
             String::from(">>>\n>> h\n> i\nt\n\nt\n>>>")
+        );
+        assert_eq!(
+            Highlight::new_with_nodes(
+                Some("h"),
+                Some("i"),
+                false,
+                vec![
+                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into(),
+                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
+                ]
+            )
+            .serialize(),
+            String::from(">>>\n>> h\n> i\nt\n\nt\n>>>\n\n")
         );
     }
 
@@ -183,9 +228,23 @@ mod tests {
             Some(Highlight::new_with_nodes(
                 Some("h"),
                 Some("i"),
+                true,
                 vec![
                     Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
+                ]
+            ))
+        );
+
+        assert_eq!(
+            Highlight::deserialize(">>>\n>> h\n> i\nt\n\nt2\n>>>\n\n"),
+            Some(Highlight::new_with_nodes(
+                Some("h"),
+                Some("i"),
+                false,
+                vec![
+                    Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
+                    Paragraph::new_with_nodes(true, vec![Text::new("t2").into()]).into()
                 ]
             ))
         )

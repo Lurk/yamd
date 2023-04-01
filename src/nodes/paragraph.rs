@@ -170,6 +170,7 @@ impl FallbackNode for Paragraph {
 
 #[cfg(test)]
 mod tests {
+    use super::Paragraph;
     use crate::{
         nodes::bold::Bold,
         nodes::inline_code::InlineCode,
@@ -179,8 +180,7 @@ mod tests {
             node::Node,
         },
     };
-
-    use super::Paragraph;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn push() {
@@ -215,6 +215,10 @@ mod tests {
         assert_eq!(
             Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).serialize(),
             "t\n\n".to_string()
+        );
+        assert_eq!(
+            Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).serialize(),
+            "t".to_string()
         )
     }
 
@@ -239,5 +243,10 @@ mod tests {
                 vec![Text::new("1 2").into()]
             ))
         );
+    }
+    #[test]
+    fn len() {
+        assert_eq!(Paragraph::new(true).len(), 0);
+        assert_eq!(Paragraph::new(false).len(), 2);
     }
 }

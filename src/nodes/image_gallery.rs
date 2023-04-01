@@ -39,45 +39,36 @@ impl From<Image> for ImageGalleryNodes {
 #[derive(Debug, PartialEq)]
 pub struct ImageGallery {
     nodes: Vec<ImageGalleryNodes>,
+    consumed_all_input: bool,
 }
 
 impl ImageGallery {
-    pub fn new() -> Self {
-        Self::new_with_nodes(vec![])
+    pub fn new(consumed_all_input: bool) -> Self {
+        Self::new_with_nodes(vec![], consumed_all_input)
     }
 
-    pub fn new_with_nodes(nodes: Vec<ImageGalleryNodes>) -> Self {
-        Self { nodes }
-    }
-}
-
-impl Default for ImageGallery {
-    fn default() -> Self {
-        Self::new()
+    pub fn new_with_nodes(nodes: Vec<ImageGalleryNodes>, consumed_all_input: bool) -> Self {
+        Self {
+            nodes,
+            consumed_all_input,
+        }
     }
 }
 
 impl Node for ImageGallery {
     fn serialize(&self) -> String {
+        let end = if self.consumed_all_input { "" } else { "\n\n" };
         format!(
-            "!!!\n{}\n!!!",
+            "!!!\n{}!!!{end}",
             self.nodes
                 .iter()
                 .map(|node| node.serialize())
                 .collect::<Vec<String>>()
-                .join("\n")
+                .join("")
         )
     }
     fn len(&self) -> usize {
-        let spacing_len = if self.nodes.is_empty() {
-            0
-        } else {
-            self.nodes.len() - 1
-        };
-
-        self.nodes.iter().map(|node| node.len()).sum::<usize>()
-            + spacing_len
-            + self.get_outer_token_length()
+        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
     }
 }
 
@@ -86,10 +77,17 @@ impl Deserializer for ImageGallery {
         let mut matcher = Matcher::new(input);
         if let Some(image_gallery) = matcher.get_match(
             &[RepeatTimes(3, '!'), Once('\n')],
-            &[Once('\n'), Once('!'), Once('!'), Once('!')],
+            &[RepeatTimes(3, '!')],
             false,
         ) {
-            return Self::parse_branch(image_gallery.body, Self::new());
+            return Self::parse_branch(
+                image_gallery.body,
+                Self::new(
+                    matcher
+                        .get_match(&[RepeatTimes(2, '\n')], &[], false)
+                        .is_none(),
+                ),
+            );
         }
         None
     }
@@ -109,40 +107,72 @@ impl Branch<ImageGalleryNodes> for ImageGallery {
     }
 
     fn get_outer_token_length(&self) -> usize {
-        8
+        if self.consumed_all_input {
+            7
+        } else {
+            9
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::ImageGallery;
     use crate::{
         nodes::image::Image,
         toolkit::{deserializer::Deserializer, node::Node},
     };
-
-    use super::ImageGallery;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn serialize() {
         assert_eq!(
-            ImageGallery::new_with_nodes(vec![
-                Image::new("a", "u").into(),
-                Image::new("a2", "u2").into()
-            ])
+            ImageGallery::new_with_nodes(
+                vec![
+                    Image::new("a", "u", true).into(),
+                    Image::new("a2", "u2", true).into()
+                ],
+                true
+            )
             .serialize(),
             "!!!\n![a](u)\n![a2](u2)\n!!!"
+        );
+        assert_eq!(
+            ImageGallery::new_with_nodes(
+                vec![
+                    Image::new("a", "u", true).into(),
+                    Image::new("a2", "u2", true).into()
+                ],
+                false
+            )
+            .serialize(),
+            "!!!\n![a](u)\n![a2](u2)\n!!!\n\n"
         );
     }
 
     #[test]
     fn len() {
         assert_eq!(
-            ImageGallery::new_with_nodes(vec![
-                Image::new("a", "u").into(),
-                Image::new("a2", "u2").into()
-            ])
+            ImageGallery::new_with_nodes(
+                vec![
+                    Image::new("a", "u", true).into(),
+                    Image::new("a2", "u2", true).into()
+                ],
+                true
+            )
             .len(),
             25
+        );
+        assert_eq!(
+            ImageGallery::new_with_nodes(
+                vec![
+                    Image::new("a", "u", true).into(),
+                    Image::new("a2", "u2", true).into()
+                ],
+                false
+            )
+            .len(),
+            27
         );
     }
 
@@ -150,15 +180,23 @@ mod tests {
     fn deserialize() {
         assert_eq!(
             ImageGallery::deserialize("!!!\n![a](u)\n![a2](u2)\n!!!"),
-            Some(ImageGallery::new_with_nodes(vec![
-                Image::new("a", "u").into(),
-                Image::new("a2", "u2").into()
-            ]))
+            Some(ImageGallery::new_with_nodes(
+                vec![
+                    Image::new("a", "u", true).into(),
+                    Image::new("a2", "u2", true).into()
+                ],
+                true
+            ))
         );
-    }
-
-    #[test]
-    fn default() {
-        assert_eq!(ImageGallery::default().len(), 8)
+        assert_eq!(
+            ImageGallery::deserialize("!!!\n![a](u)\n![a2](u2)\n!!!\n\n"),
+            Some(ImageGallery::new_with_nodes(
+                vec![
+                    Image::new("a", "u", true).into(),
+                    Image::new("a2", "u2", true).into()
+                ],
+                false
+            ))
+        );
     }
 }

@@ -46,9 +46,9 @@ impl Deserializer for Anchor {
 
 #[cfg(test)]
 mod tests {
-    use crate::toolkit::{deserializer::Deserializer, node::Node};
-
     use super::Anchor;
+    use crate::toolkit::{deserializer::Deserializer, node::Node};
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn happy_path() {

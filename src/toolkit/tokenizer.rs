@@ -136,6 +136,9 @@ impl<'input> Matcher<'input> {
             return Some((start_position, 0));
         } else {
             let mut pattern = Pattern::new(sequence);
+            if match_end_of_input && start_position == self.input.len() {
+                return Some((start_position, 0));
+            }
             for (index, char) in self.input.chars().enumerate().skip(start_position) {
                 let is_character_in_pattern = pattern.check_character(&char);
                 if is_character_in_pattern && pattern.is_end_of_sequence() {
@@ -160,6 +163,7 @@ mod tests {
         Match, Matcher, Pattern,
         Quantifiers::{Once, RepeatTimes, ZeroOrMore},
     };
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn get_match() {
@@ -204,13 +208,26 @@ mod tests {
     }
 
     #[test]
-    fn get_match_with() {
+    fn get_match_with_empty_start_token_and_macth_end() {
         let mut matcher = Matcher::new("t");
         assert_eq!(
             matcher.get_match(&[], &[RepeatTimes(2, '\n')], true),
             Some(Match {
                 start_token: "",
                 body: "t",
+                end_token: ""
+            })
+        )
+    }
+
+    #[test]
+    fn get_match_with_empty_body() {
+        let mut matcher = Matcher::new("--");
+        assert_eq!(
+            matcher.get_match(&[RepeatTimes(2, '-')], &[RepeatTimes(2, '\n')], true),
+            Some(Match {
+                start_token: "--",
+                body: "",
                 end_token: ""
             })
         )
