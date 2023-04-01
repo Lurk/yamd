@@ -60,6 +60,7 @@ impl Default for Context {
 #[cfg(test)]
 mod tests {
     use super::Context;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn usize_value() {

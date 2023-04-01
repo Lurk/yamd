@@ -6,7 +6,8 @@ use crate::{
 };
 
 use super::{
-    code::Code, highlight::Highlight, image::Image, image_gallery::ImageGallery, list::List,
+    code::Code, divider::Divider, highlight::Highlight, image::Image, image_gallery::ImageGallery,
+    list::List,
 };
 
 #[derive(Debug, PartialEq)]
@@ -18,6 +19,7 @@ pub enum YamdNodes {
     List(List),
     ImageGallery(ImageGallery),
     Highlight(Highlight),
+    Divider(Divider),
 }
 
 impl From<Paragraph> for YamdNodes {
@@ -62,6 +64,12 @@ impl From<Highlight> for YamdNodes {
     }
 }
 
+impl From<Divider> for YamdNodes {
+    fn from(value: Divider) -> Self {
+        YamdNodes::Divider(value)
+    }
+}
+
 impl Node for YamdNodes {
     fn serialize(&self) -> String {
         match self {
@@ -72,10 +80,11 @@ impl Node for YamdNodes {
             YamdNodes::List(node) => node.serialize(),
             YamdNodes::ImageGallery(node) => node.serialize(),
             YamdNodes::Highlight(node) => node.serialize(),
+            YamdNodes::Divider(node) => node.serialize(),
         }
     }
     fn len(&self) -> usize {
-        let len = match self {
+        match self {
             YamdNodes::P(node) => node.len(),
             YamdNodes::H(node) => node.len(),
             YamdNodes::Image(node) => node.len(),
@@ -83,8 +92,8 @@ impl Node for YamdNodes {
             YamdNodes::List(node) => node.len(),
             YamdNodes::ImageGallery(node) => node.len(),
             YamdNodes::Highlight(node) => node.len(),
-        };
-        len + 2
+            YamdNodes::Divider(node) => node.len(),
+        }
     }
 }
 
@@ -116,6 +125,7 @@ impl Branch<YamdNodes> for Yamd {
             List::maybe_node(),
             ImageGallery::maybe_node(),
             Highlight::maybe_node(),
+            Divider::maybe_node(),
         ]
     }
 
@@ -155,23 +165,31 @@ impl Node for Yamd {
 
 #[cfg(test)]
 mod tests {
+    use super::Yamd;
     use crate::{
         nodes::heading::Heading,
         nodes::paragraph::Paragraph,
         nodes::{
-            bold::Bold, code::Code, highlight::Highlight, image::Image,
-            image_gallery::ImageGallery, strikethrough::Strikethrough, text::Text,
+            bold::Bold,
+            code::Code,
+            divider::Divider,
+            highlight::Highlight,
+            image::Image,
+            image_gallery::ImageGallery,
+            list::{List, ListTypes::Unordered},
+            list_item::ListItem,
+            strikethrough::Strikethrough,
+            text::Text,
         },
         toolkit::deserializer::Branch,
         toolkit::{deserializer::Deserializer, node::Node},
     };
-
-    use super::Yamd;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn push() {
         let mut t = Yamd::new();
-        t.push(Heading::new("header", 1));
+        t.push(Heading::new("header", 1, true));
         t.push(Paragraph::new_with_nodes(
             true,
             vec![Text::new("text").into()],
@@ -183,7 +201,7 @@ mod tests {
     #[test]
     fn from_vec() {
         let t: String = Yamd::new_with_nodes(vec![
-            Heading::new("header", 1).into(),
+            Heading::new("header", 1, true).into(),
             Paragraph::new_with_nodes(true, vec![Text::new("text").into()]).into(),
         ])
         .serialize();
@@ -193,44 +211,97 @@ mod tests {
 
     #[test]
     fn deserialize() {
-        assert_eq!(
-            Yamd::deserialize("# hh\n\ntt\n\n![a](u)"),
-            Some(Yamd::new_with_nodes(vec![
-                Heading::new("hh", 1).into(),
-                Paragraph::new_with_nodes(true, vec![Text::new("tt").into()]).into(),
-                Image::new("a", "u").into()
-            ]))
-        );
+        let test_case = r#"# hello
 
+```rust
+let a=1;
+```
+
+t**b**
+
+![a](u)
+
+!!!
+![a](u)
+![a2](u2)
+!!!
+
+>>>
+>> H
+> I
+~~s~~
+>>>
+
+-----
+
+- one
+ - two
+
+end"#;
         assert_eq!(
-            Yamd::deserialize("t**b**\n\n![a](u)\n\n## h"),
+            Yamd::deserialize(test_case),
             Some(Yamd::new_with_nodes(vec![
+                Heading::new("hello", 1, false).into(),
+                Code::new("rust", "let a=1;", false).into(),
                 Paragraph::new_with_nodes(
-                    true,
+                    false,
                     vec![
                         Text::new("t").into(),
                         Bold::new_with_nodes(vec![Text::new("b").into()]).into()
                     ]
                 )
                 .into(),
-                Image::new('a', 'u').into(),
-                Heading::new("h", 2).into(),
-            ]),)
-        );
-
-        assert_eq!(
-            Yamd::deserialize("```rust\nlet a=1;\n```\n\nt**b**\n\n![a](u)\n\n## h\n\n!!!\n![a](u)\n![a2](u2)\n!!!\n\n>>>\n>> H\n> I\n~~s~~\n>>>"),
-            Some(Yamd::new_with_nodes(vec![
-                Code::new("rust", "let a=1;").into(),
-                Paragraph::new_with_nodes(true,vec![
-                    Text::new("t").into(),
-                    Bold::new_with_nodes(vec![Text::new("b").into()]).into()
-                ])
+                Image::new('a', 'u', false).into(),
+                ImageGallery::new_with_nodes(
+                    vec![
+                        Image::new("a", "u", true).into(),
+                        Image::new("a2", "u2", true).into()
+                    ],
+                    false
+                )
                 .into(),
-                Image::new('a', 'u').into(),
-                Heading::new("h", 2).into(),
-                ImageGallery::new_with_nodes(vec![Image::new("a", "u").into(), Image::new("a2", "u2").into()]).into(),
-                Highlight::new_with_nodes(Some("H"), Some("I"), vec![Paragraph::new_with_nodes(true, vec![Strikethrough::new("s").into()]).into()]).into()
+                Highlight::new_with_nodes(
+                    Some("H"),
+                    Some("I"),
+                    false,
+                    vec![
+                        Paragraph::new_with_nodes(true, vec![Strikethrough::new("s").into()])
+                            .into()
+                    ]
+                )
+                .into(),
+                Divider::new(false).into(),
+                List::new_with_nodes(
+                    Unordered,
+                    0,
+                    false,
+                    vec![ListItem::new_with_nodes(
+                        Unordered,
+                        0,
+                        vec![
+                            Paragraph::new_with_nodes(true, vec![Text::new("one").into()]).into(),
+                            List::new_with_nodes(
+                                Unordered,
+                                1,
+                                true,
+                                vec![ListItem::new_with_nodes(
+                                    Unordered,
+                                    1,
+                                    vec![Paragraph::new_with_nodes(
+                                        true,
+                                        vec![Text::new("two").into()]
+                                    )
+                                    .into()]
+                                )
+                                .into()]
+                            )
+                            .into()
+                        ]
+                    )
+                    .into()]
+                )
+                .into(),
+                Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
             ]))
         );
     }

@@ -41,9 +41,9 @@ impl Deserializer for Strikethrough {
 
 #[cfg(test)]
 mod tests {
-    use crate::toolkit::{deserializer::Deserializer, node::Node};
-
     use super::Strikethrough;
+    use crate::toolkit::{deserializer::Deserializer, node::Node};
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn happy_path() {

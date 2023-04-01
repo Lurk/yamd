@@ -1,6 +1,7 @@
 pub mod anchor;
 pub mod bold;
 pub mod code;
+pub mod divider;
 pub mod heading;
 pub mod highlight;
 pub mod image;

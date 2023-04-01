@@ -131,6 +131,7 @@ mod tests {
             node::Node,
         },
     };
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn only_text() {

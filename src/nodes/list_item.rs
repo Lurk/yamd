@@ -164,6 +164,7 @@ impl Deserializer for ListItem {
 
 #[cfg(test)]
 mod tests {
+    use super::ListItem;
     use crate::{
         nodes::{
             list::{List, ListTypes},
@@ -172,8 +173,7 @@ mod tests {
         },
         toolkit::{deserializer::Deserializer, node::Node},
     };
-
-    use super::ListItem;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn deserialize() {
@@ -223,6 +223,7 @@ mod tests {
                     List::new_with_nodes(
                         ListTypes::Unordered,
                         1,
+                        true,
                         vec![
                             ListItem::new_with_nodes(
                                 ListTypes::Unordered,
@@ -264,6 +265,7 @@ mod tests {
                     List::new_with_nodes(
                         ListTypes::Unordered,
                         1,
+                        true,
                         vec![
                             ListItem::new_with_nodes(
                                 ListTypes::Unordered,
@@ -277,6 +279,7 @@ mod tests {
                                     List::new_with_nodes(
                                         ListTypes::Unordered,
                                         2,
+                                        true,
                                         vec![ListItem::new_with_nodes(
                                             ListTypes::Unordered,
                                             2,
