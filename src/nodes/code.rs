@@ -91,5 +91,6 @@ mod tests {
             Code::deserialize("```rust\nlet a=1;\n```\n\n"),
             Some(Code::new("rust", "let a=1;", false))
         );
+        assert_eq!(Code::deserialize("```rust\nlet a=1;\n"), None);
     }
 }

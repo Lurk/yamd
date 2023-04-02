@@ -58,14 +58,16 @@ mod tests {
     }
 
     #[test]
-    fn to_string_with_text() {
+    fn serialize() {
         let a: String = Anchor::new("nice link", "https://test.io").serialize();
         assert_eq!(a, "[nice link](https://test.io)".to_string());
     }
 
     #[test]
-    fn from_string() {
-        assert_eq!(Anchor::deserialize("[1](2)"), Some(Anchor::new("1", "2")))
+    fn deserialize() {
+        assert_eq!(Anchor::deserialize("[1](2)"), Some(Anchor::new("1", "2")));
+        assert_eq!(Anchor::deserialize("[1"), None);
+        assert_eq!(Anchor::deserialize("[1](2"), None);
     }
 
     #[test]

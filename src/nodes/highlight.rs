@@ -143,7 +143,6 @@ impl Deserializer for Highlight {
                 .get_match(&[RepeatTimes(2, '\n')], &[], false)
                 .is_none();
 
-            println!("++++++\n{}\n+++++++++++", matcher.get_rest());
             return Self::parse_branch(
                 matcher.get_rest(),
                 Self::new(header, icon, consumed_all_input),
@@ -190,6 +189,19 @@ mod tests {
             .len(),
             23
         );
+        assert_eq!(
+            Highlight::new_with_nodes::<String, String>(
+                None,
+                None,
+                false,
+                vec![
+                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into(),
+                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
+                ]
+            )
+            .len(),
+            14
+        );
     }
     #[test]
     fn serialize() {
@@ -218,6 +230,19 @@ mod tests {
             )
             .serialize(),
             String::from(">>>\n>> h\n> i\nt\n\nt\n>>>\n\n")
+        );
+        assert_eq!(
+            Highlight::new_with_nodes::<String, String>(
+                None,
+                None,
+                false,
+                vec![
+                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into(),
+                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
+                ]
+            )
+            .serialize(),
+            String::from(">>>\nt\n\nt\n>>>\n\n")
         );
     }
 
