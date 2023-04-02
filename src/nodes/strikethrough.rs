@@ -2,7 +2,7 @@ use crate::{
     toolkit::{context::Context, deserializer::Deserializer},
     toolkit::{
         node::Node,
-        tokenizer::{Matcher, Quantifiers::Once},
+        tokenizer::{Matcher, Quantifiers::RepeatTimes},
     },
 };
 
@@ -31,7 +31,7 @@ impl Deserializer for Strikethrough {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(strikethrough) =
-            matcher.get_match(&[Once('~'), Once('~')], &[Once('~'), Once('~')], false)
+            matcher.get_match(&[RepeatTimes(2, '~')], &[RepeatTimes(2, '~')], false)
         {
             return Some(Strikethrough::new(strikethrough.body));
         }

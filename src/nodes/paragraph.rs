@@ -174,7 +174,7 @@ mod tests {
     use crate::{
         nodes::bold::Bold,
         nodes::inline_code::InlineCode,
-        nodes::{anchor::Anchor, text::Text},
+        nodes::{anchor::Anchor, italic::Italic, strikethrough::Strikethrough, text::Text},
         toolkit::{
             deserializer::{Branch, Deserializer},
             node::Node,
@@ -196,30 +196,26 @@ mod tests {
     }
 
     #[test]
-    fn from_vec() {
-        let p: String = Paragraph::new_with_nodes(
-            true,
-            vec![
-                Text::new("simple text ").into(),
-                Bold::new_with_nodes(vec![Text::new("bold text").into()]).into(),
-                InlineCode::new("let foo='bar';").into(),
-            ],
-        )
-        .serialize();
-
-        assert_eq!(p, "simple text **bold text**`let foo='bar';`".to_string());
-    }
-
-    #[test]
     fn serialize() {
+        assert_eq!(
+            Paragraph::new_with_nodes(
+                true,
+                vec![
+                    Text::new("simple text ").into(),
+                    Bold::new_with_nodes(vec![Text::new("bold text").into()]).into(),
+                    InlineCode::new("let foo='bar';").into(),
+                    Anchor::new("a", "u").into(),
+                    Italic::new("I").into(),
+                    Strikethrough::new("S").into()
+                ],
+            )
+            .serialize(),
+            "simple text **bold text**`let foo='bar';`[a](u)_I_~~S~~".to_string()
+        );
         assert_eq!(
             Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).serialize(),
             "t\n\n".to_string()
         );
-        assert_eq!(
-            Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).serialize(),
-            "t".to_string()
-        )
     }
 
     #[test]
