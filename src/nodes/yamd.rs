@@ -156,7 +156,7 @@ impl Node for Yamd {
             .iter()
             .map(|node| node.serialize())
             .collect::<Vec<String>>()
-            .join("\n\n")
+            .join("")
     }
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum()
@@ -185,33 +185,7 @@ mod tests {
         toolkit::{deserializer::Deserializer, node::Node},
     };
     use pretty_assertions::assert_eq;
-
-    #[test]
-    fn push() {
-        let mut t = Yamd::new();
-        t.push(Heading::new("header", 1, true));
-        t.push(Paragraph::new_with_nodes(
-            true,
-            vec![Text::new("text").into()],
-        ));
-
-        assert_eq!(t.serialize(), "# header\n\ntext".to_string());
-    }
-
-    #[test]
-    fn from_vec() {
-        let t: String = Yamd::new_with_nodes(vec![
-            Heading::new("header", 1, true).into(),
-            Paragraph::new_with_nodes(true, vec![Text::new("text").into()]).into(),
-        ])
-        .serialize();
-
-        assert_eq!(t, "# header\n\ntext".to_string());
-    }
-
-    #[test]
-    fn deserialize() {
-        let test_case = r#"# hello
+    const TEST_CASE: &str = r#"# hello
 
 ```rust
 let a=1;
@@ -238,8 +212,34 @@ t**b**
  - two
 
 end"#;
+
+    #[test]
+    fn push() {
+        let mut t = Yamd::new();
+        t.push(Heading::new("header", 1, false));
+        t.push(Paragraph::new_with_nodes(
+            true,
+            vec![Text::new("text").into()],
+        ));
+
+        assert_eq!(t.serialize(), "# header\n\ntext".to_string());
+    }
+
+    #[test]
+    fn from_vec() {
+        let t: String = Yamd::new_with_nodes(vec![
+            Heading::new("header", 1, false).into(),
+            Paragraph::new_with_nodes(true, vec![Text::new("text").into()]).into(),
+        ])
+        .serialize();
+
+        assert_eq!(t, "# header\n\ntext".to_string());
+    }
+
+    #[test]
+    fn deserialize() {
         assert_eq!(
-            Yamd::deserialize(test_case),
+            Yamd::deserialize(TEST_CASE),
             Some(Yamd::new_with_nodes(vec![
                 Heading::new("hello", 1, false).into(),
                 Code::new("rust", "let a=1;", false).into(),
@@ -304,5 +304,76 @@ end"#;
                 Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
             ]))
         );
+    }
+
+    #[test]
+    fn serialize() {
+        assert_eq!(
+            Yamd::new_with_nodes(vec![
+                Heading::new("hello", 1, false).into(),
+                Code::new("rust", "let a=1;", false).into(),
+                Paragraph::new_with_nodes(
+                    false,
+                    vec![
+                        Text::new("t").into(),
+                        Bold::new_with_nodes(vec![Text::new("b").into()]).into()
+                    ]
+                )
+                .into(),
+                Image::new('a', 'u', false).into(),
+                ImageGallery::new_with_nodes(
+                    vec![
+                        Image::new("a", "u", true).into(),
+                        Image::new("a2", "u2", true).into()
+                    ],
+                    false
+                )
+                .into(),
+                Highlight::new_with_nodes(
+                    Some("H"),
+                    Some("I"),
+                    false,
+                    vec![
+                        Paragraph::new_with_nodes(true, vec![Strikethrough::new("s").into()])
+                            .into()
+                    ]
+                )
+                .into(),
+                Divider::new(false).into(),
+                List::new_with_nodes(
+                    Unordered,
+                    0,
+                    false,
+                    vec![ListItem::new_with_nodes(
+                        Unordered,
+                        0,
+                        vec![
+                            Paragraph::new_with_nodes(true, vec![Text::new("one").into()]).into(),
+                            List::new_with_nodes(
+                                Unordered,
+                                1,
+                                true,
+                                vec![ListItem::new_with_nodes(
+                                    Unordered,
+                                    1,
+                                    vec![Paragraph::new_with_nodes(
+                                        true,
+                                        vec![Text::new("two").into()]
+                                    )
+                                    .into()]
+                                )
+                                .into()]
+                            )
+                            .into()
+                        ]
+                    )
+                    .into()]
+                )
+                .into(),
+                Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
+            ])
+            .serialize(),
+            String::from(TEST_CASE)
+        )
     }
 }
