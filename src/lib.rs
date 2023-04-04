@@ -21,7 +21,7 @@
 //! Starts with "+ " and ends with a new line
 //!
 //! Example:
-//! ```
+//! ```text
 //! - item 1
 //! - item 2
 //!  + ordered nested list
@@ -46,14 +46,17 @@
 //!
 //! Element that starts with "!" has image alt text in [] and followed by image url in ()
 //!
-//! Example: ```![alt text](url)```
+//! Example:
+//! ```text
+//! ![alt text](url)
+//! ```
 //!
 //! ### ImageGallery
 //!
 //! Element that starts with "!!!\n", ends with "\n!!!", and has image elements in between
 //!
 //! Example:
-//! ```
+//! ```text
 //! !!!
 //! ![alt text](url)
 //! ![alt text](url)
@@ -67,7 +70,7 @@
 //! contain any number of paragraph elements
 //!
 //! Example:
-//! ```
+//! ```text
 //! >>>
 //! >> Header
 //! > icon
@@ -77,7 +80,7 @@
 //! >>>
 //! ```
 //! no header and no icon:
-//! ```
+//! ```text
 //! >>>
 //! body
 //! >>>
