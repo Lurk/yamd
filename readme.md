@@ -1,20 +1,29 @@
 # Yet another markdown flavour (YAMD)
 [![codecov](https://codecov.io/gh/Lurk/yamd/branch/main/graph/badge.svg?token=F8KRUYI1AA)](https://codecov.io/gh/Lurk/yamd)
+[![crates.io](https://img.shields.io/crates/v/yamd.svg)](https://crates.io/crates/yamd)
+[![Released API docs](https://docs.rs/yamd/badge.svg)](https://docs.rs/yamd)
 
 ## Status
 
-It is not ready.
+It is ready to poke around. There is no significant API changes expected.
 
 ## Why?
 
 Initial idea was to create human readable text format for my blog. Why not existing flavour? 
-Existing flavours do not have elements like image gallery. And it turned out really fun adventure.
+Existing flavours do not have elements like image gallery, dividers, highlight, etc.
 
-## Plans
+## Features
 
-Since the first priority is ease of adding new elements(nodes) looks like the most likely outcome 
-is a toolkit to create new flavours. At some point it will stabilize, and then docs, even more tests, 
-benchmarks, etc.
+Deserialize markdown to YAMD struct, Serialize YAMD struct to markdown.
+
+## Example
+
+```rust
+use yamd::{deserialize, serialize};
+let input = "# header";
+let yamd = deserialize(input).unwrap();
+let output = serialize(&yamd);
+```
 
 
 
