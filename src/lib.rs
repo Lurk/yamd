@@ -92,6 +92,14 @@
 //!
 //! Example: ```-----```
 //!
+//! ### Embed
+//!
+//! Element that starts with "{{" followed by embed type, followed by "|" followed by embed url, followed by "}}"
+//! and ends with a new line or EOF.
+//!
+//! Example: ```{{youtube|https://www.youtube.com/embed/wsfdjlkjsdf}}```
+//!
+//!
 //! ### Paragraph
 //!
 //! Element that starts with any character that is not a special character and ends with a new line or EOF.

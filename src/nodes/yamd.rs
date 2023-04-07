@@ -6,8 +6,8 @@ use crate::{
 };
 
 use super::{
-    code::Code, divider::Divider, highlight::Highlight, image::Image, image_gallery::ImageGallery,
-    list::List,
+    code::Code, divider::Divider, embed::Embed, highlight::Highlight, image::Image,
+    image_gallery::ImageGallery, list::List,
 };
 
 #[derive(Debug, PartialEq)]
@@ -20,6 +20,7 @@ pub enum YamdNodes {
     ImageGallery(ImageGallery),
     Highlight(Highlight),
     Divider(Divider),
+    Embed(Embed),
 }
 
 impl From<Paragraph> for YamdNodes {
@@ -70,6 +71,12 @@ impl From<Divider> for YamdNodes {
     }
 }
 
+impl From<Embed> for YamdNodes {
+    fn from(value: Embed) -> Self {
+        YamdNodes::Embed(value)
+    }
+}
+
 impl Node for YamdNodes {
     fn serialize(&self) -> String {
         match self {
@@ -81,6 +88,7 @@ impl Node for YamdNodes {
             YamdNodes::ImageGallery(node) => node.serialize(),
             YamdNodes::Highlight(node) => node.serialize(),
             YamdNodes::Divider(node) => node.serialize(),
+            YamdNodes::Embed(node) => node.serialize(),
         }
     }
     fn len(&self) -> usize {
@@ -93,6 +101,7 @@ impl Node for YamdNodes {
             YamdNodes::ImageGallery(node) => node.len(),
             YamdNodes::Highlight(node) => node.len(),
             YamdNodes::Divider(node) => node.len(),
+            YamdNodes::Embed(node) => node.len(),
         }
     }
 }
@@ -126,6 +135,7 @@ impl Branch<YamdNodes> for Yamd {
             ImageGallery::maybe_node(),
             Highlight::maybe_node(),
             Divider::maybe_node(),
+            Embed::maybe_node(),
         ]
     }
 
@@ -173,6 +183,7 @@ mod tests {
             bold::Bold,
             code::Code,
             divider::Divider,
+            embed::Embed,
             highlight::Highlight,
             image::Image,
             image_gallery::ImageGallery,
@@ -210,6 +221,8 @@ t**b**
 
 - one
  - two
+
+{{youtube|123}}
 
 end"#;
 
@@ -301,6 +314,7 @@ end"#;
                     .into()]
                 )
                 .into(),
+                Embed::new("youtube", "123", false).into(),
                 Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
             ]))
         );
@@ -370,6 +384,7 @@ end"#;
                     .into()]
                 )
                 .into(),
+                Embed::new("youtube", "123", false).into(),
                 Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
             ])
             .serialize(),
