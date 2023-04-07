@@ -20,7 +20,9 @@ Deserialize markdown to YAMD struct, Serialize YAMD struct to markdown.
 
 ```rust
 use yamd::{deserialize, serialize};
-let input = "# header";
+let input = r#"# This is a new Yamd document
+
+Check out [documentation](https://docs.rs/yamd/latest/yamd/) to get what elements **Yamd** format supports."#;
 let yamd = deserialize(input).unwrap();
 let output = serialize(&yamd);
 ```
