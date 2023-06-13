@@ -121,17 +121,8 @@ impl<'input> Matcher<'input> {
             && END_SEQUENCE_SIZE > 0
             && !Self::are_sequences_equal(start_sequence, end_sequence)
         {
-            println!(
-                "Balanced match start: {:?}, end: {:?}",
-                start_sequence, end_sequence
-            );
             return self.get_balanced_match(start_sequence, end_sequence);
         }
-        println!(
-            "Unbalanced match start: {:?}, end: {:?}",
-            start_sequence, end_sequence
-        );
-
         self.get_unbalanced_match(start_sequence, end_sequence, match_end_of_input)
     }
 
