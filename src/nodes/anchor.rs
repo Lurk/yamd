@@ -71,6 +71,19 @@ mod tests {
     }
 
     #[test]
+    fn deserilalze_with_parentesis_in_url() {
+        assert_eq!(
+            Anchor::deserialize(
+                "[the Rope data structure](https://en.wikipedia.org/wiki/Rope_(data_structure))"
+            ),
+            Some(Anchor::new(
+                "the Rope data structure",
+                "https://en.wikipedia.org/wiki/Rope_(data_structure)"
+            ))
+        );
+    }
+
+    #[test]
     fn len() {
         assert_eq!(Anchor::new("a", "b").len(), 6);
     }
