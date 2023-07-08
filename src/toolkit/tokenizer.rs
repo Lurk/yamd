@@ -118,7 +118,7 @@ impl<'input> Matcher<'input> {
     ) -> Option<Match<'input>> {
         if !match_end_of_input
             && START_SEQUENCE_SIZE > 0
-            && END_SEQUENCE_SIZE > 0
+            && END_SEQUENCE_SIZE == START_SEQUENCE_SIZE
             && !Self::are_sequences_equal(start_sequence, end_sequence)
         {
             return self.get_balanced_match(start_sequence, end_sequence);
@@ -296,6 +296,19 @@ mod tests {
                 start_token: "--",
                 body: "",
                 end_token: ""
+            })
+        )
+    }
+
+    #[test]
+    fn get_match_when_value_repeats_part_of_start_token() {
+        let mut matcher = Matcher::new("(((t");
+        assert_eq!(
+            matcher.get_match(&[Once('(')], &[Once('('), Once('t')], false),
+            Some(Match {
+                start_token: "(",
+                body: "(",
+                end_token: "(t"
             })
         )
     }
