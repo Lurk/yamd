@@ -107,11 +107,14 @@ impl<'input> Matcher<'input> {
     ) -> Option<Match<'input>> {
         let mut start_pattern = Pattern::new(start_sequence);
         let mut end_pattern = Pattern::new(end_sequence);
-        let mut balance = 0;
+        let mut balance = 1;
         if let Some((start_token_end_index, _)) =
             self.iterate(start_sequence, self.position, true, false)
         {
-            for (index, char) in self.input.chars().enumerate().skip(self.position) {
+            println!("start_token_end_index: {}", start_token_end_index);
+            for (index, char) in self.input.chars().enumerate().skip(start_token_end_index) {
+                println!("index: {}", index);
+                println!("char: {}", char);
                 let start_pattern_state = start_pattern.check_character(&char);
                 let end_pattern_state = end_pattern.check_character(&char);
                 if start_pattern_state.hit && start_pattern_state.end {
