@@ -5,12 +5,6 @@ pub enum Quantifiers {
     RepeatTimes(usize, char),
 }
 
-pub struct Pattern<'token, const SIZE: usize> {
-    index: usize,
-    sequence: &'token [Quantifiers; SIZE],
-    quantifiers_lengths: [usize; SIZE],
-}
-
 #[derive(Debug, PartialEq)]
 pub struct PatternState<const SIZE: usize> {
     pub hit: bool,
@@ -39,46 +33,52 @@ impl<const SIZE: usize> PatternState<SIZE> {
     }
 }
 
+pub struct Pattern<'token, const SIZE: usize> {
+    index: usize,
+    last_char: Option<char>,
+    sequence: &'token [Quantifiers; SIZE],
+    quantifiers_lengths: [usize; SIZE],
+}
+
 impl<'sequence, const SIZE: usize> Pattern<'sequence, SIZE> {
     pub fn new(sequence: &'sequence [Quantifiers; SIZE]) -> Self {
         Self {
             index: 0,
+            last_char: None,
             sequence,
             quantifiers_lengths: [0; SIZE],
         }
+    }
+
+    fn increment_quantifier_length(&mut self, index: usize) {
+        if let Some(count) = self.quantifiers_lengths.get_mut(index) {
+            *count += 1;
+        };
     }
 
     fn next_index(&mut self, c: &char, index: usize) -> Option<usize> {
         let current_pattern_length = self.get_quantifier_length(index).unwrap_or(&0);
         return match self.sequence.get(index) {
             Some(Quantifiers::Once(p)) if p == c => {
-                if let Some(count) = self.quantifiers_lengths.get_mut(index) {
-                    *count += 1;
-                };
+                self.increment_quantifier_length(index);
                 Some(index + 1)
             }
             Some(Quantifiers::ZeroOrMore(p)) if p == c => {
-                if let Some(count) = self.quantifiers_lengths.get_mut(index) {
-                    *count += 1;
-                };
+                self.increment_quantifier_length(index);
                 Some(index)
             }
             Some(Quantifiers::ZeroOrMore(p)) if p != c => self.next_index(c, index + 1),
             Some(Quantifiers::RepeatTimes(length, p))
                 if (p == c && current_pattern_length + 1 < *length) =>
             {
-                if let Some(count) = self.quantifiers_lengths.get_mut(index) {
-                    *count += 1;
-                };
+                self.increment_quantifier_length(index);
 
                 Some(index)
             }
             Some(Quantifiers::RepeatTimes(length, p))
                 if (p == c && current_pattern_length + 1 == *length) =>
             {
-                if let Some(count) = self.quantifiers_lengths.get_mut(index) {
-                    *count += 1;
-                };
+                self.increment_quantifier_length(index);
 
                 Some(index + 1)
             }
@@ -92,6 +92,9 @@ impl<'sequence, const SIZE: usize> Pattern<'sequence, SIZE> {
     pub fn check_character(&mut self, c: &char) -> PatternState<SIZE> {
         if let Some(new_index) = self.next_index(c, self.index) {
             self.index = new_index;
+            self.last_char = Some(*c);
+            return self.create_state(true);
+        } else if self.index == 1 && self.last_char == Some(*c) {
             return self.create_state(true);
         }
         self.reset();
@@ -100,6 +103,7 @@ impl<'sequence, const SIZE: usize> Pattern<'sequence, SIZE> {
 
     pub fn reset(&mut self) {
         self.index = 0;
+        self.last_char = None;
         self.quantifiers_lengths = [0; SIZE];
     }
 
@@ -164,7 +168,8 @@ mod tests {
         let mut m = Pattern::new(&[RepeatTimes(2, ' '), Once('-')]);
         assert_eq!(m.check_character(&' '), PatternState::new(true));
         assert_eq!(m.check_character(&' '), PatternState::new(true));
-        assert_eq!(m.check_character(&' '), PatternState::new(false));
+        assert_eq!(m.check_character(&' '), PatternState::new(true));
+        assert_eq!(m.check_character(&'-'), PatternState::end([2, 1]));
     }
 
     #[test]
