@@ -1,9 +1,6 @@
 use crate::{
     toolkit::{context::Context, deserializer::Deserializer},
-    toolkit::{
-        node::Node,
-        tokenizer::{Matcher, Quantifiers::Once},
-    },
+    toolkit::{matcher::Matcher, node::Node, pattern::Quantifiers::*},
 };
 
 /// Representation of an Italic text

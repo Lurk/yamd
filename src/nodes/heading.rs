@@ -1,8 +1,6 @@
 use crate::toolkit::{
-    context::Context,
-    deserializer::Deserializer,
-    node::Node,
-    tokenizer::{Matcher, Quantifiers::Once, Quantifiers::RepeatTimes},
+    context::Context, deserializer::Deserializer, matcher::Matcher, node::Node,
+    pattern::Quantifiers::*,
 };
 
 #[derive(Debug, PartialEq)]
@@ -30,12 +28,12 @@ impl Heading {
 impl Deserializer for Heading {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let start_tokens = [
-            [Once('#'), Once(' ')],
-            [RepeatTimes(2, '#'), Once(' ')],
-            [RepeatTimes(3, '#'), Once(' ')],
-            [RepeatTimes(4, '#'), Once(' ')],
-            [RepeatTimes(5, '#'), Once(' ')],
             [RepeatTimes(6, '#'), Once(' ')],
+            [RepeatTimes(5, '#'), Once(' ')],
+            [RepeatTimes(4, '#'), Once(' ')],
+            [RepeatTimes(3, '#'), Once(' ')],
+            [RepeatTimes(2, '#'), Once(' ')],
+            [Once('#'), Once(' ')],
         ];
 
         for (i, start_token) in start_tokens.iter().enumerate() {
@@ -43,7 +41,7 @@ impl Deserializer for Heading {
             if let Some(heading) = matcher.get_match(start_token, &[RepeatTimes(2, '\n')], true) {
                 return Some(Self::new(
                     heading.body,
-                    (i + 1).try_into().unwrap_or(1),
+                    (start_tokens.len() - i).try_into().unwrap_or(1),
                     heading.end_token.is_empty(),
                 ));
             }

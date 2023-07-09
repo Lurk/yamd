@@ -5,8 +5,9 @@ use crate::{
     toolkit::{
         context::Context,
         deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
+        matcher::Matcher,
         node::Node,
-        tokenizer::{Matcher, Quantifiers::Once},
+        pattern::Quantifiers::*,
     },
 };
 
