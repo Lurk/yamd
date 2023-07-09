@@ -95,10 +95,10 @@ impl<'sequence, const SIZE: usize> Pattern<'sequence, SIZE> {
         if let Some(new_index) = self.next_index(c, self.index) {
             self.index = new_index;
             self.length += 1;
-            return self.is_end_of_sequence(true);
+            return self.create_state(true);
         }
         self.reset();
-        self.is_end_of_sequence(false)
+        self.create_state(false)
     }
 
     pub fn reset(&mut self) {
@@ -107,9 +107,11 @@ impl<'sequence, const SIZE: usize> Pattern<'sequence, SIZE> {
         self.quantifiers_lengths = [0; SIZE];
     }
 
-    fn is_end_of_sequence(&self, hit: bool) -> PatternState<SIZE> {
+    fn create_state(&mut self, hit: bool) -> PatternState<SIZE> {
         if self.index == self.sequence.len() {
-            return PatternState::end(self.length, self.quantifiers_lengths);
+            let state = PatternState::end(self.length, self.quantifiers_lengths);
+            self.reset();
+            return state;
         }
         PatternState::new(hit)
     }
@@ -143,14 +145,14 @@ mod tests {
         assert_eq!(m.check_character(&' '), PatternState::new(true));
         assert_eq!(m.check_character(&' '), PatternState::new(true));
         assert_eq!(m.check_character(&'-'), PatternState::end(3, [2, 1]));
-        assert_eq!(m.check_character(&'-'), PatternState::new(false));
+        assert_eq!(m.check_character(&'-'), PatternState::end(1, [0, 1]));
     }
 
     #[test]
     fn pattern_repeat_zero() {
         let mut m = Pattern::new(&[ZeroOrMore(' '), Once('-')]);
         assert_eq!(m.check_character(&'-'), PatternState::end(1, [0, 1]));
-        assert_eq!(m.check_character(&'-'), PatternState::new(false));
+        assert_eq!(m.check_character(&'-'), PatternState::end(1, [0, 1]));
     }
 
     #[test]
@@ -189,7 +191,7 @@ mod tests {
         let mut m = Pattern::new(&[RepeatTimes(2, ' ')]);
         assert_eq!(m.check_character(&' '), PatternState::new(true));
         assert_eq!(m.check_character(&' '), PatternState::end(2, [2]));
-        assert_eq!(m.check_character(&' '), PatternState::new(false));
+        assert_eq!(m.check_character(&' '), PatternState::new(true));
     }
 
     #[test]
