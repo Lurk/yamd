@@ -59,14 +59,14 @@ impl<'sequence, const SIZE: usize> Pattern<'sequence, SIZE> {
         };
     }
 
-    pub fn check_character(&mut self, c: &char) -> bool {
+    pub fn check_character(&mut self, c: &char) -> (bool, bool) {
         if let Some(new_index) = self.next_index(c, self.index) {
             self.index = new_index;
             self.length += 1;
-            return true;
+            return (true, self.is_end_of_sequence());
         }
         self.reset();
-        false
+        (false, self.is_end_of_sequence())
     }
 
     pub fn reset(&mut self) {
@@ -75,11 +75,11 @@ impl<'sequence, const SIZE: usize> Pattern<'sequence, SIZE> {
         self.quantifiers_lengths = [0; SIZE];
     }
 
-    pub fn is_end_of_sequence(&self) -> bool {
+    fn is_end_of_sequence(&self) -> bool {
         self.index == self.sequence.len()
     }
 
-    pub fn get_quantifier_length(&self, index: usize) -> Option<&usize> {
+    fn get_quantifier_length(&self, index: usize) -> Option<&usize> {
         self.quantifiers_lengths.get(index)
     }
 }
@@ -91,87 +91,75 @@ mod tests {
     #[test]
     fn matcher() {
         let mut m = Pattern::new(&[Once('*'), Once('*')]);
-        assert_eq!(m.check_character(&'*'), true);
-        assert_eq!(m.is_end_of_sequence(), false);
-        assert_eq!(m.check_character(&'*'), true);
-        assert_eq!(m.is_end_of_sequence(), true);
+        assert_eq!(m.check_character(&'*'), (true, false));
+        assert_eq!(m.check_character(&'*'), (true, true));
     }
 
     #[test]
     fn matcher_not_matched() {
         let mut m = Pattern::new(&[Once('*'), Once('*')]);
-        assert_eq!(m.check_character(&'a'), false);
-        assert_eq!(m.is_end_of_sequence(), false);
-        assert_eq!(m.check_character(&'b'), false);
-        assert_eq!(m.is_end_of_sequence(), false);
+        assert_eq!(m.check_character(&'a'), (false, false));
+        assert_eq!(m.check_character(&'b'), (false, false));
     }
 
     #[test]
     fn pattern_repeat() {
         let mut m = Pattern::new(&[ZeroOrMore(' '), Once('-')]);
-        assert_eq!(m.check_character(&' '), true);
-        assert_eq!(m.check_character(&' '), true);
-        assert_eq!(m.check_character(&'-'), true);
-        assert_eq!(m.is_end_of_sequence(), true);
+        assert_eq!(m.check_character(&' '), (true, false));
+        assert_eq!(m.check_character(&' '), (true, false));
+        assert_eq!(m.check_character(&'-'), (true, true));
         assert_eq!(m.length, 3);
         assert_eq!(m.get_quantifier_length(0), Some(&2));
         assert_eq!(m.get_quantifier_length(1), Some(&1));
-        assert_eq!(m.check_character(&'-'), false);
-        assert_eq!(m.length, 0);
-        assert_eq!(m.is_end_of_sequence(), false);
+        assert_eq!(m.check_character(&'-'), (false, false));
     }
 
     #[test]
     fn pattern_repeat_zero() {
         let mut m = Pattern::new(&[ZeroOrMore(' '), Once('-')]);
-        assert_eq!(m.check_character(&'-'), true);
-        assert_eq!(m.is_end_of_sequence(), true);
+        assert_eq!(m.check_character(&'-'), (true, true));
         assert_eq!(m.get_quantifier_length(0), Some(&0));
         assert_eq!(m.get_quantifier_length(1), Some(&1));
-        assert_eq!(m.check_character(&'-'), false);
+        assert_eq!(m.check_character(&'-'), (false, false));
     }
 
     #[test]
     fn pattern_exact_repeat_happy_path() {
         let mut m = Pattern::new(&[RepeatTimes(2, ' '), Once('-')]);
-        assert_eq!(m.check_character(&' '), true);
-        assert_eq!(m.check_character(&' '), true);
-        assert_eq!(m.check_character(&'-'), true);
-        assert_eq!(m.is_end_of_sequence(), true);
+        assert_eq!(m.check_character(&' '), (true, false));
+        assert_eq!(m.check_character(&' '), (true, false));
+        assert_eq!(m.check_character(&'-'), (true, true));
     }
 
     #[test]
     fn pattern_starts_with_exact_repeat() {
         let mut m = Pattern::new(&[RepeatTimes(2, ' '), Once('-')]);
-        assert_eq!(m.check_character(&' '), true);
-        assert_eq!(m.check_character(&' '), true);
-        assert_eq!(m.check_character(&' '), false)
+        assert_eq!(m.check_character(&' '), (true, false));
+        assert_eq!(m.check_character(&' '), (true, false));
+        assert_eq!(m.check_character(&' '), (false, false));
     }
 
     #[test]
     fn pattern_starts_with_0_exact_repeat() {
         let mut m = Pattern::new(&[RepeatTimes(0, ' '), Once('-')]);
-        assert_eq!(m.check_character(&'-'), true);
-        assert_eq!(m.is_end_of_sequence(), true);
+        assert_eq!(m.check_character(&'-'), (true, true));
     }
 
     #[test]
     fn pattern_ends_with_exact_repeat() {
         let mut m = Pattern::new(&[Once('-'), RepeatTimes(2, ' ')]);
-        assert_eq!(m.check_character(&'-'), true);
-        assert_eq!(m.check_character(&' '), true);
-        assert_eq!(m.check_character(&' '), true);
-        assert_eq!(m.is_end_of_sequence(), true);
-        assert_eq!(m.check_character(&' '), false);
+        assert_eq!(m.check_character(&'-'), (true, false));
+        assert_eq!(m.check_character(&' '), (true, false));
+        assert_eq!(m.check_character(&' '), (true, true));
+        assert_eq!(m.check_character(&' '), (false, false));
     }
 
     #[test]
     fn repeat_times_pattern() {
         let mut m = Pattern::new(&[RepeatTimes(2, ' ')]);
-        assert_eq!(m.check_character(&' '), true);
-        assert_eq!(m.check_character(&' '), true);
-        assert_eq!(m.is_end_of_sequence(), true);
-        assert_eq!(m.check_character(&' '), false);
+        assert_eq!(m.check_character(&' '), (true, false));
+        assert_eq!(m.check_character(&' '), (true, true));
+        assert_eq!(m.check_character(&' '), (false, false));
     }
 
     #[test]
@@ -185,9 +173,8 @@ mod tests {
     #[test]
     fn pattern_repeat_is_not_matched() {
         let mut m = Pattern::new(&[ZeroOrMore(' '), Once('-')]);
-        assert_eq!(m.check_character(&' '), true);
-        assert_eq!(m.check_character(&' '), true);
-        assert_eq!(m.check_character(&'a'), false);
-        assert_eq!(m.is_end_of_sequence(), false);
+        assert_eq!(m.check_character(&' '), (true, false));
+        assert_eq!(m.check_character(&' '), (true, false));
+        assert_eq!(m.check_character(&'a'), (false, false));
     }
 }

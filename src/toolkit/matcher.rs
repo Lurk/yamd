@@ -58,8 +58,8 @@ impl<'input> Matcher<'input> {
                 return Some((start_position, 0));
             }
             for (index, char) in self.input.chars().enumerate().skip(start_position) {
-                let is_character_in_pattern = pattern.check_character(&char);
-                if is_character_in_pattern && pattern.is_end_of_sequence() {
+                let (is_character_in_pattern, is_end_of_sequence) = pattern.check_character(&char);
+                if is_character_in_pattern && is_end_of_sequence {
                     return Some((index + 1, pattern.length));
                 } else if match_end_of_input && index == self.input.len() - 1 {
                     return Some((index + 1, 0));
@@ -112,13 +112,10 @@ impl<'input> Matcher<'input> {
             self.iterate(start_sequence, self.position, true, false)
         {
             for (index, char) in self.input.chars().enumerate().skip(self.position) {
-                if start_pattern.check_character(&char) && start_pattern.is_end_of_sequence() {
+                if start_pattern.check_character(&char) == (true, true) {
                     start_pattern.reset();
                     balance += 1;
-                } else if balance > 0
-                    && end_pattern.check_character(&char)
-                    && end_pattern.is_end_of_sequence()
-                {
+                } else if balance > 0 && end_pattern.check_character(&char) == (true, true) {
                     balance -= 1;
                     if balance == 0 {
                         let end_token_end_index = index + 1;
