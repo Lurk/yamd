@@ -144,7 +144,7 @@ impl<'input> Matcher<'input> {
 
 #[cfg(test)]
 mod tests {
-    use crate::toolkit::tokenizer::{
+    use crate::toolkit::matcher::{
         Match, Matcher,
         Quantifiers::{Once, RepeatTimes},
     };

@@ -1,6 +1,6 @@
 use crate::{
     toolkit::{context::Context, deserializer::Deserializer},
-    toolkit::{node::Node, pattern::Quantifiers::*, tokenizer::Matcher},
+    toolkit::{matcher::Matcher, node::Node, pattern::Quantifiers::*},
 };
 
 /// Representation of strikethrough

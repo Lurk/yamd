@@ -1,9 +1,9 @@
 use crate::toolkit::{
     context::Context,
     deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
+    matcher::Matcher,
     node::Node,
     pattern::Quantifiers::*,
-    tokenizer::Matcher,
 };
 
 use super::{
