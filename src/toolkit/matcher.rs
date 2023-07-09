@@ -58,12 +58,12 @@ impl<'input> Matcher<'input> {
                 return Some((start_position, 0));
             }
             for (index, char) in self.input.chars().enumerate().skip(start_position) {
-                let (is_character_in_pattern, is_end_of_sequence) = pattern.check_character(&char);
-                if is_character_in_pattern && is_end_of_sequence {
-                    return Some((index + 1, pattern.length));
+                let pattern_state = pattern.check_character(&char);
+                if pattern_state.hit && pattern_state.end {
+                    return Some((index + 1, pattern_state.length));
                 } else if match_end_of_input && index == self.input.len() - 1 {
                     return Some((index + 1, 0));
-                } else if fail_fast && !is_character_in_pattern {
+                } else if fail_fast && !pattern_state.hit {
                     break;
                 }
             }
@@ -112,14 +112,16 @@ impl<'input> Matcher<'input> {
             self.iterate(start_sequence, self.position, true, false)
         {
             for (index, char) in self.input.chars().enumerate().skip(self.position) {
-                if start_pattern.check_character(&char) == (true, true) {
+                let start_pattern_state = start_pattern.check_character(&char);
+                let end_pattern_state = end_pattern.check_character(&char);
+                if start_pattern_state.hit && start_pattern_state.end {
                     start_pattern.reset();
                     balance += 1;
-                } else if balance > 0 && end_pattern.check_character(&char) == (true, true) {
+                } else if balance > 0 && end_pattern_state.hit && end_pattern_state.end {
                     balance -= 1;
                     if balance == 0 {
                         let end_token_end_index = index + 1;
-                        let end_token_start_index = end_token_end_index - end_pattern.length;
+                        let end_token_start_index = end_token_end_index - end_pattern_state.length;
                         self.position = index + 1;
                         return Some(Match {
                             start_token: &self.input[..start_token_end_index],

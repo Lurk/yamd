@@ -8,8 +8,36 @@ pub enum Quantifiers {
 pub struct Pattern<'token, const SIZE: usize> {
     index: usize,
     sequence: &'token [Quantifiers; SIZE],
+    length: usize,
+    quantifiers_lengths: [usize; SIZE],
+}
+
+#[derive(Debug, PartialEq)]
+pub struct PatternState<const SIZE: usize> {
+    pub hit: bool,
+    pub end: bool,
     pub length: usize,
     quantifiers_lengths: [usize; SIZE],
+}
+
+impl<const SIZE: usize> PatternState<SIZE> {
+    pub fn new(hit: bool) -> Self {
+        Self {
+            hit,
+            end: false,
+            length: 0,
+            quantifiers_lengths: [0; SIZE],
+        }
+    }
+
+    pub fn end(length: usize, quantifiers_lengths: [usize; SIZE]) -> Self {
+        Self {
+            hit: true,
+            end: true,
+            length,
+            quantifiers_lengths,
+        }
+    }
 }
 
 impl<'sequence, const SIZE: usize> Pattern<'sequence, SIZE> {
@@ -50,6 +78,10 @@ impl<'sequence, const SIZE: usize> Pattern<'sequence, SIZE> {
             Some(Quantifiers::RepeatTimes(length, p))
                 if (p == c && current_pattern_length + 1 == *length) =>
             {
+                if let Some(count) = self.quantifiers_lengths.get_mut(index) {
+                    *count += 1;
+                };
+
                 Some(index + 1)
             }
             Some(Quantifiers::RepeatTimes(length, _)) if (*length == 0) => {
@@ -59,14 +91,14 @@ impl<'sequence, const SIZE: usize> Pattern<'sequence, SIZE> {
         };
     }
 
-    pub fn check_character(&mut self, c: &char) -> (bool, bool) {
+    pub fn check_character(&mut self, c: &char) -> PatternState<SIZE> {
         if let Some(new_index) = self.next_index(c, self.index) {
             self.index = new_index;
             self.length += 1;
-            return (true, self.is_end_of_sequence());
+            return self.is_end_of_sequence(true);
         }
         self.reset();
-        (false, self.is_end_of_sequence())
+        self.is_end_of_sequence(false)
     }
 
     pub fn reset(&mut self) {
@@ -75,8 +107,11 @@ impl<'sequence, const SIZE: usize> Pattern<'sequence, SIZE> {
         self.quantifiers_lengths = [0; SIZE];
     }
 
-    fn is_end_of_sequence(&self) -> bool {
-        self.index == self.sequence.len()
+    fn is_end_of_sequence(&self, hit: bool) -> PatternState<SIZE> {
+        if self.index == self.sequence.len() {
+            return PatternState::end(self.length, self.quantifiers_lengths);
+        }
+        PatternState::new(hit)
     }
 
     fn get_quantifier_length(&self, index: usize) -> Option<&usize> {
@@ -86,80 +121,75 @@ impl<'sequence, const SIZE: usize> Pattern<'sequence, SIZE> {
 
 #[cfg(test)]
 mod tests {
-    use crate::toolkit::pattern::{Pattern, Quantifiers::*};
+    use crate::toolkit::pattern::{Pattern, PatternState, Quantifiers::*};
 
     #[test]
     fn matcher() {
         let mut m = Pattern::new(&[Once('*'), Once('*')]);
-        assert_eq!(m.check_character(&'*'), (true, false));
-        assert_eq!(m.check_character(&'*'), (true, true));
+        assert_eq!(m.check_character(&'*'), PatternState::new(true));
+        assert_eq!(m.check_character(&'*'), PatternState::end(2, [1, 1]));
     }
 
     #[test]
     fn matcher_not_matched() {
         let mut m = Pattern::new(&[Once('*'), Once('*')]);
-        assert_eq!(m.check_character(&'a'), (false, false));
-        assert_eq!(m.check_character(&'b'), (false, false));
+        assert_eq!(m.check_character(&'a'), PatternState::new(false));
+        assert_eq!(m.check_character(&'b'), PatternState::new(false));
     }
 
     #[test]
     fn pattern_repeat() {
         let mut m = Pattern::new(&[ZeroOrMore(' '), Once('-')]);
-        assert_eq!(m.check_character(&' '), (true, false));
-        assert_eq!(m.check_character(&' '), (true, false));
-        assert_eq!(m.check_character(&'-'), (true, true));
-        assert_eq!(m.length, 3);
-        assert_eq!(m.get_quantifier_length(0), Some(&2));
-        assert_eq!(m.get_quantifier_length(1), Some(&1));
-        assert_eq!(m.check_character(&'-'), (false, false));
+        assert_eq!(m.check_character(&' '), PatternState::new(true));
+        assert_eq!(m.check_character(&' '), PatternState::new(true));
+        assert_eq!(m.check_character(&'-'), PatternState::end(3, [2, 1]));
+        assert_eq!(m.check_character(&'-'), PatternState::new(false));
     }
 
     #[test]
     fn pattern_repeat_zero() {
         let mut m = Pattern::new(&[ZeroOrMore(' '), Once('-')]);
-        assert_eq!(m.check_character(&'-'), (true, true));
-        assert_eq!(m.get_quantifier_length(0), Some(&0));
-        assert_eq!(m.get_quantifier_length(1), Some(&1));
-        assert_eq!(m.check_character(&'-'), (false, false));
+        assert_eq!(m.check_character(&'-'), PatternState::end(1, [0, 1]));
+        assert_eq!(m.check_character(&'-'), PatternState::new(false));
     }
 
     #[test]
     fn pattern_exact_repeat_happy_path() {
         let mut m = Pattern::new(&[RepeatTimes(2, ' '), Once('-')]);
-        assert_eq!(m.check_character(&' '), (true, false));
-        assert_eq!(m.check_character(&' '), (true, false));
-        assert_eq!(m.check_character(&'-'), (true, true));
+        assert_eq!(m.check_character(&' '), PatternState::new(true));
+        assert_eq!(m.check_character(&' '), PatternState::new(true));
+        assert_eq!(m.check_character(&'-'), PatternState::end(3, [2, 1]));
     }
 
     #[test]
     fn pattern_starts_with_exact_repeat() {
         let mut m = Pattern::new(&[RepeatTimes(2, ' '), Once('-')]);
-        assert_eq!(m.check_character(&' '), (true, false));
-        assert_eq!(m.check_character(&' '), (true, false));
-        assert_eq!(m.check_character(&' '), (false, false));
+        assert_eq!(m.check_character(&' '), PatternState::new(true));
+        assert_eq!(m.check_character(&' '), PatternState::new(true));
+        assert_eq!(m.check_character(&' '), PatternState::new(false));
     }
 
     #[test]
     fn pattern_starts_with_0_exact_repeat() {
         let mut m = Pattern::new(&[RepeatTimes(0, ' '), Once('-')]);
-        assert_eq!(m.check_character(&'-'), (true, true));
+        assert_eq!(m.check_character(&'-'), PatternState::end(1, [0, 1]));
     }
 
     #[test]
     fn pattern_ends_with_exact_repeat() {
         let mut m = Pattern::new(&[Once('-'), RepeatTimes(2, ' ')]);
-        assert_eq!(m.check_character(&'-'), (true, false));
-        assert_eq!(m.check_character(&' '), (true, false));
-        assert_eq!(m.check_character(&' '), (true, true));
-        assert_eq!(m.check_character(&' '), (false, false));
+        assert_eq!(m.check_character(&'-'), PatternState::new(true));
+        assert_eq!(m.check_character(&' '), PatternState::new(true));
+        assert_eq!(m.check_character(&' '), PatternState::end(3, [1, 2]));
+        assert_eq!(m.check_character(&' '), PatternState::new(false));
     }
 
     #[test]
     fn repeat_times_pattern() {
         let mut m = Pattern::new(&[RepeatTimes(2, ' ')]);
-        assert_eq!(m.check_character(&' '), (true, false));
-        assert_eq!(m.check_character(&' '), (true, true));
-        assert_eq!(m.check_character(&' '), (false, false));
+        assert_eq!(m.check_character(&' '), PatternState::new(true));
+        assert_eq!(m.check_character(&' '), PatternState::end(2, [2]));
+        assert_eq!(m.check_character(&' '), PatternState::new(false));
     }
 
     #[test]
@@ -173,8 +203,8 @@ mod tests {
     #[test]
     fn pattern_repeat_is_not_matched() {
         let mut m = Pattern::new(&[ZeroOrMore(' '), Once('-')]);
-        assert_eq!(m.check_character(&' '), (true, false));
-        assert_eq!(m.check_character(&' '), (true, false));
-        assert_eq!(m.check_character(&'a'), (false, false));
+        assert_eq!(m.check_character(&' '), PatternState::new(true));
+        assert_eq!(m.check_character(&' '), PatternState::new(true));
+        assert_eq!(m.check_character(&'a'), PatternState::new(false));
     }
 }
