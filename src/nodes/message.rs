@@ -1,11 +1,43 @@
-use crate::toolkit::node::Node;
+use crate::toolkit::{
+    context::Context,
+    deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
+    matcher::Matcher,
+    node::Node,
+    pattern::Quantifiers::*,
+};
 
 use super::paragraph::Paragraph;
 
+#[derive(Debug, PartialEq)]
+pub enum MessageNodes {
+    Paragraph(Paragraph),
+}
+
+impl Node for MessageNodes {
+    fn serialize(&self) -> String {
+        match self {
+            Self::Paragraph(p) => p.serialize(),
+        }
+    }
+
+    fn len(&self) -> usize {
+        match self {
+            Self::Paragraph(p) => p.len(),
+        }
+    }
+}
+
+impl From<Paragraph> for MessageNodes {
+    fn from(p: Paragraph) -> Self {
+        Self::Paragraph(p)
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct Message {
     header: Option<String>,
     icon: Option<String>,
-    nodes: Vec<Paragraph>,
+    nodes: Vec<MessageNodes>,
     warning: bool,
     consumed_all_input: bool,
 }
@@ -23,7 +55,7 @@ impl Message {
     pub fn new_with_nodes<S: Into<String>>(
         header: Option<S>,
         icon: Option<S>,
-        nodes: Vec<Paragraph>,
+        nodes: Vec<MessageNodes>,
         warning: bool,
         consumed_all_input: bool,
     ) -> Self {
@@ -74,12 +106,70 @@ impl Node for Message {
     }
 }
 
+impl Branch<MessageNodes> for Message {
+    fn push<CanBeNode: Into<MessageNodes>>(&mut self, node: CanBeNode) {
+        self.nodes.push(node.into());
+    }
+
+    fn get_maybe_nodes() -> Vec<MaybeNode<MessageNodes>> {
+        vec![]
+    }
+
+    fn get_fallback_node() -> Option<DefinitelyNode<MessageNodes>> {
+        Some(Paragraph::fallback_node())
+    }
+
+    fn get_outer_token_length(&self) -> usize {
+        0
+    }
+}
+
+impl Deserializer for Message {
+    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+        let mut matcher = Matcher::new(input);
+        if let Some(message) = matcher.get_match(
+            &[RepeatTimes(4, '%'), Once('\n')],
+            &[Once('\n'), RepeatTimes(4, '%')],
+            false,
+        ) {
+            println!("message: {:?}", message);
+            let mut inner_matcher = Matcher::new(&message.body);
+            let header = inner_matcher
+                .get_match(&[RepeatTimes(3, '%'), Once(' ')], &[Once('\n')], false)
+                .map(|s| s.body.to_string());
+            let icon = inner_matcher
+                .get_match(&[RepeatTimes(2, '%'), Once(' ')], &[Once('\n')], false)
+                .map(|s| s.body.to_string());
+            let warning = inner_matcher
+                .get_match(&[Once('%'), Once(' ')], &[Once('\n')], false)
+                .is_some();
+
+            let consumed_all_input = matcher
+                .get_match(&[RepeatTimes(2, '\n')], &[], false)
+                .is_none();
+            let rest = inner_matcher.get_rest();
+
+            println!("rest: {:?}", rest);
+
+            let container = Self::new(header, icon, warning, consumed_all_input);
+
+            if rest.is_empty() {
+                println!("here");
+                return Some(container);
+            } else {
+                return Self::parse_branch(rest, container);
+            }
+        }
+        None
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::Message;
     use crate::{
         nodes::{paragraph::Paragraph, text::Text},
-        toolkit::node::Node,
+        toolkit::{deserializer::Deserializer, node::Node},
     };
     use pretty_assertions::assert_eq;
 
@@ -117,10 +207,7 @@ mod test {
             Message::new_with_nodes(
                 Some("header"),
                 Some("icon"),
-                vec![Paragraph::new_with_nodes(
-                    true,
-                    vec![Text::new("simple text").into()]
-                )],
+                vec![Paragraph::new_with_nodes(true, vec![Text::new("simple text").into()]).into()],
                 true,
                 true
             )
@@ -186,6 +273,26 @@ mod test {
         assert_eq!(
             Message::new(Some("header"), None, true, true).serialize(),
             "%%%%\n%%% header\n% \n\n%%%%"
+        );
+    }
+
+    #[test]
+    fn deserialize_empty() {
+        assert_eq!(
+            Message::deserialize("%%%%\n\n%%%%\n\n"),
+            Some(Message::new::<&str>(None, None, false, false))
+        );
+        assert_eq!(
+            Message::deserialize("%%%%\n\n%%%%"),
+            Some(Message::new::<&str>(None, None, false, true))
+        );
+    }
+
+    #[test]
+    fn deserialize() {
+        assert_eq!(
+            Message::deserialize("%%%%\n%%% header\n\n%%%%\n\n"),
+            Some(Message::new(Some("header"), None, false, false)),
         );
     }
 }
