@@ -301,14 +301,14 @@ mod tests {
     }
 
     #[test]
-    fn get_match_when_value_repeats_part_of_start_token() {
-        let mut matcher = Matcher::new("(((t");
+    fn patterns_with_non_equal_length_can_not_be_balanced() {
+        let mut matcher = Matcher::new("(()t");
         assert_eq!(
-            matcher.get_match(&[Once('(')], &[Once('('), Once('t')], false),
+            matcher.get_match(&[Once('(')], &[Once(')'), Once('t')], false),
             Some(Match {
                 start_token: "(",
                 body: "(",
-                end_token: "(t"
+                end_token: ")t"
             })
         )
     }
