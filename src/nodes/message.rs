@@ -88,21 +88,7 @@ impl Node for Message {
     }
 
     fn len(&self) -> usize {
-        let mut len = 10;
-        if let Some(header) = &self.header {
-            len += header.len() + 5;
-        }
-        if let Some(icon) = &self.icon {
-            len += icon.len() + 4;
-        }
-        len += self.nodes.iter().map(|n| n.len()).sum::<usize>();
-        if self.warning {
-            len += 3;
-        }
-        if !self.consumed_all_input {
-            len += 2;
-        }
-        len
+        self.nodes.iter().map(|n| n.len()).sum::<usize>() + self.get_outer_token_length()
     }
 }
 

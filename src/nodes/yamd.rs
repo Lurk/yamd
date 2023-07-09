@@ -7,7 +7,7 @@ use crate::{
 
 use super::{
     code::Code, divider::Divider, embed::Embed, highlight::Highlight, image::Image,
-    image_gallery::ImageGallery, list::List,
+    image_gallery::ImageGallery, list::List, message::Message,
 };
 
 #[derive(Debug, PartialEq)]
@@ -21,6 +21,7 @@ pub enum YamdNodes {
     Highlight(Highlight),
     Divider(Divider),
     Embed(Embed),
+    Message(Message),
 }
 
 impl From<Paragraph> for YamdNodes {
@@ -77,6 +78,12 @@ impl From<Embed> for YamdNodes {
     }
 }
 
+impl From<Message> for YamdNodes {
+    fn from(value: Message) -> Self {
+        YamdNodes::Message(value)
+    }
+}
+
 impl Node for YamdNodes {
     fn serialize(&self) -> String {
         match self {
@@ -89,6 +96,7 @@ impl Node for YamdNodes {
             YamdNodes::Highlight(node) => node.serialize(),
             YamdNodes::Divider(node) => node.serialize(),
             YamdNodes::Embed(node) => node.serialize(),
+            YamdNodes::Message(node) => node.serialize(),
         }
     }
     fn len(&self) -> usize {
@@ -102,6 +110,7 @@ impl Node for YamdNodes {
             YamdNodes::Highlight(node) => node.len(),
             YamdNodes::Divider(node) => node.len(),
             YamdNodes::Embed(node) => node.len(),
+            YamdNodes::Message(node) => node.len(),
         }
     }
 }
@@ -136,6 +145,7 @@ impl Branch<YamdNodes> for Yamd {
             Highlight::maybe_node(),
             Divider::maybe_node(),
             Embed::maybe_node(),
+            Message::maybe_node(),
         ]
     }
 
@@ -187,8 +197,10 @@ mod tests {
             highlight::Highlight,
             image::Image,
             image_gallery::ImageGallery,
+            italic::Italic,
             list::{List, ListTypes::Unordered},
             list_item::ListItem,
+            message::Message,
             strikethrough::Strikethrough,
             text::Text,
         },
@@ -223,6 +235,15 @@ t**b**
  - two
 
 {{youtube|123}}
+
+%%%%
+%%% header
+%% icon
+% 
+content **bold**
+
+content _italic_
+%%%%
 
 end"#;
 
@@ -315,6 +336,28 @@ end"#;
                 )
                 .into(),
                 Embed::new("youtube", "123", false).into(),
+                Message::new_with_nodes(
+                    Some("header"),
+                    Some("icon"),
+                    vec![
+                        Paragraph::new_with_nodes(
+                            false,
+                            vec![
+                                Text::new("content ").into(),
+                                Bold::new_with_nodes(vec![Text::new("bold").into()]).into()
+                            ]
+                        )
+                        .into(),
+                        Paragraph::new_with_nodes(
+                            true,
+                            vec![Text::new("content ").into(), Italic::new("italic").into()]
+                        )
+                        .into()
+                    ],
+                    true,
+                    false
+                )
+                .into(),
                 Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
             ]))
         );
@@ -385,6 +428,28 @@ end"#;
                 )
                 .into(),
                 Embed::new("youtube", "123", false).into(),
+                Message::new_with_nodes(
+                    Some("header"),
+                    Some("icon"),
+                    vec![
+                        Paragraph::new_with_nodes(
+                            false,
+                            vec![
+                                Text::new("content ").into(),
+                                Bold::new_with_nodes(vec![Text::new("bold").into()]).into()
+                            ]
+                        )
+                        .into(),
+                        Paragraph::new_with_nodes(
+                            true,
+                            vec![Text::new("content ").into(), Italic::new("italic").into()]
+                        )
+                        .into()
+                    ],
+                    true,
+                    false
+                )
+                .into(),
                 Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
             ])
             .serialize(),
