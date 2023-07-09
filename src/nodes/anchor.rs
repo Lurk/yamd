@@ -1,10 +1,7 @@
 use crate::{
     toolkit::context::Context,
     toolkit::deserializer::Deserializer,
-    toolkit::{
-        node::Node,
-        tokenizer::{Matcher, Quantifiers::Once},
-    },
+    toolkit::{node::Node, pattern::Quantifiers::*, tokenizer::Matcher},
 };
 
 /// Representation of an anchor

@@ -1,8 +1,6 @@
 use crate::toolkit::{
-    context::Context,
-    deserializer::Deserializer,
-    node::Node,
-    tokenizer::{Matcher, Quantifiers::Once},
+    context::Context, deserializer::Deserializer, node::Node, pattern::Quantifiers::*,
+    tokenizer::Matcher,
 };
 
 #[derive(Debug, PartialEq)]

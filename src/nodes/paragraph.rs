@@ -6,7 +6,8 @@ use crate::toolkit::node::Node;
 use crate::toolkit::{
     context::Context,
     deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
-    tokenizer::{Matcher, Quantifiers::RepeatTimes},
+    pattern::Quantifiers::*,
+    tokenizer::Matcher,
 };
 
 #[derive(Debug, PartialEq)]

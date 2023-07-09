@@ -2,10 +2,8 @@ use crate::toolkit::{
     context::Context,
     deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
     node::Node,
-    tokenizer::{
-        Matcher,
-        Quantifiers::{Once, RepeatTimes},
-    },
+    pattern::Quantifiers::*,
+    tokenizer::Matcher,
 };
 
 use super::image::Image;

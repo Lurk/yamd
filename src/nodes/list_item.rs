@@ -2,10 +2,8 @@ use crate::toolkit::{
     context::Context,
     deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
     node::Node,
-    tokenizer::{
-        Matcher,
-        Quantifiers::{Once, RepeatTimes, ZeroOrMore},
-    },
+    pattern::Quantifiers::*,
+    tokenizer::Matcher,
 };
 
 use super::{
