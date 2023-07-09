@@ -20,6 +20,17 @@ where
         while current_position < input.len() {
             let slice = &input[current_position..];
             current_position += 1;
+            if maybe_nodes.is_empty() {
+                match fallback_node.as_ref() {
+                    Some(fallback_node) => {
+                        branch.push(fallback_node(slice));
+                        current_position = branch.len() - branch.get_outer_token_length();
+                        fallback_position = current_position;
+                    }
+                    None => return None,
+                }
+                continue;
+            }
             for parser in &maybe_nodes {
                 if let Some(node) = parser(slice, branch.context()) {
                     if fallback_position != current_position - 1 {

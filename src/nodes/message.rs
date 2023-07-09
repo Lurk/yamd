@@ -120,7 +120,20 @@ impl Branch<MessageNodes> for Message {
     }
 
     fn get_outer_token_length(&self) -> usize {
-        0
+        let mut len = 10;
+        if let Some(header) = &self.header {
+            len += header.len() + 5;
+        }
+        if let Some(icon) = &self.icon {
+            len += icon.len() + 4;
+        }
+        if self.warning {
+            len += 3;
+        }
+        if !self.consumed_all_input {
+            len += 2;
+        }
+        len
     }
 }
 
@@ -132,8 +145,7 @@ impl Deserializer for Message {
             &[Once('\n'), RepeatTimes(4, '%')],
             false,
         ) {
-            println!("message: {:?}", message);
-            let mut inner_matcher = Matcher::new(&message.body);
+            let mut inner_matcher = Matcher::new(message.body);
             let header = inner_matcher
                 .get_match(&[RepeatTimes(3, '%'), Once(' ')], &[Once('\n')], false)
                 .map(|s| s.body.to_string());
@@ -149,12 +161,9 @@ impl Deserializer for Message {
                 .is_none();
             let rest = inner_matcher.get_rest();
 
-            println!("rest: {:?}", rest);
-
             let container = Self::new(header, icon, warning, consumed_all_input);
 
             if rest.is_empty() {
-                println!("here");
                 return Some(container);
             } else {
                 return Self::parse_branch(rest, container);
@@ -168,7 +177,7 @@ impl Deserializer for Message {
 mod test {
     use super::Message;
     use crate::{
-        nodes::{paragraph::Paragraph, text::Text},
+        nodes::{bold::Bold, paragraph::Paragraph, strikethrough::Strikethrough, text::Text},
         toolkit::{deserializer::Deserializer, node::Node},
     };
     use pretty_assertions::assert_eq;
@@ -289,10 +298,119 @@ mod test {
     }
 
     #[test]
-    fn deserialize() {
+    fn deserialize_with_header() {
         assert_eq!(
             Message::deserialize("%%%%\n%%% header\n\n%%%%\n\n"),
             Some(Message::new(Some("header"), None, false, false)),
+        );
+        assert_eq!(
+            Message::deserialize("%%%%\n%%% header\n\n%%%%"),
+            Some(Message::new(Some("header"), None, false, true)),
+        );
+    }
+
+    #[test]
+    fn deserialize_with_icon() {
+        assert_eq!(
+            Message::deserialize("%%%%\n%% icon\n\n%%%%\n\n"),
+            Some(Message::new(None, Some("icon"), false, false)),
+        );
+        assert_eq!(
+            Message::deserialize("%%%%\n%% icon\n\n%%%%"),
+            Some(Message::new(None, Some("icon"), false, true)),
+        );
+    }
+
+    #[test]
+    fn deserialize_with_header_and_icon() {
+        assert_eq!(
+            Message::deserialize("%%%%\n%%% header\n%% icon\n\n%%%%\n\n"),
+            Some(Message::new(Some("header"), Some("icon"), false, false)),
+        );
+        assert_eq!(
+            Message::deserialize("%%%%\n%%% header\n%% icon\n\n%%%%"),
+            Some(Message::new(Some("header"), Some("icon"), false, true)),
+        );
+    }
+
+    #[test]
+    fn deserialize_with_header_and_icon_and_warning() {
+        assert_eq!(
+            Message::deserialize("%%%%\n%%% header\n%% icon\n% \n\n%%%%\n\n"),
+            Some(Message::new::<&str>(
+                Some("header"),
+                Some("icon"),
+                true,
+                false
+            )),
+        );
+        assert_eq!(
+            Message::deserialize("%%%%\n%%% header\n%% icon\n% \n\n%%%%"),
+            Some(Message::new::<&str>(
+                Some("header"),
+                Some("icon"),
+                true,
+                true
+            )),
+        );
+    }
+
+    #[test]
+    fn deserialize_with_header_and_warning() {
+        assert_eq!(
+            Message::deserialize("%%%%\n%%% header\n% \n\n%%%%\n\n"),
+            Some(Message::new::<&str>(Some("header"), None, true, false)),
+        );
+        assert_eq!(
+            Message::deserialize("%%%%\n%%% header\n% \n\n%%%%"),
+            Some(Message::new::<&str>(Some("header"), None, true, true)),
+        );
+    }
+
+    #[test]
+    fn deserialize_with_icon_and_warning() {
+        assert_eq!(
+            Message::deserialize("%%%%\n%% icon\n% \n\n%%%%\n\n"),
+            Some(Message::new::<&str>(None, Some("icon"), true, false)),
+        );
+        assert_eq!(
+            Message::deserialize("%%%%\n%% icon\n% \n\n%%%%"),
+            Some(Message::new::<&str>(None, Some("icon"), true, true)),
+        );
+    }
+
+    #[test]
+    fn deserialize_with_warning() {
+        assert_eq!(
+            Message::deserialize("%%%%\n% \n\n%%%%\n\n"),
+            Some(Message::new::<&str>(None, None, true, false)),
+        );
+        assert_eq!(
+            Message::deserialize("%%%%\n% \n\n%%%%"),
+            Some(Message::new::<&str>(None, None, true, true)),
+        );
+    }
+
+    #[test]
+    fn deserialize_with_header_and_icon_and_content() {
+        assert_eq!(
+            Message::deserialize("%%%%\n%%% header\n%% icon\nthis is some **content**\n\nand this is next ~~line~~\n%%%%\n\n"),
+            Some(Message::new_with_nodes(
+                Some("header"),
+                Some("icon"),
+                vec![
+                    Paragraph::new_with_nodes(false, vec![
+                    Text::new("this is some ".to_string()).into(),
+                    Bold::new_with_nodes(vec![Text::new("content").into()]).into(),
+                ]).into(),
+                    Paragraph::new_with_nodes(true, vec![
+                    Text::new("and this is next ").into(),
+                    Strikethrough::new("line").into(),
+                ]).into(),
+                ],
+                false,
+                false
+            )),
         );
     }
 }
