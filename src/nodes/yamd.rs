@@ -6,8 +6,8 @@ use crate::{
 };
 
 use super::{
-    code::Code, divider::Divider, embed::Embed, highlight::Highlight, image::Image,
-    image_gallery::ImageGallery, list::List, message::Message,
+    cloudinary_image_gallery::CloudinaryImageGallery, code::Code, divider::Divider, embed::Embed,
+    highlight::Highlight, image::Image, image_gallery::ImageGallery, list::List, message::Message,
 };
 
 #[derive(Debug, PartialEq)]
@@ -22,6 +22,7 @@ pub enum YamdNodes {
     Divider(Divider),
     Embed(Embed),
     Message(Message),
+    CloudinaryImageGallery(CloudinaryImageGallery),
 }
 
 impl From<Paragraph> for YamdNodes {
@@ -84,6 +85,12 @@ impl From<Message> for YamdNodes {
     }
 }
 
+impl From<CloudinaryImageGallery> for YamdNodes {
+    fn from(value: CloudinaryImageGallery) -> Self {
+        YamdNodes::CloudinaryImageGallery(value)
+    }
+}
+
 impl Node for YamdNodes {
     fn serialize(&self) -> String {
         match self {
@@ -97,6 +104,7 @@ impl Node for YamdNodes {
             YamdNodes::Divider(node) => node.serialize(),
             YamdNodes::Embed(node) => node.serialize(),
             YamdNodes::Message(node) => node.serialize(),
+            YamdNodes::CloudinaryImageGallery(node) => node.serialize(),
         }
     }
     fn len(&self) -> usize {
@@ -111,6 +119,7 @@ impl Node for YamdNodes {
             YamdNodes::Divider(node) => node.len(),
             YamdNodes::Embed(node) => node.len(),
             YamdNodes::Message(node) => node.len(),
+            YamdNodes::CloudinaryImageGallery(node) => node.len(),
         }
     }
 }
@@ -146,6 +155,7 @@ impl Branch<YamdNodes> for Yamd {
             Divider::maybe_node(),
             Embed::maybe_node(),
             Message::maybe_node(),
+            CloudinaryImageGallery::maybe_node(),
         ]
     }
 
@@ -191,6 +201,7 @@ mod tests {
         nodes::paragraph::Paragraph,
         nodes::{
             bold::Bold,
+            cloudinary_image_gallery::CloudinaryImageGallery,
             code::Code,
             divider::Divider,
             embed::Embed,
@@ -244,6 +255,11 @@ content **bold**
 
 content _italic_
 %%%%
+
+!!!!
+! username
+! tag
+!!!!
 
 end"#;
 
@@ -358,6 +374,7 @@ end"#;
                     false
                 )
                 .into(),
+                CloudinaryImageGallery::new("username", "tag", false).into(),
                 Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
             ]))
         );
@@ -450,6 +467,7 @@ end"#;
                     false
                 )
                 .into(),
+                CloudinaryImageGallery::new("username", "tag", false).into(),
                 Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
             ])
             .serialize(),
