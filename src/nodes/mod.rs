@@ -1,5 +1,6 @@
 pub mod anchor;
 pub mod bold;
+pub mod cloudinary_image_gallery;
 pub mod code;
 pub mod divider;
 pub mod embed;
