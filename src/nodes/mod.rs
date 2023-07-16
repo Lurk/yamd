@@ -1,3 +1,4 @@
+pub mod accordion_tab;
 pub mod anchor;
 pub mod bold;
 pub mod cloudinary_image_gallery;
@@ -12,7 +13,6 @@ pub mod inline_code;
 pub mod italic;
 pub mod list;
 pub mod list_item;
-pub mod message;
 pub mod paragraph;
 pub mod strikethrough;
 pub mod text;

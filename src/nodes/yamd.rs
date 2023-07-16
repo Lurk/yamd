@@ -7,7 +7,7 @@ use crate::{
 
 use super::{
     cloudinary_image_gallery::CloudinaryImageGallery, code::Code, divider::Divider, embed::Embed,
-    highlight::Highlight, image::Image, image_gallery::ImageGallery, list::List, message::Message,
+    highlight::Highlight, image::Image, image_gallery::ImageGallery, list::List,
 };
 
 #[derive(Debug, PartialEq)]
@@ -21,7 +21,6 @@ pub enum YamdNodes {
     Highlight(Highlight),
     Divider(Divider),
     Embed(Embed),
-    Message(Message),
     CloudinaryImageGallery(CloudinaryImageGallery),
 }
 
@@ -79,12 +78,6 @@ impl From<Embed> for YamdNodes {
     }
 }
 
-impl From<Message> for YamdNodes {
-    fn from(value: Message) -> Self {
-        YamdNodes::Message(value)
-    }
-}
-
 impl From<CloudinaryImageGallery> for YamdNodes {
     fn from(value: CloudinaryImageGallery) -> Self {
         YamdNodes::CloudinaryImageGallery(value)
@@ -103,7 +96,6 @@ impl Node for YamdNodes {
             YamdNodes::Highlight(node) => node.serialize(),
             YamdNodes::Divider(node) => node.serialize(),
             YamdNodes::Embed(node) => node.serialize(),
-            YamdNodes::Message(node) => node.serialize(),
             YamdNodes::CloudinaryImageGallery(node) => node.serialize(),
         }
     }
@@ -118,7 +110,6 @@ impl Node for YamdNodes {
             YamdNodes::Highlight(node) => node.len(),
             YamdNodes::Divider(node) => node.len(),
             YamdNodes::Embed(node) => node.len(),
-            YamdNodes::Message(node) => node.len(),
             YamdNodes::CloudinaryImageGallery(node) => node.len(),
         }
     }
@@ -154,7 +145,6 @@ impl Branch<YamdNodes> for Yamd {
             Highlight::maybe_node(),
             Divider::maybe_node(),
             Embed::maybe_node(),
-            Message::maybe_node(),
             CloudinaryImageGallery::maybe_node(),
         ]
     }
@@ -211,7 +201,6 @@ mod tests {
             italic::Italic,
             list::{List, ListTypes::Unordered},
             list_item::ListItem,
-            message::Message,
             strikethrough::Strikethrough,
             text::Text,
         },
@@ -238,6 +227,8 @@ t**b**
 >> H
 > I
 ~~s~~
+
+_I_
 >>>
 
 -----
@@ -246,15 +237,6 @@ t**b**
  - two
 
 {{youtube|123}}
-
-%%%%
-%%% header
-%% icon
-% 
-content **bold**
-
-content _italic_
-%%%%
 
 !!!!
 ! username
@@ -315,8 +297,9 @@ end"#;
                     Some("I"),
                     false,
                     vec![
-                        Paragraph::new_with_nodes(true, vec![Strikethrough::new("s").into()])
-                            .into()
+                        Paragraph::new_with_nodes(false, vec![Strikethrough::new("s").into()])
+                            .into(),
+                        Paragraph::new_with_nodes(true, vec![Italic::new("I").into()]).into()
                     ]
                 )
                 .into(),
@@ -352,28 +335,6 @@ end"#;
                 )
                 .into(),
                 Embed::new("youtube", "123", false).into(),
-                Message::new_with_nodes(
-                    Some("header"),
-                    Some("icon"),
-                    vec![
-                        Paragraph::new_with_nodes(
-                            false,
-                            vec![
-                                Text::new("content ").into(),
-                                Bold::new_with_nodes(vec![Text::new("bold").into()]).into()
-                            ]
-                        )
-                        .into(),
-                        Paragraph::new_with_nodes(
-                            true,
-                            vec![Text::new("content ").into(), Italic::new("italic").into()]
-                        )
-                        .into()
-                    ],
-                    true,
-                    false
-                )
-                .into(),
                 CloudinaryImageGallery::new("username", "tag", false).into(),
                 Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
             ]))
@@ -408,8 +369,9 @@ end"#;
                     Some("I"),
                     false,
                     vec![
-                        Paragraph::new_with_nodes(true, vec![Strikethrough::new("s").into()])
-                            .into()
+                        Paragraph::new_with_nodes(false, vec![Strikethrough::new("s").into()])
+                            .into(),
+                        Paragraph::new_with_nodes(true, vec![Italic::new("I").into()]).into()
                     ]
                 )
                 .into(),
@@ -445,28 +407,6 @@ end"#;
                 )
                 .into(),
                 Embed::new("youtube", "123", false).into(),
-                Message::new_with_nodes(
-                    Some("header"),
-                    Some("icon"),
-                    vec![
-                        Paragraph::new_with_nodes(
-                            false,
-                            vec![
-                                Text::new("content ").into(),
-                                Bold::new_with_nodes(vec![Text::new("bold").into()]).into()
-                            ]
-                        )
-                        .into(),
-                        Paragraph::new_with_nodes(
-                            true,
-                            vec![Text::new("content ").into(), Italic::new("italic").into()]
-                        )
-                        .into()
-                    ],
-                    true,
-                    false
-                )
-                .into(),
                 CloudinaryImageGallery::new("username", "tag", false).into(),
                 Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
             ])
