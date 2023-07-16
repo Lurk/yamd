@@ -248,7 +248,7 @@ end"#;
     #[test]
     fn push() {
         let mut t = Yamd::new();
-        t.push(Heading::new("header", 1, false));
+        t.push(Heading::new(false, "header", 1));
         t.push(Paragraph::new_with_nodes(
             true,
             vec![Text::new("text").into()],
@@ -260,7 +260,7 @@ end"#;
     #[test]
     fn from_vec() {
         let t: String = Yamd::new_with_nodes(vec![
-            Heading::new("header", 1, false).into(),
+            Heading::new(false, "header", 1).into(),
             Paragraph::new_with_nodes(true, vec![Text::new("text").into()]).into(),
         ])
         .serialize();
@@ -273,7 +273,7 @@ end"#;
         assert_eq!(
             Yamd::deserialize(TEST_CASE),
             Some(Yamd::new_with_nodes(vec![
-                Heading::new("hello", 1, false).into(),
+                Heading::new(false, "hello", 1).into(),
                 Code::new("rust", "let a=1;", false).into(),
                 Paragraph::new_with_nodes(
                     false,
@@ -283,11 +283,11 @@ end"#;
                     ]
                 )
                 .into(),
-                Image::new('a', 'u', false).into(),
+                Image::new(false, 'a', 'u').into(),
                 ImageGallery::new_with_nodes(
                     vec![
-                        Image::new("a", "u", true).into(),
-                        Image::new("a2", "u2", true).into()
+                        Image::new(true, "a", "u").into(),
+                        Image::new(true, "a2", "u2").into()
                     ],
                     false
                 )
@@ -345,7 +345,7 @@ end"#;
     fn serialize() {
         assert_eq!(
             Yamd::new_with_nodes(vec![
-                Heading::new("hello", 1, false).into(),
+                Heading::new(false, "hello", 1).into(),
                 Code::new("rust", "let a=1;", false).into(),
                 Paragraph::new_with_nodes(
                     false,
@@ -355,11 +355,11 @@ end"#;
                     ]
                 )
                 .into(),
-                Image::new('a', 'u', false).into(),
+                Image::new(false, 'a', 'u').into(),
                 ImageGallery::new_with_nodes(
                     vec![
-                        Image::new("a", "u", true).into(),
-                        Image::new("a2", "u2", true).into()
+                        Image::new(true, "a", "u").into(),
+                        Image::new(true, "a2", "u2").into()
                     ],
                     false
                 )

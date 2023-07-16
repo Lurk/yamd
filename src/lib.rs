@@ -179,14 +179,14 @@ mod tests {
     #[test]
     fn test_deserialize() {
         let input = "# header";
-        let expected = Yamd::new_with_nodes(vec![Heading::new("header", 1, true).into()]);
+        let expected = Yamd::new_with_nodes(vec![Heading::new(true, "header", 1).into()]);
         let actual = deserialize(input).unwrap();
         assert_eq!(expected, actual);
     }
 
     #[test]
     fn test_serialize() {
-        let input = Yamd::new_with_nodes(vec![Heading::new("header", 1, true).into()]);
+        let input = Yamd::new_with_nodes(vec![Heading::new(true, "header", 1).into()]);
         let expected = "# header";
         let actual = serialize(&input);
         assert_eq!(expected, actual);

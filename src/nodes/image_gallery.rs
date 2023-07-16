@@ -127,8 +127,8 @@ mod tests {
         assert_eq!(
             ImageGallery::new_with_nodes(
                 vec![
-                    Image::new("a", "u", true).into(),
-                    Image::new("a2", "u2", true).into()
+                    Image::new(true, "a", "u").into(),
+                    Image::new(true, "a2", "u2").into()
                 ],
                 true
             )
@@ -138,8 +138,8 @@ mod tests {
         assert_eq!(
             ImageGallery::new_with_nodes(
                 vec![
-                    Image::new("a", "u", true).into(),
-                    Image::new("a2", "u2", true).into()
+                    Image::new(true, "a", "u").into(),
+                    Image::new(true, "a2", "u2").into()
                 ],
                 false
             )
@@ -153,8 +153,8 @@ mod tests {
         assert_eq!(
             ImageGallery::new_with_nodes(
                 vec![
-                    Image::new("a", "u", true).into(),
-                    Image::new("a2", "u2", true).into()
+                    Image::new(true, "a", "u").into(),
+                    Image::new(true, "a2", "u2").into()
                 ],
                 true
             )
@@ -164,8 +164,8 @@ mod tests {
         assert_eq!(
             ImageGallery::new_with_nodes(
                 vec![
-                    Image::new("a", "u", true).into(),
-                    Image::new("a2", "u2", true).into()
+                    Image::new(true, "a", "u").into(),
+                    Image::new(true, "a2", "u2").into()
                 ],
                 false
             )
@@ -180,8 +180,8 @@ mod tests {
             ImageGallery::deserialize("!!!\n![a](u)\n![a2](u2)\n!!!"),
             Some(ImageGallery::new_with_nodes(
                 vec![
-                    Image::new("a", "u", true).into(),
-                    Image::new("a2", "u2", true).into()
+                    Image::new(true, "a", "u").into(),
+                    Image::new(true, "a2", "u2").into()
                 ],
                 true
             ))
@@ -190,8 +190,8 @@ mod tests {
             ImageGallery::deserialize("!!!\n![a](u)\n![a2](u2)\n!!!\n\n"),
             Some(ImageGallery::new_with_nodes(
                 vec![
-                    Image::new("a", "u", true).into(),
-                    Image::new("a2", "u2", true).into()
+                    Image::new(true, "a", "u").into(),
+                    Image::new(true, "a2", "u2").into()
                 ],
                 false
             ))
