@@ -167,7 +167,6 @@ mod test {
 
 \\
 \\\"#;
-        println!("{}", input.len());
         assert_eq!(Accordion::deserialize(input).unwrap().len(), 41);
     }
 

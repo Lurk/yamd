@@ -201,6 +201,8 @@ mod tests {
         nodes::heading::Heading,
         nodes::paragraph::Paragraph,
         nodes::{
+            accordion::Accordion,
+            accordion_tab::AccordionTab,
             bold::Bold,
             cloudinary_image_gallery::CloudinaryImageGallery,
             code::Code,
@@ -254,6 +256,17 @@ _I_
 ! username
 ! tag
 !!!!
+
+///
+//
+/ accordeon tab
+
+\\
+//
+/ one more accordeon tab
+
+\\
+\\\
 
 end"#;
 
@@ -344,6 +357,14 @@ end"#;
                 .into(),
                 Embed::new("youtube", "123", false).into(),
                 CloudinaryImageGallery::new("username", "tag", false).into(),
+                Accordion::new_with_nodes(
+                    false,
+                    vec![
+                        AccordionTab::new(false, Some("accordeon tab"),).into(),
+                        AccordionTab::new(true, Some("one more accordeon tab"),).into()
+                    ]
+                )
+                .into(),
                 Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
             ]))
         );
@@ -414,6 +435,14 @@ end"#;
                 .into(),
                 Embed::new("youtube", "123", false).into(),
                 CloudinaryImageGallery::new("username", "tag", false).into(),
+                Accordion::new_with_nodes(
+                    false,
+                    vec![
+                        AccordionTab::new(false, Some("accordeon tab"),).into(),
+                        AccordionTab::new(true, Some("one more accordeon tab"),).into()
+                    ]
+                )
+                .into(),
                 Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
             ])
             .serialize(),
