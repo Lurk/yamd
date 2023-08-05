@@ -92,7 +92,7 @@ impl<'sequence, const SIZE: usize> Pattern<'sequence, SIZE> {
             return self.create_state(true);
         } else if let Some(new_index) = self.next_index(c, 0) {
             self.reset();
-            self.increment_quantifier_length(new_index);
+            self.increment_quantifier_length(0);
             self.index = new_index;
             self.last_char = Some(*c);
             return self.create_state(true);
@@ -186,5 +186,17 @@ mod tests {
         assert_eq!(m.check_character(&'b'), PatternState::new(true));
         assert_eq!(m.check_character(&'b'), PatternState::new(true));
         assert_eq!(m.check_character(&'a'), PatternState::new(true));
+    }
+
+    #[test]
+    fn when_reset_repeating_pattern() {
+        let mut m = Pattern::new(&[Once('\n'), RepeatTimes(3, '\\')]);
+        assert_eq!(m.check_character(&'\n'), PatternState::new(true));
+        assert_eq!(m.check_character(&'\\'), PatternState::new(true));
+        assert_eq!(m.check_character(&'\\'), PatternState::new(true));
+        assert_eq!(m.check_character(&'\n'), PatternState::new(true));
+        assert_eq!(m.check_character(&'\\'), PatternState::new(true));
+        assert_eq!(m.check_character(&'\\'), PatternState::new(true));
+        assert_eq!(m.check_character(&'\\'), PatternState::end([1, 3]));
     }
 }
