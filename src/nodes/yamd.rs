@@ -6,8 +6,9 @@ use crate::{
 };
 
 use super::{
-    cloudinary_image_gallery::CloudinaryImageGallery, code::Code, divider::Divider, embed::Embed,
-    highlight::Highlight, image::Image, image_gallery::ImageGallery, list::List,
+    accordion::Accordion, cloudinary_image_gallery::CloudinaryImageGallery, code::Code,
+    divider::Divider, embed::Embed, highlight::Highlight, image::Image,
+    image_gallery::ImageGallery, list::List,
 };
 
 #[derive(Debug, PartialEq)]
@@ -22,6 +23,7 @@ pub enum YamdNodes {
     Divider(Divider),
     Embed(Embed),
     CloudinaryImageGallery(CloudinaryImageGallery),
+    Accordion(Accordion),
 }
 
 impl From<Paragraph> for YamdNodes {
@@ -84,6 +86,12 @@ impl From<CloudinaryImageGallery> for YamdNodes {
     }
 }
 
+impl From<Accordion> for YamdNodes {
+    fn from(value: Accordion) -> Self {
+        YamdNodes::Accordion(value)
+    }
+}
+
 impl Node for YamdNodes {
     fn serialize(&self) -> String {
         match self {
@@ -97,6 +105,7 @@ impl Node for YamdNodes {
             YamdNodes::Divider(node) => node.serialize(),
             YamdNodes::Embed(node) => node.serialize(),
             YamdNodes::CloudinaryImageGallery(node) => node.serialize(),
+            YamdNodes::Accordion(node) => node.serialize(),
         }
     }
     fn len(&self) -> usize {
@@ -111,6 +120,7 @@ impl Node for YamdNodes {
             YamdNodes::Divider(node) => node.len(),
             YamdNodes::Embed(node) => node.len(),
             YamdNodes::CloudinaryImageGallery(node) => node.len(),
+            YamdNodes::Accordion(node) => node.len(),
         }
     }
 }
@@ -146,6 +156,7 @@ impl Branch<YamdNodes> for Yamd {
             Divider::maybe_node(),
             Embed::maybe_node(),
             CloudinaryImageGallery::maybe_node(),
+            Accordion::maybe_node(),
         ]
     }
 
