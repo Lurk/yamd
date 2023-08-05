@@ -1,7 +1,6 @@
 #[derive(Clone, Debug, PartialEq)]
 pub enum Quantifiers {
     Once(char),
-    ZeroOrMore(char),
     RepeatTimes(usize, char),
 }
 
@@ -63,11 +62,6 @@ impl<'sequence, const SIZE: usize> Pattern<'sequence, SIZE> {
                 self.increment_quantifier_length(index);
                 Some(index + 1)
             }
-            Some(Quantifiers::ZeroOrMore(p)) if p == c => {
-                self.increment_quantifier_length(index);
-                Some(index)
-            }
-            Some(Quantifiers::ZeroOrMore(p)) if p != c => self.next_index(c, index + 1),
             Some(Quantifiers::RepeatTimes(length, p))
                 if (p == c && current_pattern_length + 1 < *length) =>
             {
@@ -95,6 +89,12 @@ impl<'sequence, const SIZE: usize> Pattern<'sequence, SIZE> {
             self.last_char = Some(*c);
             return self.create_state(true);
         } else if self.index == 1 && self.last_char == Some(*c) {
+            return self.create_state(true);
+        } else if let Some(new_index) = self.next_index(c, 0) {
+            self.reset();
+            self.increment_quantifier_length(new_index);
+            self.index = new_index;
+            self.last_char = Some(*c);
             return self.create_state(true);
         }
         self.reset();
@@ -140,22 +140,6 @@ mod tests {
     }
 
     #[test]
-    fn pattern_repeat() {
-        let mut m = Pattern::new(&[ZeroOrMore(' '), Once('-')]);
-        assert_eq!(m.check_character(&' '), PatternState::new(true));
-        assert_eq!(m.check_character(&' '), PatternState::new(true));
-        assert_eq!(m.check_character(&'-'), PatternState::end([2, 1]));
-        assert_eq!(m.check_character(&'-'), PatternState::end([0, 1]));
-    }
-
-    #[test]
-    fn pattern_repeat_zero() {
-        let mut m = Pattern::new(&[ZeroOrMore(' '), Once('-')]);
-        assert_eq!(m.check_character(&'-'), PatternState::end([0, 1]));
-        assert_eq!(m.check_character(&'-'), PatternState::end([0, 1]));
-    }
-
-    #[test]
     fn pattern_exact_repeat_happy_path() {
         let mut m = Pattern::new(&[RepeatTimes(2, ' '), Once('-')]);
         assert_eq!(m.check_character(&' '), PatternState::new(true));
@@ -196,18 +180,11 @@ mod tests {
     }
 
     #[test]
-    fn new_index() {
-        let mut m = Pattern::new(&[ZeroOrMore(' '), Once('-')]);
-        assert_eq!(m.next_index(&' ', 0), Some(0));
-        assert_eq!(m.next_index(&'-', 1), Some(2));
-        assert_eq!(m.next_index(&'d', 0), None);
-        assert_eq!(m.next_index(&'d', 1), None);
-    }
-    #[test]
-    fn pattern_repeat_is_not_matched() {
-        let mut m = Pattern::new(&[ZeroOrMore(' '), Once('-')]);
-        assert_eq!(m.check_character(&' '), PatternState::new(true));
-        assert_eq!(m.check_character(&' '), PatternState::new(true));
-        assert_eq!(m.check_character(&'a'), PatternState::new(false));
+    fn partialy_repeating_pattern() {
+        let mut m = Pattern::new(&[Once('a'), RepeatTimes(3, 'b')]);
+        assert_eq!(m.check_character(&'a'), PatternState::new(true));
+        assert_eq!(m.check_character(&'b'), PatternState::new(true));
+        assert_eq!(m.check_character(&'b'), PatternState::new(true));
+        assert_eq!(m.check_character(&'a'), PatternState::new(true));
     }
 }

@@ -201,6 +201,7 @@ mod tests {
             italic::Italic,
             list::{List, ListTypes::Unordered},
             list_item::ListItem,
+            list_item_content::ListItemContent,
             strikethrough::Strikethrough,
             text::Text,
         },
@@ -305,31 +306,27 @@ end"#;
                 .into(),
                 Divider::new(false).into(),
                 List::new_with_nodes(
+                    false,
                     Unordered,
                     0,
-                    false,
-                    vec![ListItem::new_with_nodes(
+                    vec![ListItem::new_with_nested_list(
                         Unordered,
                         0,
-                        vec![
-                            Paragraph::new_with_nodes(true, vec![Text::new("one").into()]).into(),
-                            List::new_with_nodes(
+                        ListItemContent::new_with_nodes(false, vec![Text::new("one").into()]),
+                        Some(List::new_with_nodes(
+                            true,
+                            Unordered,
+                            1,
+                            vec![ListItem::new(
                                 Unordered,
                                 1,
-                                true,
-                                vec![ListItem::new_with_nodes(
-                                    Unordered,
-                                    1,
-                                    vec![Paragraph::new_with_nodes(
-                                        true,
-                                        vec![Text::new("two").into()]
-                                    )
-                                    .into()]
+                                ListItemContent::new_with_nodes(
+                                    true,
+                                    vec![Text::new("two").into()]
                                 )
-                                .into()]
                             )
-                            .into()
-                        ]
+                            .into()]
+                        ))
                     )
                     .into()]
                 )
@@ -377,31 +374,29 @@ end"#;
                 .into(),
                 Divider::new(false).into(),
                 List::new_with_nodes(
+                    false,
                     Unordered,
                     0,
-                    false,
-                    vec![ListItem::new_with_nodes(
+                    vec![ListItem::new_with_nested_list(
                         Unordered,
                         0,
-                        vec![
-                            Paragraph::new_with_nodes(true, vec![Text::new("one").into()]).into(),
-                            List::new_with_nodes(
+                        ListItemContent::new_with_nodes(false, vec![Text::new("one").into()])
+                            .into(),
+                        List::new_with_nodes(
+                            true,
+                            Unordered,
+                            1,
+                            vec![ListItem::new(
                                 Unordered,
                                 1,
-                                true,
-                                vec![ListItem::new_with_nodes(
-                                    Unordered,
-                                    1,
-                                    vec![Paragraph::new_with_nodes(
-                                        true,
-                                        vec![Text::new("two").into()]
-                                    )
-                                    .into()]
+                                ListItemContent::new_with_nodes(
+                                    true,
+                                    vec![Text::new("two").into()]
                                 )
-                                .into()]
                             )
-                            .into()
-                        ]
+                            .into()]
+                        )
+                        .into()
                     )
                     .into()]
                 )
