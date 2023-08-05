@@ -128,7 +128,7 @@ mod tests {
             list_item_content::ListItemContent,
             text::Text,
         },
-        toolkit::{deserializer::Deserializer, node::Node},
+        toolkit::{context::Context, deserializer::Deserializer, node::Node},
     };
     use pretty_assertions::assert_eq;
 
@@ -248,5 +248,15 @@ mod tests {
     #[test]
     fn deserialize_with_nested_list_and_text() {
         assert_eq!(ListItem::deserialize("- 111111\n - 22222\n 33333"), None);
+    }
+
+    #[test]
+    fn deserialize_with_wrong_context() {
+        let mut ctx = Context::new();
+        ctx.add("list_type", '+');
+        assert_eq!(
+            ListItem::deserialize_with_context("- test", Some(ctx)),
+            None
+        );
     }
 }
