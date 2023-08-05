@@ -62,6 +62,17 @@
 //! ![alt text](url)
 //! !!!
 //! ```
+//! ### CloudinaryImageGallery
+//!
+//! Element that allows to embed image gallery from cloudinary.com by providing username and tag.
+//!
+//! Example:
+//! ```text
+//! !!!
+//! ! username
+//! ! tag
+//! !!!
+//! ```
 //!
 //! ### Highlight
 //!
@@ -141,6 +152,24 @@
 //!
 //! Altogether: ``` text **bold _italic_ text** ~~strikethrough~~ text `inline code` [Yamd repo](url) ``` will be parsed into Paragraph
 //!
+//! ### Accordion
+//!
+//! Accordion element can contain all from the above
+//!
+//! Example:
+//! ```text
+//! ///
+//! //
+//! / header
+//! some ranom text
+//! \\
+//! //
+//! / header
+//! some ranom text
+//! \\
+//! \\\
+//! ```
+
 use nodes::yamd::Yamd;
 use toolkit::{deserializer::Deserializer, node::Node};
 
