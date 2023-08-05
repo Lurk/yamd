@@ -449,4 +449,9 @@ end"#;
             String::from(TEST_CASE)
         )
     }
+
+    #[test]
+    fn default() {
+        assert_eq!(Yamd::default().serialize(), String::new());
+    }
 }
