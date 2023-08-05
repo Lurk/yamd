@@ -175,9 +175,13 @@ impl Deserializer for ListItemContent {
 mod test {
     use super::ListItemContent;
     use crate::{
-        nodes::text::Text,
+        nodes::{
+            anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic,
+            strikethrough::Strikethrough, text::Text,
+        },
         toolkit::{deserializer::Deserializer, node::Node},
     };
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_consume_all() {
@@ -217,6 +221,30 @@ mod test {
         assert_eq!(
             ListItemContent::new_with_nodes(false, vec![Text::new("Hello").into()]).serialize(),
             "Hello\n"
+        );
+    }
+
+    #[test]
+    fn deserialize_with_all_nodes() {
+        assert_eq!(
+            ListItemContent::deserialize(
+                "simple text **bold text** `let foo='bar';` [a](u) _I_ ~~S~~"
+            ),
+            Some(ListItemContent::new_with_nodes(
+                true,
+                vec![
+                    Text::new("simple text ").into(),
+                    Bold::new_with_nodes(vec![Text::new("bold text").into()]).into(),
+                    Text::new(" ").into(),
+                    InlineCode::new("let foo='bar';").into(),
+                    Text::new(" ").into(),
+                    Anchor::new("a", "u").into(),
+                    Text::new(" ").into(),
+                    Italic::new("I").into(),
+                    Text::new(" ").into(),
+                    Strikethrough::new("S").into(),
+                ]
+            ))
         );
     }
 }
