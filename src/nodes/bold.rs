@@ -179,4 +179,9 @@ mod tests {
             10
         );
     }
+
+    #[test]
+    fn default() {
+        assert_eq!(Bold::default(), Bold::new());
+    }
 }

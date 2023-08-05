@@ -6,8 +6,9 @@ use crate::{
 };
 
 use super::{
-    cloudinary_image_gallery::CloudinaryImageGallery, code::Code, divider::Divider, embed::Embed,
-    highlight::Highlight, image::Image, image_gallery::ImageGallery, list::List, message::Message,
+    accordion::Accordion, cloudinary_image_gallery::CloudinaryImageGallery, code::Code,
+    divider::Divider, embed::Embed, highlight::Highlight, image::Image,
+    image_gallery::ImageGallery, list::List,
 };
 
 #[derive(Debug, PartialEq)]
@@ -21,8 +22,8 @@ pub enum YamdNodes {
     Highlight(Highlight),
     Divider(Divider),
     Embed(Embed),
-    Message(Message),
     CloudinaryImageGallery(CloudinaryImageGallery),
+    Accordion(Accordion),
 }
 
 impl From<Paragraph> for YamdNodes {
@@ -79,15 +80,15 @@ impl From<Embed> for YamdNodes {
     }
 }
 
-impl From<Message> for YamdNodes {
-    fn from(value: Message) -> Self {
-        YamdNodes::Message(value)
-    }
-}
-
 impl From<CloudinaryImageGallery> for YamdNodes {
     fn from(value: CloudinaryImageGallery) -> Self {
         YamdNodes::CloudinaryImageGallery(value)
+    }
+}
+
+impl From<Accordion> for YamdNodes {
+    fn from(value: Accordion) -> Self {
+        YamdNodes::Accordion(value)
     }
 }
 
@@ -103,8 +104,8 @@ impl Node for YamdNodes {
             YamdNodes::Highlight(node) => node.serialize(),
             YamdNodes::Divider(node) => node.serialize(),
             YamdNodes::Embed(node) => node.serialize(),
-            YamdNodes::Message(node) => node.serialize(),
             YamdNodes::CloudinaryImageGallery(node) => node.serialize(),
+            YamdNodes::Accordion(node) => node.serialize(),
         }
     }
     fn len(&self) -> usize {
@@ -118,8 +119,8 @@ impl Node for YamdNodes {
             YamdNodes::Highlight(node) => node.len(),
             YamdNodes::Divider(node) => node.len(),
             YamdNodes::Embed(node) => node.len(),
-            YamdNodes::Message(node) => node.len(),
             YamdNodes::CloudinaryImageGallery(node) => node.len(),
+            YamdNodes::Accordion(node) => node.len(),
         }
     }
 }
@@ -154,8 +155,8 @@ impl Branch<YamdNodes> for Yamd {
             Highlight::maybe_node(),
             Divider::maybe_node(),
             Embed::maybe_node(),
-            Message::maybe_node(),
             CloudinaryImageGallery::maybe_node(),
+            Accordion::maybe_node(),
         ]
     }
 
@@ -200,6 +201,8 @@ mod tests {
         nodes::heading::Heading,
         nodes::paragraph::Paragraph,
         nodes::{
+            accordion::Accordion,
+            accordion_tab::AccordionTab,
             bold::Bold,
             cloudinary_image_gallery::CloudinaryImageGallery,
             code::Code,
@@ -211,7 +214,7 @@ mod tests {
             italic::Italic,
             list::{List, ListTypes::Unordered},
             list_item::ListItem,
-            message::Message,
+            list_item_content::ListItemContent,
             strikethrough::Strikethrough,
             text::Text,
         },
@@ -238,6 +241,8 @@ t**b**
 >> H
 > I
 ~~s~~
+
+_I_
 >>>
 
 -----
@@ -247,26 +252,28 @@ t**b**
 
 {{youtube|123}}
 
-%%%%
-%%% header
-%% icon
-% 
-content **bold**
-
-content _italic_
-%%%%
-
 !!!!
 ! username
 ! tag
 !!!!
+
+///
+//
+/ accordeon tab
+
+\\
+//
+/ one more accordeon tab
+
+\\
+\\\
 
 end"#;
 
     #[test]
     fn push() {
         let mut t = Yamd::new();
-        t.push(Heading::new("header", 1, false));
+        t.push(Heading::new(false, "header", 1));
         t.push(Paragraph::new_with_nodes(
             true,
             vec![Text::new("text").into()],
@@ -278,7 +285,7 @@ end"#;
     #[test]
     fn from_vec() {
         let t: String = Yamd::new_with_nodes(vec![
-            Heading::new("header", 1, false).into(),
+            Heading::new(false, "header", 1).into(),
             Paragraph::new_with_nodes(true, vec![Text::new("text").into()]).into(),
         ])
         .serialize();
@@ -291,7 +298,7 @@ end"#;
         assert_eq!(
             Yamd::deserialize(TEST_CASE),
             Some(Yamd::new_with_nodes(vec![
-                Heading::new("hello", 1, false).into(),
+                Heading::new(false, "hello", 1).into(),
                 Code::new("rust", "let a=1;", false).into(),
                 Paragraph::new_with_nodes(
                     false,
@@ -301,11 +308,11 @@ end"#;
                     ]
                 )
                 .into(),
-                Image::new('a', 'u', false).into(),
+                Image::new(false, 'a', 'u').into(),
                 ImageGallery::new_with_nodes(
                     vec![
-                        Image::new("a", "u", true).into(),
-                        Image::new("a2", "u2", true).into()
+                        Image::new(true, "a", "u").into(),
+                        Image::new(true, "a2", "u2").into()
                     ],
                     false
                 )
@@ -315,66 +322,49 @@ end"#;
                     Some("I"),
                     false,
                     vec![
-                        Paragraph::new_with_nodes(true, vec![Strikethrough::new("s").into()])
-                            .into()
+                        Paragraph::new_with_nodes(false, vec![Strikethrough::new("s").into()])
+                            .into(),
+                        Paragraph::new_with_nodes(true, vec![Italic::new("I").into()]).into()
                     ]
                 )
                 .into(),
                 Divider::new(false).into(),
                 List::new_with_nodes(
+                    false,
                     Unordered,
                     0,
-                    false,
-                    vec![ListItem::new_with_nodes(
+                    vec![ListItem::new_with_nested_list(
                         Unordered,
                         0,
-                        vec![
-                            Paragraph::new_with_nodes(true, vec![Text::new("one").into()]).into(),
-                            List::new_with_nodes(
+                        ListItemContent::new_with_nodes(false, vec![Text::new("one").into()]),
+                        Some(List::new_with_nodes(
+                            true,
+                            Unordered,
+                            1,
+                            vec![ListItem::new(
                                 Unordered,
                                 1,
-                                true,
-                                vec![ListItem::new_with_nodes(
-                                    Unordered,
-                                    1,
-                                    vec![Paragraph::new_with_nodes(
-                                        true,
-                                        vec![Text::new("two").into()]
-                                    )
-                                    .into()]
+                                ListItemContent::new_with_nodes(
+                                    true,
+                                    vec![Text::new("two").into()]
                                 )
-                                .into()]
                             )
-                            .into()
-                        ]
+                            .into()]
+                        ))
                     )
                     .into()]
                 )
                 .into(),
                 Embed::new("youtube", "123", false).into(),
-                Message::new_with_nodes(
-                    Some("header"),
-                    Some("icon"),
+                CloudinaryImageGallery::new("username", "tag", false).into(),
+                Accordion::new_with_nodes(
+                    false,
                     vec![
-                        Paragraph::new_with_nodes(
-                            false,
-                            vec![
-                                Text::new("content ").into(),
-                                Bold::new_with_nodes(vec![Text::new("bold").into()]).into()
-                            ]
-                        )
-                        .into(),
-                        Paragraph::new_with_nodes(
-                            true,
-                            vec![Text::new("content ").into(), Italic::new("italic").into()]
-                        )
-                        .into()
-                    ],
-                    true,
-                    false
+                        AccordionTab::new(false, Some("accordeon tab"),).into(),
+                        AccordionTab::new(true, Some("one more accordeon tab"),).into()
+                    ]
                 )
                 .into(),
-                CloudinaryImageGallery::new("username", "tag", false).into(),
                 Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
             ]))
         );
@@ -384,7 +374,7 @@ end"#;
     fn serialize() {
         assert_eq!(
             Yamd::new_with_nodes(vec![
-                Heading::new("hello", 1, false).into(),
+                Heading::new(false, "hello", 1).into(),
                 Code::new("rust", "let a=1;", false).into(),
                 Paragraph::new_with_nodes(
                     false,
@@ -394,11 +384,11 @@ end"#;
                     ]
                 )
                 .into(),
-                Image::new('a', 'u', false).into(),
+                Image::new(false, 'a', 'u').into(),
                 ImageGallery::new_with_nodes(
                     vec![
-                        Image::new("a", "u", true).into(),
-                        Image::new("a2", "u2", true).into()
+                        Image::new(true, "a", "u").into(),
+                        Image::new(true, "a2", "u2").into()
                     ],
                     false
                 )
@@ -408,70 +398,60 @@ end"#;
                     Some("I"),
                     false,
                     vec![
-                        Paragraph::new_with_nodes(true, vec![Strikethrough::new("s").into()])
-                            .into()
+                        Paragraph::new_with_nodes(false, vec![Strikethrough::new("s").into()])
+                            .into(),
+                        Paragraph::new_with_nodes(true, vec![Italic::new("I").into()]).into()
                     ]
                 )
                 .into(),
                 Divider::new(false).into(),
                 List::new_with_nodes(
+                    false,
                     Unordered,
                     0,
-                    false,
-                    vec![ListItem::new_with_nodes(
+                    vec![ListItem::new_with_nested_list(
                         Unordered,
                         0,
-                        vec![
-                            Paragraph::new_with_nodes(true, vec![Text::new("one").into()]).into(),
-                            List::new_with_nodes(
+                        ListItemContent::new_with_nodes(false, vec![Text::new("one").into()])
+                            .into(),
+                        List::new_with_nodes(
+                            true,
+                            Unordered,
+                            1,
+                            vec![ListItem::new(
                                 Unordered,
                                 1,
-                                true,
-                                vec![ListItem::new_with_nodes(
-                                    Unordered,
-                                    1,
-                                    vec![Paragraph::new_with_nodes(
-                                        true,
-                                        vec![Text::new("two").into()]
-                                    )
-                                    .into()]
+                                ListItemContent::new_with_nodes(
+                                    true,
+                                    vec![Text::new("two").into()]
                                 )
-                                .into()]
                             )
-                            .into()
-                        ]
+                            .into()]
+                        )
+                        .into()
                     )
                     .into()]
                 )
                 .into(),
                 Embed::new("youtube", "123", false).into(),
-                Message::new_with_nodes(
-                    Some("header"),
-                    Some("icon"),
+                CloudinaryImageGallery::new("username", "tag", false).into(),
+                Accordion::new_with_nodes(
+                    false,
                     vec![
-                        Paragraph::new_with_nodes(
-                            false,
-                            vec![
-                                Text::new("content ").into(),
-                                Bold::new_with_nodes(vec![Text::new("bold").into()]).into()
-                            ]
-                        )
-                        .into(),
-                        Paragraph::new_with_nodes(
-                            true,
-                            vec![Text::new("content ").into(), Italic::new("italic").into()]
-                        )
-                        .into()
-                    ],
-                    true,
-                    false
+                        AccordionTab::new(false, Some("accordeon tab"),).into(),
+                        AccordionTab::new(true, Some("one more accordeon tab"),).into()
+                    ]
                 )
                 .into(),
-                CloudinaryImageGallery::new("username", "tag", false).into(),
                 Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
             ])
             .serialize(),
             String::from(TEST_CASE)
         )
+    }
+
+    #[test]
+    fn default() {
+        assert_eq!(Yamd::default().serialize(), String::new());
     }
 }

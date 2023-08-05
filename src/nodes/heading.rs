@@ -11,7 +11,7 @@ pub struct Heading {
 }
 
 impl Heading {
-    pub fn new<S: Into<String>>(text: S, level: u8, consumed_all_input: bool) -> Self {
+    pub fn new<S: Into<String>>(consumed_all_input: bool, text: S, level: u8) -> Self {
         let normalized_level = match level {
             0 => 1,
             7.. => 6,
@@ -40,9 +40,9 @@ impl Deserializer for Heading {
             let mut matcher = Matcher::new(input);
             if let Some(heading) = matcher.get_match(start_token, &[RepeatTimes(2, '\n')], true) {
                 return Some(Self::new(
+                    heading.end_token.is_empty(),
                     heading.body,
                     (start_tokens.len() - i).try_into().unwrap_or(1),
-                    heading.end_token.is_empty(),
                 ));
             }
         }
@@ -71,27 +71,27 @@ mod tests {
 
     #[test]
     fn level_one() {
-        assert_eq!(Heading::new("Header", 1, true).serialize(), "# Header");
-        assert_eq!(Heading::new("Header", 1, false).serialize(), "# Header\n\n");
+        assert_eq!(Heading::new(true, "Header", 1).serialize(), "# Header");
+        assert_eq!(Heading::new(false, "Header", 1).serialize(), "# Header\n\n");
     }
 
     #[test]
     fn level_gt_six() {
-        let h = Heading::new("Header", 7, true).serialize();
+        let h = Heading::new(true, "Header", 7).serialize();
         assert_eq!(h, "###### Header");
-        let h = Heading::new("Header", 34, true).serialize();
+        let h = Heading::new(true, "Header", 34).serialize();
         assert_eq!(h, "###### Header");
     }
 
     #[test]
     fn level_eq_zero() {
-        let h = Heading::new("Header", 0, true).serialize();
+        let h = Heading::new(true, "Header", 0).serialize();
         assert_eq!(h, "# Header");
     }
 
     #[test]
     fn level_eq_four() {
-        let h = Heading::new("Header", 4, true).serialize();
+        let h = Heading::new(true, "Header", 4).serialize();
         assert_eq!(h, "#### Header");
     }
 
@@ -99,15 +99,15 @@ mod tests {
     fn from_string() {
         assert_eq!(
             Heading::deserialize("## Header"),
-            Some(Heading::new("Header", 2, true))
+            Some(Heading::new(true, "Header", 2))
         );
         assert_eq!(
             Heading::deserialize("### Head"),
-            Some(Heading::new("Head", 3, true))
+            Some(Heading::new(true, "Head", 3))
         );
         assert_eq!(
             Heading::deserialize("### Head\n\nsome other thing"),
-            Some(Heading::new("Head", 3, false))
+            Some(Heading::new(false, "Head", 3))
         );
         assert_eq!(Heading::deserialize("not a header"), None);
         assert_eq!(Heading::deserialize("######"), None);
@@ -116,8 +116,8 @@ mod tests {
 
     #[test]
     fn len() {
-        assert_eq!(Heading::new("h", 1, true).len(), 3);
-        assert_eq!(Heading::new("h", 2, true).len(), 4);
-        assert_eq!(Heading::new("h", 2, false).len(), 6);
+        assert_eq!(Heading::new(true, "h", 1).len(), 3);
+        assert_eq!(Heading::new(true, "h", 2).len(), 4);
+        assert_eq!(Heading::new(false, "h", 2).len(), 6);
     }
 }

@@ -11,7 +11,7 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn new<S: Into<String>>(alt: S, url: S, consumed_all_input: bool) -> Self {
+    pub fn new<S: Into<String>>(consumed_all_input: bool, alt: S, url: S) -> Self {
         Self {
             alt: alt.into(),
             url: url.into(),
@@ -41,7 +41,7 @@ impl Deserializer for Image {
         if let Some(alt) = matcher.get_match(&[Once('!'), Once('[')], &[Once(']')], false) {
             if let Some(url) = matcher.get_match(&[Once('(')], &[Once(')'), Once('\n')], false) {
                 let consumed_all_input = matcher.get_match(&[Once('\n')], &[], false).is_none();
-                return Some(Self::new(alt.body, url.body, consumed_all_input));
+                return Some(Self::new(consumed_all_input, alt.body, url.body));
             }
         }
         None
@@ -57,30 +57,30 @@ mod tests {
     #[test]
     fn serializer() {
         assert_eq!(
-            Image::new('a', 'u', true).serialize(),
+            Image::new(true, 'a', 'u').serialize(),
             String::from("![a](u)\n")
         );
         assert_eq!(
-            Image::new('a', 'u', false).serialize(),
+            Image::new(false, 'a', 'u').serialize(),
             String::from("![a](u)\n\n")
         )
     }
 
     #[test]
     fn len() {
-        assert_eq!(Image::new('a', 'u', true).len(), 8);
-        assert_eq!(Image::new('a', 'u', false).len(), 9);
+        assert_eq!(Image::new(true, 'a', 'u').len(), 8);
+        assert_eq!(Image::new(false, 'a', 'u').len(), 9);
     }
 
     #[test]
     fn deserializer() {
         assert_eq!(
             Image::deserialize("![alt](url)\n"),
-            Some(Image::new("alt", "url", true))
+            Some(Image::new(true, "alt", "url"))
         );
         assert_eq!(
             Image::deserialize("![alt](url)\n\n"),
-            Some(Image::new("alt", "url", false))
+            Some(Image::new(false, "alt", "url"))
         );
 
         assert_eq!(Image::deserialize("![alt](url"), None);

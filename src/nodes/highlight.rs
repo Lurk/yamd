@@ -82,14 +82,12 @@ impl Node for Highlight {
                 .iter()
                 .map(|node| node.serialize())
                 .collect::<Vec<String>>()
-                .join("\n\n")
+                .join("")
         )
     }
 
     fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>()
-            + (self.nodes.len() - 1) * 2
-            + self.get_outer_token_length()
+        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
     }
 }
 
@@ -167,7 +165,7 @@ mod tests {
                 Some("i"),
                 true,
                 vec![
-                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into(),
+                    Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
                 ]
             )
@@ -180,7 +178,7 @@ mod tests {
                 Some("i"),
                 false,
                 vec![
-                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into(),
+                    Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
                 ]
             )
@@ -193,7 +191,7 @@ mod tests {
                 None,
                 false,
                 vec![
-                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into(),
+                    Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
                 ]
             )
@@ -209,7 +207,7 @@ mod tests {
                 Some("i"),
                 true,
                 vec![
-                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into(),
+                    Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
                 ]
             )
@@ -222,7 +220,7 @@ mod tests {
                 Some("i"),
                 false,
                 vec![
-                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into(),
+                    Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
                 ]
             )
@@ -235,7 +233,7 @@ mod tests {
                 None,
                 false,
                 vec![
-                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into(),
+                    Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
                 ]
             )
