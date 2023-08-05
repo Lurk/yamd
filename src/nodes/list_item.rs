@@ -73,12 +73,6 @@ impl Node for ListItem {
     fn len(&self) -> usize {
         self.nested_list.as_ref().map_or(0, |list| list.len()) + self.text.len() + self.level + 2
     }
-
-    fn context(&self) -> Option<Context> {
-        let mut ctx = Context::new();
-        ctx.add("level", self.level);
-        Some(ctx)
-    }
 }
 
 impl Deserializer for ListItem {
