@@ -68,7 +68,7 @@ impl List {
     fn get_level_from_context(ctx: &Option<Context>) -> usize {
         if let Some(actual_ctx) = ctx {
             if let Some(level) = actual_ctx.get_usize_value("level") {
-                return level;
+                return level + 1;
             }
         }
         0
@@ -110,10 +110,7 @@ impl Node for List {
 
 impl Deserializer for List {
     fn deserialize_with_context(input: &str, ctx: Option<Context>) -> Option<Self> {
-        let level = match ctx {
-            Some(_) => Self::get_level_from_context(&ctx) + 1,
-            None => 0,
-        };
+        let level = Self::get_level_from_context(&ctx);
         let mut matcher = Matcher::new(input);
         if let Some(unordered_list) = matcher.get_match(
             &[RepeatTimes(level, ' '), Once('-'), Once(' ')],
