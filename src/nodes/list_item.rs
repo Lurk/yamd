@@ -253,9 +253,9 @@ mod tests {
     #[test]
     fn deserialize_with_wrong_context() {
         let mut ctx = Context::new();
-        ctx.add("list_type", '+');
+        ctx.add("list_type", '-');
         assert_eq!(
-            ListItem::deserialize_with_context("- test", Some(ctx)),
+            ListItem::deserialize_with_context("+ test", Some(ctx)),
             None
         );
     }
