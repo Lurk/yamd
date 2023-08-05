@@ -117,19 +117,6 @@ impl ListItemContent {
     }
 }
 
-impl FallbackNode for ListItemContent {
-    fn fallback_node<BranchNodes>() -> DefinitelyNode<BranchNodes>
-    where
-        Self: Into<BranchNodes>,
-    {
-        Box::new(|input| {
-            ListItemContent::deserialize(input)
-                .unwrap_or(ListItemContent::new(true))
-                .into()
-        })
-    }
-}
-
 impl Branch<ListItemContentNodes> for ListItemContent {
     fn push<CanBeNode: Into<ListItemContentNodes>>(&mut self, node: CanBeNode) {
         self.nodes.push(node.into());
