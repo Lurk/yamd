@@ -247,4 +247,26 @@ mod test {
             ))
         );
     }
+    #[test]
+    fn serialize_with_all_nodes() {
+        assert_eq!(
+            "simple text **bold text** `let foo='bar';` [a](u) _I_ ~~S~~",
+            ListItemContent::new_with_nodes(
+                true,
+                vec![
+                    Text::new("simple text ").into(),
+                    Bold::new_with_nodes(vec![Text::new("bold text").into()]).into(),
+                    Text::new(" ").into(),
+                    InlineCode::new("let foo='bar';").into(),
+                    Text::new(" ").into(),
+                    Anchor::new("a", "u").into(),
+                    Text::new(" ").into(),
+                    Italic::new("I").into(),
+                    Text::new(" ").into(),
+                    Strikethrough::new("S").into(),
+                ]
+            )
+            .serialize()
+        );
+    }
 }

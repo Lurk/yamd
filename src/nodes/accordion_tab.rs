@@ -7,8 +7,9 @@ use crate::toolkit::{
 };
 
 use super::{
-    accordion::Accordion, cloudinary_image_gallery::CloudinaryImageGallery, embed::Embed,
-    heading::Heading, image::Image, image_gallery::ImageGallery, list::List, paragraph::Paragraph,
+    accordion::Accordion, cloudinary_image_gallery::CloudinaryImageGallery, code::Code,
+    divider::Divider, embed::Embed, heading::Heading, image::Image, image_gallery::ImageGallery,
+    list::List, paragraph::Paragraph,
 };
 
 #[derive(Debug, PartialEq)]
@@ -21,6 +22,8 @@ pub enum AccordionTabNodes {
     List(List),
     Embed(Embed),
     Accordion(Accordion),
+    Divider(Divider),
+    Code(Code),
 }
 
 impl Node for AccordionTabNodes {
@@ -34,6 +37,8 @@ impl Node for AccordionTabNodes {
             AccordionTabNodes::List(node) => node.serialize(),
             AccordionTabNodes::Embed(node) => node.serialize(),
             AccordionTabNodes::Accordion(node) => node.serialize(),
+            AccordionTabNodes::Divider(node) => node.serialize(),
+            AccordionTabNodes::Code(node) => node.serialize(),
         }
     }
 
@@ -47,6 +52,8 @@ impl Node for AccordionTabNodes {
             AccordionTabNodes::List(node) => node.len(),
             AccordionTabNodes::Embed(node) => node.len(),
             AccordionTabNodes::Accordion(node) => node.len(),
+            AccordionTabNodes::Divider(node) => node.len(),
+            AccordionTabNodes::Code(node) => node.len(),
         }
     }
 }
@@ -96,6 +103,18 @@ impl From<Embed> for AccordionTabNodes {
 impl From<Accordion> for AccordionTabNodes {
     fn from(value: Accordion) -> Self {
         Self::Accordion(value)
+    }
+}
+
+impl From<Divider> for AccordionTabNodes {
+    fn from(value: Divider) -> Self {
+        Self::Divider(value)
+    }
+}
+
+impl From<Code> for AccordionTabNodes {
+    fn from(value: Code) -> Self {
+        Self::Code(value)
     }
 }
 
@@ -160,6 +179,8 @@ impl Branch<AccordionTabNodes> for AccordionTab {
             List::maybe_node(),
             Embed::maybe_node(),
             Accordion::maybe_node(),
+            Divider::maybe_node(),
+            Code::maybe_node(),
         ]
     }
 
@@ -202,8 +223,11 @@ mod cfg {
 
     use crate::{
         nodes::{
-            accordion_tab::AccordionTab, heading::Heading, image::Image, paragraph::Paragraph,
-            text::Text,
+            accordion_tab::AccordionTab, bold::Bold,
+            cloudinary_image_gallery::CloudinaryImageGallery, code::Code, divider::Divider,
+            embed::Embed, heading::Heading, image::Image, image_gallery::ImageGallery, list::List,
+            list::ListTypes::*, list_item::ListItem, list_item_content::ListItemContent,
+            paragraph::Paragraph, text::Text,
         },
         toolkit::{deserializer::Deserializer, node::Node},
     };
@@ -282,5 +306,99 @@ mod cfg {
             .serialize(),
             "//\n/ Header\n# Heading\n\\\\\n"
         );
+    }
+
+    #[test]
+    fn fail_to_deseiralize_accordion_tab() {
+        assert_eq!(AccordionTab::deserialize("I am not an accordion tab"), None);
+    }
+
+    #[test]
+    fn with_all_nodes() {
+        let input = r#"//
+/ Header
+# hello
+
+```rust
+let a=1;
+```
+
+t**b**
+
+![a](u)
+
+!!!
+![a](u)
+![a2](u2)
+!!!
+
+-----
+
+- one
+ - two
+
+{{youtube|123}}
+
+!!!!
+! username
+! tag
+!!!!
+\\"#;
+        let tab = AccordionTab::new_with_nodes(
+            true,
+            Some("Header"),
+            vec![
+                Heading::new(false, "hello", 1).into(),
+                Code::new("rust", "let a=1;", false).into(),
+                Paragraph::new_with_nodes(
+                    false,
+                    vec![
+                        Text::new("t").into(),
+                        Bold::new_with_nodes(vec![Text::new("b").into()]).into(),
+                    ],
+                )
+                .into(),
+                Image::new(false, 'a', 'u').into(),
+                ImageGallery::new_with_nodes(
+                    vec![
+                        Image::new(true, "a", "u").into(),
+                        Image::new(true, "a2", "u2").into(),
+                    ],
+                    false,
+                )
+                .into(),
+                Divider::new(false).into(),
+                List::new_with_nodes(
+                    false,
+                    Unordered,
+                    0,
+                    vec![ListItem::new_with_nested_list(
+                        Unordered,
+                        0,
+                        ListItemContent::new_with_nodes(false, vec![Text::new("one").into()]),
+                        Some(List::new_with_nodes(
+                            true,
+                            Unordered,
+                            1,
+                            vec![ListItem::new(
+                                Unordered,
+                                1,
+                                ListItemContent::new_with_nodes(
+                                    true,
+                                    vec![Text::new("two").into()],
+                                ),
+                            )
+                            .into()],
+                        )),
+                    )
+                    .into()],
+                )
+                .into(),
+                Embed::new("youtube", "123", false).into(),
+                CloudinaryImageGallery::new("username", "tag", true).into(),
+            ],
+        );
+        assert_eq!(tab.serialize(), input);
+        assert_eq!(AccordionTab::deserialize(input), Some(tab));
     }
 }
