@@ -1,7 +1,4 @@
-use crate::toolkit::{
-    context::Context, deserializer::Deserializer, matcher::Matcher, node::Node,
-    pattern::Quantifiers::*,
-};
+use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
 #[derive(Debug, PartialEq)]
 pub struct Image {
@@ -38,9 +35,9 @@ impl Node for Image {
 impl Deserializer for Image {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(alt) = matcher.get_match(&[Once('!'), Once('[')], &[Once(']')], false) {
-            if let Some(url) = matcher.get_match(&[Once('(')], &[Once(')'), Once('\n')], false) {
-                let consumed_all_input = matcher.get_match(&[Once('\n')], &[], false).is_none();
+        if let Some(alt) = matcher.get_match("![", "]", false) {
+            if let Some(url) = matcher.get_match("(", ")\n", false) {
+                let consumed_all_input = matcher.get_match("\n", "", false).is_none();
                 return Some(Self::new(consumed_all_input, alt.body, url.body));
             }
         }

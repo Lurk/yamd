@@ -1,6 +1,6 @@
 use crate::{
     toolkit::{context::Context, deserializer::Deserializer},
-    toolkit::{matcher::Matcher, node::Node, pattern::Quantifiers::*},
+    toolkit::{matcher::Matcher, node::Node},
 };
 
 /// Representation of an Italic text
@@ -27,7 +27,7 @@ impl Node for Italic {
 impl Deserializer for Italic {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(italic) = matcher.get_match(&[Once('_')], &[Once('_')], false) {
+        if let Some(italic) = matcher.get_match("_", "_", false) {
             return Some(Italic::new(italic.body));
         }
 

@@ -3,7 +3,6 @@ use crate::toolkit::{
     deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
     matcher::Matcher,
     node::Node,
-    pattern::Quantifiers::*,
 };
 
 use super::{
@@ -197,17 +196,13 @@ impl Branch<AccordionTabNodes> for AccordionTab {
 impl Deserializer for AccordionTab {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(tab) = matcher.get_match(
-            &[RepeatTimes(2, '/'), Once('\n')],
-            &[Once('\n'), RepeatTimes(2, '\\')],
-            false,
-        ) {
+        if let Some(tab) = matcher.get_match("//\n", "\n\\\\", false) {
             let mut inner_matcher = Matcher::new(tab.body);
             let header = inner_matcher
-                .get_match(&[Once('/'), RepeatTimes(1, ' ')], &[Once('\n')], false)
+                .get_match("/ ", "\n", false)
                 .map(|header| header.body);
 
-            let consumed_all_input = matcher.get_match(&[Once('\n')], &[], false).is_none();
+            let consumed_all_input = matcher.get_match("\n", "", false).is_none();
             return Self::parse_branch(
                 inner_matcher.get_rest(),
                 Self::new(consumed_all_input, header),

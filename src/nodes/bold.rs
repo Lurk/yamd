@@ -7,7 +7,6 @@ use crate::{
         deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
         matcher::Matcher,
         node::Node,
-        pattern::Quantifiers::*,
     },
 };
 
@@ -111,9 +110,7 @@ impl Node for Bold {
 impl Deserializer for Bold {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(bold) =
-            matcher.get_match(&[Once('*'), Once('*')], &[Once('*'), Once('*')], false)
-        {
+        if let Some(bold) = matcher.get_match("**", "**", false) {
             return Self::parse_branch(bold.body, Self::new());
         }
         None

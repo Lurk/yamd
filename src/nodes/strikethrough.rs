@@ -1,9 +1,9 @@
 use crate::{
     toolkit::{context::Context, deserializer::Deserializer},
-    toolkit::{matcher::Matcher, node::Node, pattern::Quantifiers::*},
+    toolkit::{matcher::Matcher, node::Node},
 };
 
-/// Representation of strikethrough
+/// Representation of strike through
 #[derive(Debug, PartialEq)]
 pub struct Strikethrough {
     text: String,
@@ -27,9 +27,7 @@ impl Node for Strikethrough {
 impl Deserializer for Strikethrough {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(strikethrough) =
-            matcher.get_match(&[RepeatTimes(2, '~')], &[RepeatTimes(2, '~')], false)
-        {
+        if let Some(strikethrough) = matcher.get_match("~~", "~~", false) {
             return Some(Strikethrough::new(strikethrough.body));
         }
         None

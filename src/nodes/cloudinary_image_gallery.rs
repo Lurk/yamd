@@ -1,7 +1,4 @@
-use crate::toolkit::{
-    context::Context, deserializer::Deserializer, matcher::Matcher, node::Node,
-    pattern::Quantifiers::*,
-};
+use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct CloudinaryImageGallery {
@@ -38,21 +35,11 @@ impl Node for CloudinaryImageGallery {
 impl Deserializer for CloudinaryImageGallery {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(cloudinary_image_gallery) = matcher.get_match(
-            &[RepeatTimes(4, '!'), Once('\n')],
-            &[Once('\n'), RepeatTimes(4, '!')],
-            false,
-        ) {
+        if let Some(cloudinary_image_gallery) = matcher.get_match("!!!!\n", "\n!!!!", false) {
             let mut inner_matcher = Matcher::new(cloudinary_image_gallery.body);
-            if let Some(username) =
-                inner_matcher.get_match(&[Once('!'), Once(' ')], &[Once('\n')], false)
-            {
-                if let Some(tag) =
-                    inner_matcher.get_match(&[Once('!'), Once(' ')], &[Once('\n')], true)
-                {
-                    let consumed_all_input = matcher
-                        .get_match(&[RepeatTimes(2, '\n')], &[], false)
-                        .is_none();
+            if let Some(username) = inner_matcher.get_match("! ", "\n", false) {
+                if let Some(tag) = inner_matcher.get_match("! ", "\n", true) {
+                    let consumed_all_input = matcher.get_match("\n\n", "", false).is_none();
                     return Some(Self::new(username.body, tag.body, consumed_all_input));
                 }
             }

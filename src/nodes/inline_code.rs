@@ -1,7 +1,4 @@
-use crate::toolkit::{
-    context::Context, deserializer::Deserializer, matcher::Matcher, node::Node,
-    pattern::Quantifiers::*,
-};
+use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
 #[derive(Debug, PartialEq)]
 pub struct InlineCode {
@@ -26,7 +23,7 @@ impl Node for InlineCode {
 impl Deserializer for InlineCode {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(inline_code) = matcher.get_match(&[Once('`')], &[Once('`')], false) {
+        if let Some(inline_code) = matcher.get_match("`", "`", false) {
             return Some(InlineCode::new(inline_code.body));
         }
         None

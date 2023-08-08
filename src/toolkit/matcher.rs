@@ -1,5 +1,3 @@
-use super::pattern::{Pattern, Quantifiers};
-
 pub struct Matcher<'input> {
     input: &'input str,
     position: usize,
@@ -17,35 +15,26 @@ impl<'input> Matcher<'input> {
         Self { input, position: 0 }
     }
 
-    fn are_sequences_equal<const FIRST_SEQUENCE_SIZE: usize, const SECOND_SEQUENCE_SIZE: usize>(
-        a: &[Quantifiers; FIRST_SEQUENCE_SIZE],
-        b: &[Quantifiers; SECOND_SEQUENCE_SIZE],
-    ) -> bool {
-        if FIRST_SEQUENCE_SIZE == SECOND_SEQUENCE_SIZE {
-            return a.len() == b.len() && a.iter().zip(b.iter()).all(|(a, b)| a == b);
-        }
-        false
-    }
-
-    pub fn get_match<const START_SEQUENCE_SIZE: usize, const END_SEQUENCE_SIZE: usize>(
+    pub fn get_match(
         &mut self,
-        start_sequence: &'input [Quantifiers; START_SEQUENCE_SIZE],
-        end_sequence: &'input [Quantifiers; END_SEQUENCE_SIZE],
+        start_sequence: &'input str,
+        end_sequence: &'input str,
         match_end_of_input: bool,
     ) -> Option<Match<'input>> {
         if !match_end_of_input
-            && START_SEQUENCE_SIZE > 0
-            && END_SEQUENCE_SIZE == START_SEQUENCE_SIZE
-            && !Self::are_sequences_equal(start_sequence, end_sequence)
+            && !start_sequence.is_empty()
+            && !end_sequence.is_empty()
+            && start_sequence.len() == end_sequence.len()
+            && start_sequence != end_sequence
         {
             return self.get_balanced_match(start_sequence, end_sequence);
         }
         self.get_unbalanced_match(start_sequence, end_sequence, match_end_of_input)
     }
 
-    fn iterate<const SEQUENCE_SIZE: usize>(
+    fn iterate(
         &self,
-        sequence: &[Quantifiers; SEQUENCE_SIZE],
+        sequence: &str,
         start_position: usize,
         fail_fast: bool,
         match_end_of_input: bool,
@@ -53,34 +42,32 @@ impl<'input> Matcher<'input> {
         if sequence.is_empty() {
             return Some((start_position, 0));
         } else {
-            let mut pattern = Pattern::new(sequence);
             if match_end_of_input && start_position == self.input.len() {
                 return Some((start_position, 0));
             }
-            for (index, char) in self.input.chars().enumerate().skip(start_position) {
-                let pattern_state = pattern.check_character(&char);
-                if pattern_state.hit && pattern_state.end {
-                    return Some((index + 1, pattern_state.length));
+            for index in start_position..self.input.len() {
+                if self.input[index..].starts_with(sequence) {
+                    return Some((index + sequence.len(), sequence.len()));
                 } else if match_end_of_input && index == self.input.len() - 1 {
                     return Some((index + 1, 0));
-                } else if fail_fast && !pattern_state.hit {
-                    break;
+                } else if fail_fast {
+                    return None;
                 }
             }
         }
         None
     }
 
-    fn get_unbalanced_match<const START_SEQUENCE_SIZE: usize, const END_SEQUENCE_SIZE: usize>(
+    fn get_unbalanced_match(
         &mut self,
-        start_sequence: &'input [Quantifiers; START_SEQUENCE_SIZE],
-        end_sequence: &'input [Quantifiers; END_SEQUENCE_SIZE],
+        start_sequence: &'input str,
+        end_sequence: &'input str,
         match_end_of_input: bool,
     ) -> Option<Match<'input>> {
-        if let Some((start_token_end_index, start_sequence_length)) =
+        if let Some((start_token_end_index, start_token_lenght)) =
             self.iterate(start_sequence, self.position, true, false)
         {
-            if let Some((end_token_end_index, end_sequence_length)) = self.iterate(
+            if let Some((end_token_end_index, end_token_length)) = self.iterate(
                 end_sequence,
                 start_token_end_index,
                 false,
@@ -89,47 +76,40 @@ impl<'input> Matcher<'input> {
                 self.position = end_token_end_index;
                 return Some(Match {
                     start_token: &self.input
-                        [(start_token_end_index - start_sequence_length)..start_token_end_index],
+                        [(start_token_end_index - start_token_lenght)..start_token_end_index],
                     body: &self.input
-                        [start_token_end_index..end_token_end_index - end_sequence_length],
+                        [start_token_end_index..end_token_end_index - end_token_length],
                     end_token: &self.input
-                        [(end_token_end_index - end_sequence_length)..end_token_end_index],
+                        [(end_token_end_index - end_token_length)..end_token_end_index],
                 });
             }
         }
         None
     }
 
-    fn get_balanced_match<const START_SEQUENCE_SIZE: usize, const END_SEQUENCE_SIZE: usize>(
+    fn get_balanced_match(
         &mut self,
-        start_sequence: &'input [Quantifiers; START_SEQUENCE_SIZE],
-        end_sequence: &'input [Quantifiers; END_SEQUENCE_SIZE],
+        start_sequence: &'input str,
+        end_sequence: &'input str,
     ) -> Option<Match<'input>> {
-        let mut start_pattern = Pattern::new(start_sequence);
-        let mut end_pattern = Pattern::new(end_sequence);
         let mut balance = 1;
         if let Some((start_token_end_index, _)) =
             self.iterate(start_sequence, self.position, true, false)
         {
-            for (index, char) in self.input.chars().enumerate().skip(start_token_end_index) {
-                let start_pattern_state = start_pattern.check_character(&char);
-                let end_pattern_state = end_pattern.check_character(&char);
-                if start_pattern_state.hit && start_pattern_state.end {
-                    start_pattern.reset();
+            for index in start_token_end_index..self.input.len() {
+                if self.input[index..].starts_with(start_sequence) {
                     balance += 1;
-                } else if balance > 0 && end_pattern_state.hit && end_pattern_state.end {
+                } else if self.input[index..].starts_with(end_sequence) {
                     balance -= 1;
                     if balance == 0 {
-                        let end_token_end_index = index + 1;
-                        let end_token_start_index = end_token_end_index - end_pattern_state.length;
-                        self.position = index + 1;
+                        let end_token_end_index = index + end_sequence.len();
+                        self.position = end_token_end_index;
                         return Some(Match {
                             start_token: &self.input[..start_token_end_index],
-                            body: &self.input[start_token_end_index..end_token_start_index],
-                            end_token: &self.input[end_token_start_index..end_token_end_index],
+                            body: &self.input[start_token_end_index..index],
+                            end_token: &self.input[index..end_token_end_index],
                         });
                     }
-                    end_pattern.reset();
                 }
             }
         }
@@ -143,17 +123,14 @@ impl<'input> Matcher<'input> {
 
 #[cfg(test)]
 mod tests {
-    use crate::toolkit::matcher::{
-        Match, Matcher,
-        Quantifiers::{Once, RepeatTimes},
-    };
+    use crate::toolkit::matcher::{Match, Matcher};
     use pretty_assertions::assert_eq;
 
     #[test]
     fn get_match() {
         let mut matcher = Matcher::new("*italic*~~one more~~ statement");
         assert_eq!(
-            matcher.get_match(&[Once('*')], &[Once('*')], false),
+            matcher.get_match("*", "*", false),
             Some(Match {
                 start_token: "*",
                 body: "italic",
@@ -161,7 +138,7 @@ mod tests {
             })
         );
         assert_eq!(
-            matcher.get_match(&[RepeatTimes(2, '~')], &[RepeatTimes(2, '~')], false),
+            matcher.get_match("~~", "~~", false),
             Some(Match {
                 start_token: "~~",
                 body: "one more",
@@ -174,7 +151,7 @@ mod tests {
     fn get_match_with_end_of_input() {
         let mut matcher = Matcher::new("*italic*~~one more");
         assert_eq!(
-            matcher.get_match(&[Once('*')], &[Once('*')], false),
+            matcher.get_match("*", "*", false),
             Some(Match {
                 start_token: "*",
                 body: "italic",
@@ -182,7 +159,7 @@ mod tests {
             })
         );
         assert_eq!(
-            matcher.get_match(&[RepeatTimes(2, '~')], &[RepeatTimes(2, '~')], true),
+            matcher.get_match("~~", "~~", true),
             Some(Match {
                 start_token: "~~",
                 body: "one more",
@@ -195,7 +172,7 @@ mod tests {
     fn get_match_with_empty_start_token_and_macth_end() {
         let mut matcher = Matcher::new("t");
         assert_eq!(
-            matcher.get_match(&[], &[RepeatTimes(2, '\n')], true),
+            matcher.get_match("", "\n", true),
             Some(Match {
                 start_token: "",
                 body: "t",
@@ -208,7 +185,7 @@ mod tests {
     fn get_match_with_empty_body() {
         let mut matcher = Matcher::new("--");
         assert_eq!(
-            matcher.get_match(&[RepeatTimes(2, '-')], &[RepeatTimes(2, '\n')], true),
+            matcher.get_match("--", "\n", true),
             Some(Match {
                 start_token: "--",
                 body: "",
@@ -221,7 +198,7 @@ mod tests {
     fn patterns_with_non_equal_length_can_not_be_balanced() {
         let mut matcher = Matcher::new("(()t");
         assert_eq!(
-            matcher.get_match(&[Once('(')], &[Once(')'), Once('t')], false),
+            matcher.get_match("(", ")t", false),
             Some(Match {
                 start_token: "(",
                 body: "(",
@@ -234,7 +211,7 @@ mod tests {
     fn get_balanced_match() {
         let mut matcher = Matcher::new("{{}}");
         assert_eq!(
-            matcher.get_match(&[Once('{')], &[Once('}')], false),
+            matcher.get_match("{", "}", false),
             Some(Match {
                 start_token: "{",
                 body: "{}",

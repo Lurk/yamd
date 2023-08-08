@@ -3,7 +3,6 @@ use crate::toolkit::{
     deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
     matcher::Matcher,
     node::Node,
-    pattern::Quantifiers::*,
 };
 
 use super::paragraph::Paragraph;
@@ -122,22 +121,14 @@ impl Branch<HighlightNodes> for Highlight {
 impl Deserializer for Highlight {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut outer_matcher = Matcher::new(input);
-        if let Some(highlight) = outer_matcher.get_match(
-            &[RepeatTimes(3, '>'), Once('\n')],
-            &[Once('\n'), RepeatTimes(3, '>')],
-            false,
-        ) {
+        if let Some(highlight) = outer_matcher.get_match(">>>\n", "\n>>>", false) {
             let mut matcher = Matcher::new(highlight.body);
             let header = matcher
-                .get_match(&[RepeatTimes(2, '>'), Once(' ')], &[Once('\n')], false)
+                .get_match(">> ", "\n", false)
                 .map(|header| header.body);
 
-            let icon = matcher
-                .get_match(&[Once('>'), Once(' ')], &[Once('\n')], false)
-                .map(|icon| icon.body);
-            let consumed_all_input = outer_matcher
-                .get_match(&[RepeatTimes(2, '\n')], &[], false)
-                .is_none();
+            let icon = matcher.get_match("> ", "\n", false).map(|icon| icon.body);
+            let consumed_all_input = outer_matcher.get_match("\n", "", false).is_none();
 
             return Self::parse_branch(
                 matcher.get_rest(),

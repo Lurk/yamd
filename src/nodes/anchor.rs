@@ -1,7 +1,7 @@
 use crate::{
     toolkit::context::Context,
     toolkit::deserializer::Deserializer,
-    toolkit::{matcher::Matcher, node::Node, pattern::Quantifiers::*},
+    toolkit::{matcher::Matcher, node::Node},
 };
 
 /// Representation of an anchor
@@ -32,8 +32,8 @@ impl Node for Anchor {
 impl Deserializer for Anchor {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(text) = matcher.get_match(&[Once('[')], &[Once(']')], false) {
-            if let Some(url) = matcher.get_match(&[Once('(')], &[Once(')')], false) {
+        if let Some(text) = matcher.get_match("[", "]", false) {
+            if let Some(url) = matcher.get_match("(", ")", false) {
                 return Some(Anchor::new(text.body, url.body));
             }
         }

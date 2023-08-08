@@ -3,7 +3,6 @@ use crate::toolkit::{
     deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
     matcher::Matcher,
     node::Node,
-    pattern::Quantifiers::*,
 };
 
 use super::accordion_tab::AccordionTab;
@@ -96,14 +95,8 @@ impl Deserializer for Accordion {
     {
         let mut matcher = Matcher::new(input);
 
-        if let Some(accordion) = matcher.get_match(
-            &[RepeatTimes(3, '/'), Once('\n')],
-            &[Once('\n'), RepeatTimes(3, '\\')],
-            false,
-        ) {
-            let consumed_all_input = matcher
-                .get_match(&[RepeatTimes(2, '\n')], &[], false)
-                .is_none();
+        if let Some(accordion) = matcher.get_match("///\n", "\n\\\\\\", false) {
+            let consumed_all_input = matcher.get_match("\n\n", "", false).is_none();
             return Self::parse_branch(accordion.body, Self::new(consumed_all_input));
         }
         None

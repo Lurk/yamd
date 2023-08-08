@@ -7,7 +7,6 @@ use crate::toolkit::{
     context::Context,
     deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
     matcher::Matcher,
-    pattern::Quantifiers::*,
 };
 
 #[derive(Debug, PartialEq)]
@@ -127,7 +126,7 @@ impl Branch<ParagraphNodes> for Paragraph {
 impl Deserializer for Paragraph {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(paragraph) = matcher.get_match(&[], &[RepeatTimes(2, '\n')], true) {
+        if let Some(paragraph) = matcher.get_match("", "\n\n", true) {
             return Self::parse_branch(paragraph.body, Self::new(paragraph.end_token.is_empty()));
         }
         None

@@ -1,7 +1,4 @@
-use crate::toolkit::{
-    context::Context, deserializer::Deserializer, matcher::Matcher, node::Node,
-    pattern::Quantifiers::*,
-};
+use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
 #[derive(Debug, PartialEq)]
 pub struct Code {
@@ -34,15 +31,9 @@ impl Node for Code {
 impl Deserializer for Code {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(lang) =
-            matcher.get_match(&[Once('`'), Once('`'), Once('`')], &[Once('\n')], false)
-        {
-            if let Some(code) =
-                matcher.get_match(&[], &[Once('\n'), Once('`'), Once('`'), Once('`')], false)
-            {
-                let consumed_all_input = matcher
-                    .get_match(&[RepeatTimes(2, '\n')], &[], false)
-                    .is_none();
+        if let Some(lang) = matcher.get_match("```", "\n", false) {
+            if let Some(code) = matcher.get_match("", "\n```", false) {
+                let consumed_all_input = matcher.get_match("\n\n", "", false).is_none();
                 return Some(Self::new(lang.body, code.body, consumed_all_input));
             }
         }

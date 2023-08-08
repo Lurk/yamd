@@ -1,6 +1,4 @@
-use crate::toolkit::{
-    deserializer::Deserializer, matcher::Matcher, node::Node, pattern::Quantifiers::*,
-};
+use crate::toolkit::{deserializer::Deserializer, matcher::Matcher, node::Node};
 
 #[derive(Debug, PartialEq)]
 pub struct Embed {
@@ -37,14 +35,10 @@ impl Deserializer for Embed {
         _: Option<crate::toolkit::context::Context>,
     ) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(embed) =
-            matcher.get_match(&[RepeatTimes(2, '{')], &[RepeatTimes(2, '}')], false)
-        {
+        if let Some(embed) = matcher.get_match("{{", "}}", false) {
             let mut embed = embed.body.split('|');
             if let (Some(kind), Some(url)) = (embed.next(), embed.next()) {
-                let consumed_all_input = matcher
-                    .get_match(&[RepeatTimes(2, '\n')], &[], false)
-                    .is_none();
+                let consumed_all_input = matcher.get_match("\n\n", "", false).is_none();
                 return Some(Self::new(
                     kind.to_string(),
                     url.to_string(),
