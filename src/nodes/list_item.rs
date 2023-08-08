@@ -1,7 +1,4 @@
-use crate::toolkit::{
-    context::Context, deserializer::Deserializer, matcher::Matcher, node::Node,
-    pattern::Quantifiers::*,
-};
+use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
 use super::{
     list::{List, ListTypes},
@@ -79,13 +76,13 @@ impl Deserializer for ListItem {
     fn deserialize_with_context(input: &str, ctx: Option<Context>) -> Option<Self> {
         let level = Self::get_level_from_context(&ctx);
         let list_type = match Self::get_list_type_from_context(&ctx) {
-            ListTypes::Unordered => Once('-'),
-            ListTypes::Ordered => Once('+'),
+            ListTypes::Unordered => "-",
+            ListTypes::Ordered => "+",
         };
         let mut matcher = Matcher::new(input);
         if let Some(list_item) = matcher.get_match(
-            &[RepeatTimes(level, ' '), list_type.clone(), Once(' ')],
-            &[Once('\n'), RepeatTimes(level, ' '), list_type, Once(' ')],
+            format!("{}{} ", " ".repeat(level), list_type.clone()).as_str(),
+            format!("\n{}{} ", " ".repeat(level), list_type.clone()).as_str(),
             true,
         ) {
             let content_body = if list_item.end_token.is_empty() {

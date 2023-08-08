@@ -1,7 +1,4 @@
-use crate::toolkit::{
-    context::Context, deserializer::Deserializer, matcher::Matcher, node::Node,
-    pattern::Quantifiers::*,
-};
+use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
 #[derive(Debug, PartialEq)]
 pub struct Divider {
@@ -32,9 +29,7 @@ impl Node for Divider {
 impl Deserializer for Divider {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(divider) =
-            matcher.get_match(&[RepeatTimes(5, '-')], &[RepeatTimes(2, '\n')], true)
-        {
+        if let Some(divider) = matcher.get_match("-----", "\n\n", true) {
             return Some(Divider {
                 consumed_all_input: divider.end_token.is_empty(),
             });

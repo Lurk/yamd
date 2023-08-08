@@ -3,7 +3,6 @@ use crate::toolkit::{
     deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
     matcher::Matcher,
     node::Node,
-    pattern::Quantifiers::*,
 };
 
 use super::{
@@ -148,7 +147,7 @@ impl Branch<ListItemContentNodes> for ListItemContent {
 impl Deserializer for ListItemContent {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut m = Matcher::new(input);
-        if let Some(list_item_content) = m.get_match(&[], &[Once('\n')], true) {
+        if let Some(list_item_content) = m.get_match("", "\n", true) {
             return Self::parse_branch(
                 list_item_content.body,
                 Self::new(list_item_content.end_token.is_empty()),

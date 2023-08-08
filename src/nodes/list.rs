@@ -3,7 +3,6 @@ use crate::toolkit::{
     deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
     matcher::Matcher,
     node::Node,
-    pattern::Quantifiers::*,
 };
 
 use super::list_item::ListItem;
@@ -112,11 +111,9 @@ impl Deserializer for List {
     fn deserialize_with_context(input: &str, ctx: Option<Context>) -> Option<Self> {
         let level = Self::get_level_from_context(&ctx);
         let mut matcher = Matcher::new(input);
-        if let Some(unordered_list) = matcher.get_match(
-            &[RepeatTimes(level, ' '), Once('-'), Once(' ')],
-            &[RepeatTimes(2, '\n')],
-            true,
-        ) {
+        if let Some(unordered_list) =
+            matcher.get_match(format!("{}- ", " ".repeat(level)).as_str(), "\n\n", true)
+        {
             return Self::parse_branch(
                 &input[..unordered_list.start_token.len() + unordered_list.body.len()],
                 Self::new(
@@ -125,11 +122,9 @@ impl Deserializer for List {
                     level,
                 ),
             );
-        } else if let Some(ordered_list) = matcher.get_match(
-            &[RepeatTimes(level, ' '), Once('+'), Once(' ')],
-            &[RepeatTimes(2, '\n')],
-            true,
-        ) {
+        } else if let Some(ordered_list) =
+            matcher.get_match(format!("{}+ ", " ".repeat(level)).as_str(), "\n\n", true)
+        {
             return Self::parse_branch(
                 &input[..ordered_list.start_token.len() + ordered_list.body.len()],
                 Self::new(ordered_list.end_token.is_empty(), ListTypes::Ordered, level),

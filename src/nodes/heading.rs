@@ -1,7 +1,4 @@
-use crate::toolkit::{
-    context::Context, deserializer::Deserializer, matcher::Matcher, node::Node,
-    pattern::Quantifiers::*,
-};
+use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
 #[derive(Debug, PartialEq)]
 pub struct Heading {
@@ -27,18 +24,11 @@ impl Heading {
 
 impl Deserializer for Heading {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let start_tokens = [
-            [RepeatTimes(6, '#'), Once(' ')],
-            [RepeatTimes(5, '#'), Once(' ')],
-            [RepeatTimes(4, '#'), Once(' ')],
-            [RepeatTimes(3, '#'), Once(' ')],
-            [RepeatTimes(2, '#'), Once(' ')],
-            [Once('#'), Once(' ')],
-        ];
+        let start_tokens = ["###### ", "##### ", "#### ", "### ", "## ", "# "];
 
         for (i, start_token) in start_tokens.iter().enumerate() {
             let mut matcher = Matcher::new(input);
-            if let Some(heading) = matcher.get_match(start_token, &[RepeatTimes(2, '\n')], true) {
+            if let Some(heading) = matcher.get_match(start_token, "\n\n", true) {
                 return Some(Self::new(
                     heading.end_token.is_empty(),
                     heading.body,
