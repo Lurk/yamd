@@ -161,11 +161,11 @@
 //! ///
 //! //
 //! / header
-//! some ranom text
+//! some random text
 //! \\
 //! //
 //! / header
-//! some ranom text
+//! some random text
 //! \\
 //! \\\
 //! ```
@@ -208,14 +208,14 @@ mod tests {
     #[test]
     fn test_deserialize() {
         let input = "# header";
-        let expected = Yamd::new_with_nodes(vec![Heading::new(true, "header", 1).into()]);
+        let expected = Yamd::new_with_nodes(None, vec![Heading::new(true, "header", 1).into()]);
         let actual = deserialize(input).unwrap();
         assert_eq!(expected, actual);
     }
 
     #[test]
     fn test_serialize() {
-        let input = Yamd::new_with_nodes(vec![Heading::new(true, "header", 1).into()]);
+        let input = Yamd::new_with_nodes(None, vec![Heading::new(true, "header", 1).into()]);
         let expected = "# header";
         let actual = serialize(&input);
         assert_eq!(expected, actual);
