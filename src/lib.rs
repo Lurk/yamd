@@ -1,10 +1,29 @@
-//! # Yamd - yet another markdown flavour
+//! # Yamd - yet another markdown document flavour
+//!
+//! Yamd is a markdown document flavour that allows to create rich documents with images, code, and more.
+//!
+//! ## Syntax
+//!
+//! Each yamd document starts with metadata section that can contain document header, timestamp, image, preview, and
+//! tags. Metadata section ends with "^^^\n\n" and can be omitted.
+//!
+//! Example:
+//! ```text
+//! header: Yamd - yet another markdown document flavour
+//! timestamp: 1672428835705
+//! image: /image.png
+//! preview: Here you can find out more about yamd
+//! tags: markdown, rust
+//! ^^^
+//!
+//! ```
 //!
 //! ## Elements:
 //!
 //! ### Heading
 //!
-//! element that starts with one to seven "#" characters followed by space, followed by text, and ends with a new line or EOF
+//! Element that starts with one to seven "#" characters followed by space, followed by text, and ends with a new line
+//! or EOF
 //!
 //! Example: ```# header``` or ```###### header```
 //!

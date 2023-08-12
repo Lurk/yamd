@@ -69,23 +69,30 @@ impl Deserializer for Metadata {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(metadata) = matcher.get_match("", "^^^\n\n", false) {
-            let mut inner_matcher = Matcher::new(metadata.body);
-            let header = inner_matcher
-                .get_match("header: ", "\n", false)
-                .map(|h| h.body);
-            let timestamp = inner_matcher
-                .get_match("timestamp: ", "\n", false)
-                .map(|t| t.body.parse::<usize>().unwrap_or(0));
-            let image = inner_matcher
-                .get_match("image: ", "\n", false)
-                .map(|i| i.body);
-            let preview = inner_matcher
-                .get_match("preview: ", "\n", false)
-                .map(|p| p.body);
-            let tags = inner_matcher
-                .get_match("tags: ", "\n", false)
-                .map(|t| t.body.split(", ").collect());
-            return Some(Self::new(header, timestamp, image, preview, tags));
+            let mut meta = Self::new::<&str>(None, None, None, None, None);
+            metadata.body.split("\n").for_each(|line| {
+                if line.starts_with("header: ") {
+                    meta.header = Some(line.replace("header: ", ""));
+                } else if line.starts_with("timestamp: ") {
+                    meta.timestamp = Some(
+                        line.replace("timestamp: ", "")
+                            .parse::<usize>()
+                            .unwrap_or(0),
+                    );
+                } else if line.starts_with("image: ") {
+                    meta.image = Some(line.replace("image: ", ""));
+                } else if line.starts_with("preview: ") {
+                    meta.preview = Some(line.replace("preview: ", ""));
+                } else if line.starts_with("tags: ") {
+                    meta.tags = Some(
+                        line.replace("tags: ", "")
+                            .split(", ")
+                            .map(|tag| tag.to_string())
+                            .collect(),
+                    );
+                }
+            });
+            return Some(meta);
         }
         None
     }
@@ -160,5 +167,13 @@ mod tests {
     #[test]
     fn deserialize_fail() {
         assert_eq!(Metadata::deserialize("random string"), None);
+    }
+
+    #[test]
+    fn deserialize_only_with_header() {
+        assert_eq!(
+            Metadata::deserialize("header: header\n^^^\n\n"),
+            Some(Metadata::new(Some("header"), None, None, None, None))
+        );
     }
 }
