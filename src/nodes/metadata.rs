@@ -1,9 +1,10 @@
 use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
+use chrono::{DateTime, FixedOffset};
 
 #[derive(Debug, PartialEq)]
 pub struct Metadata {
     header: Option<String>,
-    timestamp: Option<usize>,
+    timestamp: Option<DateTime<FixedOffset>>,
     image: Option<String>,
     preview: Option<String>,
     tags: Option<Vec<String>>,
@@ -12,7 +13,7 @@ pub struct Metadata {
 impl Metadata {
     pub fn new<S: Into<String>>(
         header: Option<S>,
-        timestamp: Option<usize>,
+        timestamp: Option<DateTime<FixedOffset>>,
         image: Option<S>,
         preview: Option<S>,
         tags: Option<Vec<S>>,
@@ -74,11 +75,11 @@ impl Deserializer for Metadata {
                 if line.starts_with("header: ") {
                     meta.header = Some(line.replace("header: ", ""));
                 } else if line.starts_with("timestamp: ") {
-                    meta.timestamp = Some(
-                        line.replace("timestamp: ", "")
-                            .parse::<usize>()
-                            .unwrap_or(0),
-                    );
+                    meta.timestamp = DateTime::parse_from_str(
+                        line.replace("timestamp: ", "").as_str(),
+                        "%Y-%m-%d %H:%M:%S %z",
+                    )
+                    .map_or(None, |t| Some(t));
                 } else if line.starts_with("image: ") {
                     meta.image = Some(line.replace("image: ", ""));
                 } else if line.starts_with("preview: ") {
@@ -106,14 +107,17 @@ mod tests {
     fn test_serialize() {
         let metadata = Metadata::new(
             Some("header"),
-            Some(1672428835705),
+            Some(
+                DateTime::parse_from_str("2022-01-01 00:00:00 +02:00", "%Y-%m-%d %H:%M:%S %z")
+                    .unwrap(),
+            ),
             Some("image"),
             Some("preview"),
             Some(vec!["tag1", "tag2"]),
         );
         assert_eq!(
             metadata.serialize(),
-            "header: header\ntimestamp: 1672428835705\nimage: image\npreview: preview\ntags: tag1, tag2\n^^^\n\n"
+            "header: header\ntimestamp: 2022-01-01 00:00:00 +02:00\nimage: image\npreview: preview\ntags: tag1, tag2\n^^^\n\n"
         );
     }
 
@@ -121,7 +125,10 @@ mod tests {
     fn test_len() {
         let metadata = Metadata::new(
             Some("header"),
-            Some(1672428835705),
+            Some(
+                DateTime::parse_from_str("2022-01-01 00:00:00 +02:00", "%Y-%m-%d %H:%M:%S %z")
+                    .unwrap(),
+            ),
             Some("image"),
             Some("preview"),
             Some(vec!["tag1", "tag2"]),
@@ -133,7 +140,10 @@ mod tests {
     fn len_with_one_tag() {
         let metadata = Metadata::new(
             Some("header"),
-            Some(1672428835705),
+            Some(
+                DateTime::parse_from_str("2022-01-01 00:00:00 +02:00", "%Y-%m-%d %H:%M:%S %z")
+                    .unwrap(),
+            ),
             Some("image"),
             Some("preview"),
             Some(vec!["tag1"]),
@@ -145,7 +155,10 @@ mod tests {
     fn test_deserialize() {
         let metadata = Metadata::new(
             Some("header"),
-            Some(1672428835705),
+            Some(
+                DateTime::parse_from_str("2022-01-01 00:00:00 +02:00", "%Y-%m-%d %H:%M:%S %z")
+                    .unwrap(),
+            ),
             Some("image"),
             Some("preview"),
             Some(vec!["tag1", "tag2"]),
@@ -174,6 +187,14 @@ mod tests {
         assert_eq!(
             Metadata::deserialize("header: header\n^^^\n\n"),
             Some(Metadata::new(Some("header"), None, None, None, None))
+        );
+    }
+
+    #[test]
+    fn deserialize_wrong_date() {
+        assert_eq!(
+            Metadata::deserialize("timestamp: 2022-01-01 00:00:00\n^^^\n\n"),
+            Some(Metadata::new::<&str>(None, None, None, None, None))
         );
     }
 }

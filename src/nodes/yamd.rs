@@ -233,9 +233,10 @@ mod tests {
         toolkit::deserializer::Branch,
         toolkit::{deserializer::Deserializer, node::Node},
     };
+    use chrono::DateTime;
     use pretty_assertions::assert_eq;
     const TEST_CASE: &str = r#"header: test
-timestamp: 1691831672791
+timestamp: 2022-01-01 00:00:00 +02:00
 image: image
 preview: preview
 tags: tag1, tag2
@@ -322,7 +323,13 @@ end"#;
             Some(Yamd::new_with_nodes(
                 Some(Metadata::new(
                     Some("test"),
-                    Some(1691831672791),
+                    Some(
+                        DateTime::parse_from_str(
+                            "2022-01-01 00:00:00 +02:00",
+                            "%Y-%m-%d %H:%M:%S %z"
+                        )
+                        .unwrap()
+                    ),
                     Some("image"),
                     Some("preview"),
                     Some(vec!["tag1", "tag2"]),
@@ -407,7 +414,13 @@ end"#;
             Yamd::new_with_nodes(
                 Some(Metadata::new(
                     Some("test"),
-                    Some(1691831672791),
+                    Some(
+                        DateTime::parse_from_str(
+                            "2022-01-01 00:00:00 +02:00",
+                            "%Y-%m-%d %H:%M:%S %z"
+                        )
+                        .unwrap()
+                    ),
                     Some("image"),
                     Some("preview"),
                     Some(vec!["tag1", "tag2"]),

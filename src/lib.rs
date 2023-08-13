@@ -7,10 +7,14 @@
 //! Each yamd document starts with metadata section that can contain document header, timestamp, image, preview, and
 //! tags. Metadata section ends with "^^^\n\n" and can be omitted.
 //!
+//! Timestamp format: "%Y-%m-%d %H:%M:%S %z" ([specifiers description](https://docs.rs/chrono/latest/chrono/format/strftime/index.html))
+//!
+//! Tags are comma separated list.
+//!
 //! Example:
 //! ```text
 //! header: Yamd - yet another markdown document flavour
-//! timestamp: 1672428835705
+//! timestamp: 2023-01-01 00:00:00 +0000
 //! image: /image.png
 //! preview: Here you can find out more about yamd
 //! tags: markdown, rust
