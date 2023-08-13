@@ -1,10 +1,33 @@
-//! # Yamd - yet another markdown flavour
+//! # Yamd - yet another markdown document flavour
+//!
+//! Yamd is a markdown document flavour that allows to create rich documents with images, code, and more.
+//!
+//! ## Syntax
+//!
+//! Each yamd document starts with metadata section that can contain document header, timestamp, image, preview, and
+//! tags. Metadata section ends with "^^^\n\n" and can be omitted.
+//!
+//! Timestamp format: "%Y-%m-%d %H:%M:%S %z" ([specifiers description](https://docs.rs/chrono/latest/chrono/format/strftime/index.html))
+//!
+//! Tags are comma separated list.
+//!
+//! Example:
+//! ```text
+//! header: Yamd - yet another markdown document flavour
+//! timestamp: 2023-01-01 00:00:00 +0000
+//! image: /image.png
+//! preview: Here you can find out more about yamd
+//! tags: markdown, rust
+//! ^^^
+//!
+//! ```
 //!
 //! ## Elements:
 //!
 //! ### Heading
 //!
-//! element that starts with one to seven "#" characters followed by space, followed by text, and ends with a new line or EOF
+//! Element that starts with one to seven "#" characters followed by space, followed by text, and ends with a new line
+//! or EOF
 //!
 //! Example: ```# header``` or ```###### header```
 //!
@@ -161,11 +184,11 @@
 //! ///
 //! //
 //! / header
-//! some ranom text
+//! some random text
 //! \\
 //! //
 //! / header
-//! some ranom text
+//! some random text
 //! \\
 //! \\\
 //! ```
@@ -208,14 +231,14 @@ mod tests {
     #[test]
     fn test_deserialize() {
         let input = "# header";
-        let expected = Yamd::new_with_nodes(vec![Heading::new(true, "header", 1).into()]);
+        let expected = Yamd::new_with_nodes(None, vec![Heading::new(true, "header", 1).into()]);
         let actual = deserialize(input).unwrap();
         assert_eq!(expected, actual);
     }
 
     #[test]
     fn test_serialize() {
-        let input = Yamd::new_with_nodes(vec![Heading::new(true, "header", 1).into()]);
+        let input = Yamd::new_with_nodes(None, vec![Heading::new(true, "header", 1).into()]);
         let expected = "# header";
         let actual = serialize(&input);
         assert_eq!(expected, actual);
