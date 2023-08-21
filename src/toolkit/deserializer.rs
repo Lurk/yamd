@@ -19,7 +19,7 @@ where
         let maybe_nodes = Self::get_maybe_nodes();
         while current_position < input.len() {
             let slice = &input[current_position..];
-            current_position += 1;
+            current_position += slice.chars().next().unwrap().len_utf8();
             if maybe_nodes.is_empty() {
                 match fallback_node.as_ref() {
                     Some(fallback_node) => {

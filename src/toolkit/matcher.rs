@@ -45,14 +45,18 @@ impl<'input> Matcher<'input> {
             if match_end_of_input && start_position == self.input.len() {
                 return Some((start_position, 0));
             }
-            for index in start_position..self.input.len() {
+            if self.input[start_position..].starts_with(sequence) {
+                return Some((start_position + sequence.len(), sequence.len()));
+            }
+            for (index, _) in self.input.char_indices().skip(start_position) {
                 if self.input[index..].starts_with(sequence) {
                     return Some((index + sequence.len(), sequence.len()));
-                } else if match_end_of_input && index == self.input.len() - 1 {
-                    return Some((index + 1, 0));
                 } else if fail_fast {
                     return None;
                 }
+            }
+            if match_end_of_input {
+                return Some((self.input.len(), 0));
             }
         }
         None
@@ -96,16 +100,17 @@ impl<'input> Matcher<'input> {
         if let Some((start_token_end_index, _)) =
             self.iterate(start_sequence, self.position, true, false)
         {
-            for index in start_token_end_index..self.input.len() {
+            for (index, _) in self.input.char_indices().skip(start_token_end_index) {
                 if self.input[index..].starts_with(start_sequence) {
                     balance += 1;
                 } else if self.input[index..].starts_with(end_sequence) {
                     balance -= 1;
                     if balance == 0 {
                         let end_token_end_index = index + end_sequence.len();
+                        let previous_position = self.position.clone();
                         self.position = end_token_end_index;
                         return Some(Match {
-                            start_token: &self.input[..start_token_end_index],
+                            start_token: &self.input[previous_position..start_token_end_index],
                             body: &self.input[start_token_end_index..index],
                             end_token: &self.input[index..end_token_end_index],
                         });
@@ -128,12 +133,12 @@ mod tests {
 
     #[test]
     fn get_match() {
-        let mut matcher = Matcher::new("*italic*~~one more~~ statement");
+        let mut matcher = Matcher::new("*italic 😉*~~one more~~ statement");
         assert_eq!(
             matcher.get_match("*", "*", false),
             Some(Match {
                 start_token: "*",
-                body: "italic",
+                body: "italic 😉",
                 end_token: "*"
             })
         );
@@ -164,6 +169,27 @@ mod tests {
                 start_token: "~~",
                 body: "one more",
                 end_token: "",
+            })
+        );
+    }
+
+    #[test]
+    fn continue_for_balanced_match() {
+        let mut matcher = Matcher::new("[link 😉](url)");
+        assert_eq!(
+            matcher.get_match("[", "]", false),
+            Some(Match {
+                start_token: "[",
+                body: "link 😉",
+                end_token: "]"
+            })
+        );
+        assert_eq!(
+            matcher.get_match("(", ")", false),
+            Some(Match {
+                start_token: "(",
+                body: "url",
+                end_token: ")"
             })
         );
     }
