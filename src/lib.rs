@@ -225,7 +225,7 @@ pub fn serialize(input: &Yamd) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::nodes::heading::Heading;
+    use crate::nodes::{anchor::Anchor, heading::Heading, paragraph::Paragraph};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -241,6 +241,20 @@ mod tests {
         let input = Yamd::new_with_nodes(None, vec![Heading::new(true, "header", 1).into()]);
         let expected = "# header";
         let actual = serialize(&input);
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn deserialize_text_containing_utf8() {
+        let input = "## 🤔\n\n[link 😉](url)";
+        let expected = Yamd::new_with_nodes(
+            None,
+            vec![
+                Heading::new(false, "🤔", 2).into(),
+                Paragraph::new_with_nodes(true, vec![Anchor::new("link 😉", "url").into()]).into(),
+            ],
+        );
+        let actual = deserialize(input).unwrap();
         assert_eq!(expected, actual);
     }
 }
