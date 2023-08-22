@@ -71,7 +71,7 @@ impl Deserializer for Metadata {
         let mut matcher = Matcher::new(input);
         if let Some(metadata) = matcher.get_match("", "^^^\n\n", false) {
             let mut meta = Self::new::<&str>(None, None, None, None, None);
-            metadata.body.split("\n").for_each(|line| {
+            metadata.body.split('\n').for_each(|line| {
                 if line.starts_with("header: ") {
                     meta.header = Some(line.replace("header: ", ""));
                 } else if line.starts_with("timestamp: ") {
@@ -79,7 +79,7 @@ impl Deserializer for Metadata {
                         line.replace("timestamp: ", "").as_str(),
                         "%Y-%m-%d %H:%M:%S %z",
                     )
-                    .map_or(None, |t| Some(t));
+                    .ok();
                 } else if line.starts_with("image: ") {
                     meta.image = Some(line.replace("image: ", ""));
                 } else if line.starts_with("preview: ") {
