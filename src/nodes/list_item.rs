@@ -7,10 +7,10 @@ use super::{
 
 #[derive(Debug, PartialEq)]
 pub struct ListItem {
-    list_type: ListTypes,
-    level: usize,
-    text: ListItemContent,
-    nested_list: Option<List>,
+    pub list_type: ListTypes,
+    pub level: usize,
+    pub text: ListItemContent,
+    pub nested_list: Option<List>,
 }
 
 impl ListItem {

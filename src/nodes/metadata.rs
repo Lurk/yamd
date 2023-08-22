@@ -3,11 +3,11 @@ use chrono::{DateTime, FixedOffset};
 
 #[derive(Debug, PartialEq)]
 pub struct Metadata {
-    header: Option<String>,
-    timestamp: Option<DateTime<FixedOffset>>,
-    image: Option<String>,
-    preview: Option<String>,
-    tags: Option<Vec<String>>,
+    pub header: Option<String>,
+    pub timestamp: Option<DateTime<FixedOffset>>,
+    pub image: Option<String>,
+    pub preview: Option<String>,
+    pub tags: Option<Vec<String>>,
 }
 
 impl Metadata {

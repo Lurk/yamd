@@ -6,7 +6,7 @@ use crate::{
 /// Representation of an Italic text
 #[derive(Debug, PartialEq)]
 pub struct Italic {
-    text: String,
+    pub text: String,
 }
 
 impl Italic {

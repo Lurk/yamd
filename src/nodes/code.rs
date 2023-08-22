@@ -2,13 +2,13 @@ use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matc
 
 #[derive(Debug, PartialEq)]
 pub struct Code {
-    lang: String,
-    code: String,
+    pub lang: String,
+    pub code: String,
     consumed_all_input: bool,
 }
 
 impl Code {
-    pub fn new<S: Into<String>>(lang: S, code: S, consumed_all_input: bool) -> Self {
+    pub fn new<S: Into<String>>(consumed_all_input: bool, lang: S, code: S) -> Self {
         Self {
             lang: lang.into(),
             code: code.into(),
@@ -34,7 +34,7 @@ impl Deserializer for Code {
         if let Some(lang) = matcher.get_match("```", "\n", false) {
             if let Some(code) = matcher.get_match("", "\n```", false) {
                 let consumed_all_input = matcher.get_match("\n\n", "", false).is_none();
-                return Some(Self::new(lang.body, code.body, consumed_all_input));
+                return Some(Self::new(consumed_all_input, lang.body, code.body));
             }
         }
         None
@@ -52,30 +52,30 @@ mod tests {
     #[test]
     fn serialize() {
         assert_eq!(
-            Code::new("rust", "let foo:usize=1;", true).serialize(),
+            Code::new(true, "rust", "let foo:usize=1;").serialize(),
             String::from("```rust\nlet foo:usize=1;\n```")
         );
         assert_eq!(
-            Code::new("rust", "let foo:usize=1;", false).serialize(),
+            Code::new(false, "rust", "let foo:usize=1;").serialize(),
             String::from("```rust\nlet foo:usize=1;\n```\n\n")
         );
     }
 
     #[test]
     fn len() {
-        assert_eq!(Code::new('r', 'b', true).len(), 10);
-        assert_eq!(Code::new('r', 'b', false).len(), 12);
+        assert_eq!(Code::new(true, 'r', 'b').len(), 10);
+        assert_eq!(Code::new(false, 'r', 'b').len(), 12);
     }
 
     #[test]
     fn deserializer() {
         assert_eq!(
             Code::deserialize("```rust\nlet a=1;\n```"),
-            Some(Code::new("rust", "let a=1;", true))
+            Some(Code::new(true, "rust", "let a=1;"))
         );
         assert_eq!(
             Code::deserialize("```rust\nlet a=1;\n```\n\n"),
-            Some(Code::new("rust", "let a=1;", false))
+            Some(Code::new(false, "rust", "let a=1;"))
         );
         assert_eq!(Code::deserialize("```rust\nlet a=1;\n"), None);
     }

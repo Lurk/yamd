@@ -83,7 +83,7 @@ impl Node for ListItemContentNodes {
 #[derive(Debug, PartialEq)]
 pub struct ListItemContent {
     consumed_all_input: bool,
-    nodes: Vec<ListItemContentNodes>,
+    pub nodes: Vec<ListItemContentNodes>,
 }
 
 impl Node for ListItemContent {

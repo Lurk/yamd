@@ -2,7 +2,7 @@ use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matc
 
 #[derive(Debug, PartialEq)]
 pub struct InlineCode {
-    text: String,
+    pub text: String,
 }
 
 impl InlineCode {

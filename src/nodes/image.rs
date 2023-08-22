@@ -2,8 +2,8 @@ use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matc
 
 #[derive(Debug, PartialEq)]
 pub struct Image {
-    alt: String,
-    url: String,
+    pub alt: String,
+    pub url: String,
     consumed_all_input: bool,
 }
 

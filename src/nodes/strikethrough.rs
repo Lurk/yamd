@@ -6,7 +6,7 @@ use crate::{
 /// Representation of strike through
 #[derive(Debug, PartialEq)]
 pub struct Strikethrough {
-    text: String,
+    pub text: String,
 }
 
 impl Strikethrough {

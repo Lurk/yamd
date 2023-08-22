@@ -81,7 +81,7 @@ impl Node for ParagraphNodes {
 #[derive(Debug, PartialEq)]
 pub struct Paragraph {
     consumed_all_input: bool,
-    nodes: Vec<ParagraphNodes>,
+    pub nodes: Vec<ParagraphNodes>,
 }
 
 impl Paragraph {

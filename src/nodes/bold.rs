@@ -55,7 +55,7 @@ impl Node for BoldNodes {
 
 #[derive(Debug, PartialEq)]
 pub struct Bold {
-    nodes: Vec<BoldNodes>,
+    pub nodes: Vec<BoldNodes>,
 }
 
 impl Bold {

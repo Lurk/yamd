@@ -128,8 +128,8 @@ impl Node for YamdNodes {
 /// Yamd is a parent node for every node.
 #[derive(Debug, PartialEq)]
 pub struct Yamd {
-    metadata: Option<Metadata>,
-    nodes: Vec<YamdNodes>,
+    pub metadata: Option<Metadata>,
+    pub nodes: Vec<YamdNodes>,
 }
 
 impl Yamd {
@@ -336,7 +336,7 @@ end"#;
                 )),
                 vec![
                     Heading::new(false, "hello", 1).into(),
-                    Code::new("rust", "let a=1;", false).into(),
+                    Code::new(false, "rust", "let a=1;").into(),
                     Paragraph::new_with_nodes(
                         false,
                         vec![
@@ -427,7 +427,7 @@ end"#;
                 )),
                 vec![
                     Heading::new(false, "hello", 1).into(),
-                    Code::new("rust", "let a=1;", false).into(),
+                    Code::new(false, "rust", "let a=1;").into(),
                     Paragraph::new_with_nodes(
                         false,
                         vec![

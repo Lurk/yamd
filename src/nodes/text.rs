@@ -7,7 +7,7 @@ use crate::toolkit::{
 /// Representation of a regular text
 #[derive(Debug, PartialEq)]
 pub struct Text {
-    text: String,
+    pub text: String,
 }
 
 impl Text {

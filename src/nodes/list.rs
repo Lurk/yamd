@@ -39,9 +39,9 @@ impl From<ListItem> for ListNodes {
 
 #[derive(Debug, PartialEq)]
 pub struct List {
-    list_type: ListTypes,
-    level: usize,
-    nodes: Vec<ListNodes>,
+    pub list_type: ListTypes,
+    pub level: usize,
+    pub nodes: Vec<ListNodes>,
     consumed_all_input: bool,
 }
 

@@ -35,7 +35,7 @@ impl From<AccordionTab> for AccordionNodes {
 #[derive(Debug, PartialEq)]
 pub struct Accordion {
     consumed_all_input: bool,
-    nodes: Vec<AccordionNodes>,
+    pub nodes: Vec<AccordionNodes>,
 }
 
 impl Accordion {
