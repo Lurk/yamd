@@ -17,7 +17,7 @@ impl Image {
     }
 }
 
-impl Node for Image {
+impl Node<'_> for Image {
     fn serialize(&self) -> String {
         let end = if self.consumed_all_input {
             "\n"
@@ -32,8 +32,8 @@ impl Node for Image {
     }
 }
 
-impl Deserializer for Image {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Image {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(alt) = matcher.get_match("![", "]", false) {
             if let Some(url) = matcher.get_match("(", ")\n", false) {

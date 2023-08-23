@@ -17,7 +17,7 @@ impl Code {
     }
 }
 
-impl Node for Code {
+impl Node<'_> for Code {
     fn serialize(&self) -> String {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
         format!("```{}\n{}\n```{end}", self.lang, self.code)
@@ -28,8 +28,8 @@ impl Node for Code {
     }
 }
 
-impl Deserializer for Code {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Code {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(lang) = matcher.get_match("```", "\n", false) {
             if let Some(code) = matcher.get_match("", "\n```", false) {

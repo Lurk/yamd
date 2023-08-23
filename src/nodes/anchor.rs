@@ -20,7 +20,7 @@ impl Anchor {
     }
 }
 
-impl Node for Anchor {
+impl Node<'_> for Anchor {
     fn serialize(&self) -> String {
         format!("[{}]({})", self.text, self.url)
     }
@@ -29,8 +29,8 @@ impl Node for Anchor {
     }
 }
 
-impl Deserializer for Anchor {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Anchor {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(text) = matcher.get_match("[", "]", false) {
             if let Some(url) = matcher.get_match("(", ")", false) {

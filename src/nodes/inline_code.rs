@@ -11,7 +11,7 @@ impl InlineCode {
     }
 }
 
-impl Node for InlineCode {
+impl Node<'_> for InlineCode {
     fn serialize(&self) -> String {
         format!("`{}`", self.text)
     }
@@ -20,8 +20,8 @@ impl Node for InlineCode {
     }
 }
 
-impl Deserializer for InlineCode {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for InlineCode {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(inline_code) = matcher.get_match("`", "`", false) {
             return Some(InlineCode::new(inline_code.body));

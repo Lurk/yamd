@@ -50,7 +50,7 @@ impl ListItem {
     }
 }
 
-impl Node for ListItem {
+impl Node<'_> for ListItem {
     fn serialize(&self) -> String {
         let list_type = match self.list_type {
             ListTypes::Unordered => '-',
@@ -72,8 +72,8 @@ impl Node for ListItem {
     }
 }
 
-impl Deserializer for ListItem {
-    fn deserialize_with_context(input: &str, ctx: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for ListItem {
+    fn deserialize_with_context(input: &'text str, ctx: Option<Context>) -> Option<Self> {
         let level = Self::get_level_from_context(&ctx);
         let list_type = match Self::get_list_type_from_context(&ctx) {
             ListTypes::Unordered => "-",

@@ -18,7 +18,7 @@ pub enum ListNodes {
     ListItem(ListItem),
 }
 
-impl Node for ListNodes {
+impl Node<'_> for ListNodes {
     fn serialize(&self) -> String {
         match self {
             ListNodes::ListItem(node) => node.serialize(),
@@ -87,7 +87,7 @@ impl List {
     }
 }
 
-impl Node for List {
+impl Node<'_> for List {
     fn serialize(&self) -> String {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
         format!(
@@ -107,8 +107,8 @@ impl Node for List {
     }
 }
 
-impl Deserializer for List {
-    fn deserialize_with_context(input: &str, ctx: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for List {
+    fn deserialize_with_context(input: &'text str, ctx: Option<Context>) -> Option<Self> {
         let level = Self::get_level_from_context(&ctx);
         let mut matcher = Matcher::new(input);
         if let Some(unordered_list) =
@@ -134,12 +134,12 @@ impl Deserializer for List {
     }
 }
 
-impl Branch<ListNodes> for List {
+impl<'text> Branch<'text, ListNodes> for List {
     fn push<CanBeNode: Into<ListNodes>>(&mut self, node: CanBeNode) {
         self.nodes.push(node.into())
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<ListNodes>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<'text, ListNodes>> {
         vec![ListItem::maybe_node()]
     }
 

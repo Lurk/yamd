@@ -28,7 +28,7 @@ impl Metadata {
     }
 }
 
-impl Node for Metadata {
+impl Node<'_> for Metadata {
     fn serialize(&self) -> String {
         format!(
             "{}{}{}{}{}^^^\n\n",
@@ -66,8 +66,8 @@ impl Node for Metadata {
     }
 }
 
-impl Deserializer for Metadata {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Metadata {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(metadata) = matcher.get_match("", "^^^\n\n", false) {
             let mut meta = Self::new::<&str>(None, None, None, None, None);

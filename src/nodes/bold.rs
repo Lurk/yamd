@@ -35,7 +35,7 @@ impl From<Strikethrough> for BoldNodes {
     }
 }
 
-impl Node for BoldNodes {
+impl Node<'_> for BoldNodes {
     fn serialize(&self) -> String {
         match self {
             BoldNodes::Text(v) => v.serialize(),
@@ -68,12 +68,12 @@ impl Bold {
     }
 }
 
-impl Branch<BoldNodes> for Bold {
+impl<'text> Branch<'text, BoldNodes> for Bold {
     fn push<BC: Into<BoldNodes>>(&mut self, element: BC) {
         self.nodes.push(element.into());
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<BoldNodes>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<'text, BoldNodes>> {
         vec![Italic::maybe_node(), Strikethrough::maybe_node()]
     }
 
@@ -91,7 +91,7 @@ impl Default for Bold {
     }
 }
 
-impl Node for Bold {
+impl Node<'_> for Bold {
     fn serialize(&self) -> String {
         format!(
             "**{}**",
@@ -107,8 +107,8 @@ impl Node for Bold {
     }
 }
 
-impl Deserializer for Bold {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Bold {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(bold) = matcher.get_match("**", "**", false) {
             return Self::parse_branch(bold.body, Self::new());

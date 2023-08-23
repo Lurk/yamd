@@ -16,13 +16,13 @@ impl Text {
     }
 }
 
-impl Deserializer for Text {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Text {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         Some(Text::new(input.to_string()))
     }
 }
 
-impl Node for Text {
+impl Node<'_> for Text {
     fn serialize(&self) -> String {
         self.text.clone()
     }

@@ -15,7 +15,7 @@ impl Strikethrough {
     }
 }
 
-impl Node for Strikethrough {
+impl Node<'_> for Strikethrough {
     fn serialize(&self) -> String {
         format!("~~{}~~", self.text)
     }
@@ -24,8 +24,8 @@ impl Node for Strikethrough {
     }
 }
 
-impl Deserializer for Strikethrough {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Strikethrough {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(strikethrough) = matcher.get_match("~~", "~~", false) {
             return Some(Strikethrough::new(strikethrough.body));

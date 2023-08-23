@@ -55,7 +55,7 @@ impl From<InlineCode> for ParagraphNodes {
     }
 }
 
-impl Node for ParagraphNodes {
+impl Node<'_> for ParagraphNodes {
     fn serialize(&self) -> String {
         match self {
             ParagraphNodes::A(node) => node.serialize(),
@@ -96,12 +96,12 @@ impl Paragraph {
     }
 }
 
-impl Branch<ParagraphNodes> for Paragraph {
+impl<'text> Branch<'text, ParagraphNodes> for Paragraph {
     fn push<TP: Into<ParagraphNodes>>(&mut self, element: TP) {
         self.nodes.push(element.into());
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<ParagraphNodes>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<'text, ParagraphNodes>> {
         vec![
             Anchor::maybe_node(),
             Bold::maybe_node(),
@@ -123,8 +123,8 @@ impl Branch<ParagraphNodes> for Paragraph {
     }
 }
 
-impl Deserializer for Paragraph {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Paragraph {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(paragraph) = matcher.get_match("", "\n\n", true) {
             return Self::parse_branch(paragraph.body, Self::new(paragraph.end_token.is_empty()));
@@ -133,7 +133,7 @@ impl Deserializer for Paragraph {
     }
 }
 
-impl Node for Paragraph {
+impl Node<'_> for Paragraph {
     fn serialize(&self) -> String {
         let end_token = match self.consumed_all_input {
             true => "",

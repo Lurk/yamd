@@ -12,7 +12,7 @@ pub enum HighlightNodes {
     Paragraph(Paragraph),
 }
 
-impl Node for HighlightNodes {
+impl Node<'_> for HighlightNodes {
     fn serialize(&self) -> String {
         match self {
             HighlightNodes::Paragraph(node) => node.serialize(),
@@ -64,7 +64,7 @@ impl Highlight {
     }
 }
 
-impl Node for Highlight {
+impl Node<'_> for Highlight {
     fn serialize(&self) -> String {
         let header = match &self.header {
             Some(header) => format!(">> {header}\n"),
@@ -90,12 +90,12 @@ impl Node for Highlight {
     }
 }
 
-impl Branch<HighlightNodes> for Highlight {
+impl<'text> Branch<'text, HighlightNodes> for Highlight {
     fn push<CanBeNode: Into<HighlightNodes>>(&mut self, node: CanBeNode) {
         self.nodes.push(node.into());
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<HighlightNodes>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<'text, HighlightNodes>> {
         vec![Paragraph::maybe_node()]
     }
 
@@ -118,8 +118,8 @@ impl Branch<HighlightNodes> for Highlight {
     }
 }
 
-impl Deserializer for Highlight {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Highlight {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut outer_matcher = Matcher::new(input);
         if let Some(highlight) = outer_matcher.get_match(">>>\n", "\n>>>", false) {
             let mut matcher = Matcher::new(highlight.body);

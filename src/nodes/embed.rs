@@ -17,7 +17,7 @@ impl Embed {
     }
 }
 
-impl Node for Embed {
+impl Node<'_> for Embed {
     fn serialize(&self) -> String {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
         format!("{{{{{}|{}}}}}{end}", self.kind, self.url)
@@ -29,9 +29,9 @@ impl Node for Embed {
     }
 }
 
-impl Deserializer for Embed {
+impl<'text> Deserializer<'text> for Embed {
     fn deserialize_with_context(
-        input: &str,
+        input: &'text str,
         _: Option<crate::toolkit::context::Context>,
     ) -> Option<Self> {
         let mut matcher = Matcher::new(input);

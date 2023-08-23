@@ -17,7 +17,7 @@ impl CloudinaryImageGallery {
     }
 }
 
-impl Node for CloudinaryImageGallery {
+impl Node<'_> for CloudinaryImageGallery {
     fn serialize(&self) -> String {
         format!(
             "!!!!\n! {username}\n! {tag}\n!!!!{end}",
@@ -32,8 +32,8 @@ impl Node for CloudinaryImageGallery {
     }
 }
 
-impl Deserializer for CloudinaryImageGallery {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for CloudinaryImageGallery {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(cloudinary_image_gallery) = matcher.get_match("!!!!\n", "\n!!!!", false) {
             let mut inner_matcher = Matcher::new(cloudinary_image_gallery.body);

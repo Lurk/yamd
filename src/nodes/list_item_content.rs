@@ -56,7 +56,7 @@ impl From<InlineCode> for ListItemContentNodes {
     }
 }
 
-impl Node for ListItemContentNodes {
+impl Node<'_> for ListItemContentNodes {
     fn serialize(&self) -> String {
         match self {
             ListItemContentNodes::A(node) => node.serialize(),
@@ -86,7 +86,7 @@ pub struct ListItemContent {
     pub nodes: Vec<ListItemContentNodes>,
 }
 
-impl Node for ListItemContent {
+impl Node<'_> for ListItemContent {
     fn serialize(&self) -> String {
         format!(
             "{}{}",
@@ -116,12 +116,12 @@ impl ListItemContent {
     }
 }
 
-impl Branch<ListItemContentNodes> for ListItemContent {
+impl<'text> Branch<'text, ListItemContentNodes> for ListItemContent {
     fn push<CanBeNode: Into<ListItemContentNodes>>(&mut self, node: CanBeNode) {
         self.nodes.push(node.into());
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<ListItemContentNodes>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<'text, ListItemContentNodes>> {
         vec![
             Anchor::maybe_node(),
             Bold::maybe_node(),
@@ -144,8 +144,8 @@ impl Branch<ListItemContentNodes> for ListItemContent {
     }
 }
 
-impl Deserializer for ListItemContent {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for ListItemContent {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut m = Matcher::new(input);
         if let Some(list_item_content) = m.get_match("", "\n", true) {
             return Self::parse_branch(

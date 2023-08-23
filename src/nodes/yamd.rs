@@ -12,9 +12,9 @@ use super::{
 };
 
 #[derive(Debug, PartialEq)]
-pub enum YamdNodes {
+pub enum YamdNodes<'text> {
     P(Paragraph),
-    H(Heading),
+    H(Heading<'text>),
     Image(Image),
     Code(Code),
     List(List),
@@ -23,76 +23,76 @@ pub enum YamdNodes {
     Divider(Divider),
     Embed(Embed),
     CloudinaryImageGallery(CloudinaryImageGallery),
-    Accordion(Accordion),
+    Accordion(Accordion<'text>),
 }
 
-impl From<Paragraph> for YamdNodes {
+impl From<Paragraph> for YamdNodes<'_> {
     fn from(value: Paragraph) -> Self {
         YamdNodes::P(value)
     }
 }
 
-impl From<Heading> for YamdNodes {
-    fn from(value: Heading) -> Self {
+impl<'text> From<Heading<'text>> for YamdNodes<'text> {
+    fn from(value: Heading<'text>) -> Self {
         YamdNodes::H(value)
     }
 }
 
-impl From<Image> for YamdNodes {
+impl From<Image> for YamdNodes<'_> {
     fn from(value: Image) -> Self {
         YamdNodes::Image(value)
     }
 }
 
-impl From<Code> for YamdNodes {
+impl From<Code> for YamdNodes<'_> {
     fn from(value: Code) -> Self {
         YamdNodes::Code(value)
     }
 }
 
-impl From<List> for YamdNodes {
+impl From<List> for YamdNodes<'_> {
     fn from(value: List) -> Self {
         YamdNodes::List(value)
     }
 }
 
-impl From<ImageGallery> for YamdNodes {
+impl From<ImageGallery> for YamdNodes<'_> {
     fn from(value: ImageGallery) -> Self {
         YamdNodes::ImageGallery(value)
     }
 }
 
-impl From<Highlight> for YamdNodes {
+impl From<Highlight> for YamdNodes<'_> {
     fn from(value: Highlight) -> Self {
         YamdNodes::Highlight(value)
     }
 }
 
-impl From<Divider> for YamdNodes {
+impl From<Divider> for YamdNodes<'_> {
     fn from(value: Divider) -> Self {
         YamdNodes::Divider(value)
     }
 }
 
-impl From<Embed> for YamdNodes {
+impl From<Embed> for YamdNodes<'_> {
     fn from(value: Embed) -> Self {
         YamdNodes::Embed(value)
     }
 }
 
-impl From<CloudinaryImageGallery> for YamdNodes {
+impl From<CloudinaryImageGallery> for YamdNodes<'_> {
     fn from(value: CloudinaryImageGallery) -> Self {
         YamdNodes::CloudinaryImageGallery(value)
     }
 }
 
-impl From<Accordion> for YamdNodes {
-    fn from(value: Accordion) -> Self {
+impl<'text> From<Accordion<'text>> for YamdNodes<'text> {
+    fn from(value: Accordion<'text>) -> Self {
         YamdNodes::Accordion(value)
     }
 }
 
-impl Node for YamdNodes {
+impl Node<'_> for YamdNodes<'_> {
     fn serialize(&self) -> String {
         match self {
             YamdNodes::P(node) => node.serialize(),
@@ -127,26 +127,26 @@ impl Node for YamdNodes {
 
 /// Yamd is a parent node for every node.
 #[derive(Debug, PartialEq)]
-pub struct Yamd {
+pub struct Yamd<'text> {
     pub metadata: Option<Metadata>,
-    pub nodes: Vec<YamdNodes>,
+    pub nodes: Vec<YamdNodes<'text>>,
 }
 
-impl Yamd {
+impl<'text> Yamd<'text> {
     pub fn new(metadata: Option<Metadata>) -> Self {
         Self::new_with_nodes(metadata, vec![])
     }
 
-    pub fn new_with_nodes(metadata: Option<Metadata>, nodes: Vec<YamdNodes>) -> Self {
+    pub fn new_with_nodes(metadata: Option<Metadata>, nodes: Vec<YamdNodes<'text>>) -> Self {
         Self { metadata, nodes }
     }
 }
-impl Branch<YamdNodes> for Yamd {
-    fn push<TC: Into<YamdNodes>>(&mut self, element: TC) {
+impl<'text> Branch<'text, YamdNodes<'text>> for Yamd<'text> {
+    fn push<TC: Into<YamdNodes<'text>>>(&mut self, element: TC) {
         self.nodes.push(element.into());
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<YamdNodes>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<'text, YamdNodes<'text>>> {
         vec![
             Heading::maybe_node(),
             Image::maybe_node(),
@@ -161,7 +161,7 @@ impl Branch<YamdNodes> for Yamd {
         ]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<YamdNodes>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<YamdNodes<'text>>> {
         Some(Paragraph::fallback_node())
     }
 
@@ -170,21 +170,21 @@ impl Branch<YamdNodes> for Yamd {
     }
 }
 
-impl Deserializer for Yamd {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Yamd<'text> {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let metadata = Metadata::deserialize(input);
         let metadata_len = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
         Self::parse_branch(&input[metadata_len..], Self::new(metadata))
     }
 }
 
-impl Default for Yamd {
+impl Default for Yamd<'_> {
     fn default() -> Self {
         Self::new(None)
     }
 }
 
-impl Node for Yamd {
+impl Node<'_> for Yamd<'_> {
     fn serialize(&self) -> String {
         format!(
             "{}{}",

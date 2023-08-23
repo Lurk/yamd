@@ -15,7 +15,7 @@ impl Italic {
     }
 }
 
-impl Node for Italic {
+impl Node<'_> for Italic {
     fn serialize(&self) -> String {
         format!("_{}_", self.text)
     }
@@ -24,8 +24,8 @@ impl Node for Italic {
     }
 }
 
-impl Deserializer for Italic {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Italic {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(italic) = matcher.get_match("_", "_", false) {
             return Some(Italic::new(italic.body));

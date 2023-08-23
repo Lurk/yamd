@@ -12,7 +12,7 @@ pub enum ImageGalleryNodes {
     Image(Image),
 }
 
-impl Node for ImageGalleryNodes {
+impl Node<'_> for ImageGalleryNodes {
     fn serialize(&self) -> String {
         match self {
             ImageGalleryNodes::Image(node) => node.serialize(),
@@ -52,7 +52,7 @@ impl ImageGallery {
     }
 }
 
-impl Node for ImageGallery {
+impl Node<'_> for ImageGallery {
     fn serialize(&self) -> String {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
         format!(
@@ -69,8 +69,8 @@ impl Node for ImageGallery {
     }
 }
 
-impl Deserializer for ImageGallery {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for ImageGallery {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(image_gallery) = matcher.get_match("!!!\n", "!!!", false) {
             return Self::parse_branch(
@@ -82,12 +82,12 @@ impl Deserializer for ImageGallery {
     }
 }
 
-impl Branch<ImageGalleryNodes> for ImageGallery {
+impl<'text> Branch<'text, ImageGalleryNodes> for ImageGallery {
     fn push<CanBeNode: Into<ImageGalleryNodes>>(&mut self, node: CanBeNode) {
         self.nodes.push(node.into())
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<ImageGalleryNodes>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<'text, ImageGalleryNodes>> {
         vec![Image::maybe_node()]
     }
 
