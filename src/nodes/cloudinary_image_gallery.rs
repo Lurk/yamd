@@ -1,23 +1,23 @@
 use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct CloudinaryImageGallery {
-    username: String,
-    pub tag: String,
-    pub consumed_all_input: bool,
+pub struct CloudinaryImageGallery<'text> {
+    pub username: &'text str,
+    pub tag: &'text str,
+    consumed_all_input: bool,
 }
 
-impl CloudinaryImageGallery {
-    pub fn new<S: Into<String>>(username: S, tag: S, consumed_all_input: bool) -> Self {
+impl<'text> CloudinaryImageGallery<'text> {
+    pub fn new(username: &'text str, tag: &'text str, consumed_all_input: bool) -> Self {
         Self {
-            username: username.into(),
-            tag: tag.into(),
+            username,
+            tag,
             consumed_all_input,
         }
     }
 }
 
-impl Node<'_> for CloudinaryImageGallery {
+impl<'text> Node<'text> for CloudinaryImageGallery<'text> {
     fn serialize(&self) -> String {
         format!(
             "!!!!\n! {username}\n! {tag}\n!!!!{end}",
@@ -32,7 +32,7 @@ impl Node<'_> for CloudinaryImageGallery {
     }
 }
 
-impl<'text> Deserializer<'text> for CloudinaryImageGallery {
+impl<'text> Deserializer<'text> for CloudinaryImageGallery<'text> {
     fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(cloudinary_image_gallery) = matcher.get_match("!!!!\n", "\n!!!!", false) {

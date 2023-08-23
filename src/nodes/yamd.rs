@@ -22,7 +22,7 @@ pub enum YamdNodes<'text> {
     Highlight(Highlight),
     Divider(Divider),
     Embed(Embed),
-    CloudinaryImageGallery(CloudinaryImageGallery),
+    CloudinaryImageGallery(CloudinaryImageGallery<'text>),
     Accordion(Accordion<'text>),
 }
 
@@ -80,8 +80,8 @@ impl From<Embed> for YamdNodes<'_> {
     }
 }
 
-impl From<CloudinaryImageGallery> for YamdNodes<'_> {
-    fn from(value: CloudinaryImageGallery) -> Self {
+impl<'text> From<CloudinaryImageGallery<'text>> for YamdNodes<'text> {
+    fn from(value: CloudinaryImageGallery<'text>) -> Self {
         YamdNodes::CloudinaryImageGallery(value)
     }
 }

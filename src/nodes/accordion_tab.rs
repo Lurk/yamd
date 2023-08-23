@@ -17,7 +17,7 @@ pub enum AccordionTabNodes<'text> {
     Heading(Heading<'text>),
     Image(Image),
     ImageGallery(ImageGallery),
-    CloudinaryImageGallery(CloudinaryImageGallery),
+    CloudinaryImageGallery(CloudinaryImageGallery<'text>),
     List(List),
     Embed(Embed),
     Accordion(Accordion<'text>),
@@ -81,8 +81,8 @@ impl From<ImageGallery> for AccordionTabNodes<'_> {
     }
 }
 
-impl From<CloudinaryImageGallery> for AccordionTabNodes<'_> {
-    fn from(value: CloudinaryImageGallery) -> Self {
+impl<'text> From<CloudinaryImageGallery<'text>> for AccordionTabNodes<'text> {
+    fn from(value: CloudinaryImageGallery<'text>) -> Self {
         Self::CloudinaryImageGallery(value)
     }
 }
