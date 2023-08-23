@@ -119,8 +119,8 @@ impl From<Code> for AccordionTabNodes {
 
 #[derive(Debug, PartialEq)]
 pub struct AccordionTab {
-    header: Option<String>,
-    nodes: Vec<AccordionTabNodes>,
+    pub header: Option<String>,
+    pub nodes: Vec<AccordionTabNodes>,
     consumed_all_input: bool,
 }
 
@@ -344,7 +344,7 @@ t**b**
             Some("Header"),
             vec![
                 Heading::new(false, "hello", 1).into(),
-                Code::new("rust", "let a=1;", false).into(),
+                Code::new(false, "rust", "let a=1;").into(),
                 Paragraph::new_with_nodes(
                     false,
                     vec![

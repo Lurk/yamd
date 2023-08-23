@@ -107,7 +107,7 @@ impl<'input> Matcher<'input> {
                     balance -= 1;
                     if balance == 0 {
                         let end_token_end_index = index + end_sequence.len();
-                        let previous_position = self.position.clone();
+                        let previous_position = self.position;
                         self.position = end_token_end_index;
                         return Some(Match {
                             start_token: &self.input[previous_position..start_token_end_index],

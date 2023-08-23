@@ -2,8 +2,8 @@ use crate::toolkit::{deserializer::Deserializer, matcher::Matcher, node::Node};
 
 #[derive(Debug, PartialEq)]
 pub struct Embed {
-    url: String,
-    kind: String,
+    pub url: String,
+    pub kind: String,
     consumed_all_input: bool,
 }
 

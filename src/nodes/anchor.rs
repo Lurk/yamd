@@ -7,8 +7,8 @@ use crate::{
 /// Representation of an anchor
 #[derive(Debug, PartialEq)]
 pub struct Anchor {
-    text: String,
-    url: String,
+    pub text: String,
+    pub url: String,
 }
 
 impl Anchor {

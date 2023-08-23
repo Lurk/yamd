@@ -3,8 +3,8 @@ use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matc
 #[derive(Debug, PartialEq, Clone)]
 pub struct CloudinaryImageGallery {
     username: String,
-    tag: String,
-    consumed_all_input: bool,
+    pub tag: String,
+    pub consumed_all_input: bool,
 }
 
 impl CloudinaryImageGallery {

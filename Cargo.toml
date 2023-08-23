@@ -9,7 +9,7 @@ readme = "README.md"
 keywords = ["markdown", "parser"]
 
 [dev-dependencies]
-pretty_assertions = "1.3.0"
+pretty_assertions = "1.4.0"
 
 [dependencies]
 chrono = "0.4.26"

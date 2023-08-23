@@ -34,9 +34,9 @@ impl From<Paragraph> for HighlightNodes {
 
 #[derive(Debug, PartialEq)]
 pub struct Highlight {
-    header: Option<String>,
-    icon: Option<String>,
-    nodes: Vec<HighlightNodes>,
+    pub header: Option<String>,
+    pub icon: Option<String>,
+    pub nodes: Vec<HighlightNodes>,
     consumed_all_input: bool,
 }
 

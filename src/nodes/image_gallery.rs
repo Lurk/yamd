@@ -35,7 +35,7 @@ impl From<Image> for ImageGalleryNodes {
 /// it starts with `!!!\n` and ends with `\n!!!`
 #[derive(Debug, PartialEq)]
 pub struct ImageGallery {
-    nodes: Vec<ImageGalleryNodes>,
+    pub nodes: Vec<ImageGalleryNodes>,
     consumed_all_input: bool,
 }
 

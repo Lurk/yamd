@@ -2,8 +2,8 @@ use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matc
 
 #[derive(Debug, PartialEq)]
 pub struct Heading {
-    level: u8,
-    text: String,
+    pub level: u8,
+    pub text: String,
     consumed_all_input: bool,
 }
 
