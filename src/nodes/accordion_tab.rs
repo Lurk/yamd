@@ -15,8 +15,8 @@ use super::{
 pub enum AccordionTabNodes<'text> {
     Pargaraph(Paragraph<'text>),
     Heading(Heading<'text>),
-    Image(Image),
-    ImageGallery(ImageGallery),
+    Image(Image<'text>),
+    ImageGallery(ImageGallery<'text>),
     CloudinaryImageGallery(CloudinaryImageGallery<'text>),
     List(List<'text>),
     Embed(Embed<'text>),
@@ -69,14 +69,14 @@ impl<'text> From<Heading<'text>> for AccordionTabNodes<'text> {
     }
 }
 
-impl From<Image> for AccordionTabNodes<'_> {
-    fn from(value: Image) -> Self {
+impl<'text> From<Image<'text>> for AccordionTabNodes<'text> {
+    fn from(value: Image<'text>) -> Self {
         Self::Image(value)
     }
 }
 
-impl From<ImageGallery> for AccordionTabNodes<'_> {
-    fn from(value: ImageGallery) -> Self {
+impl<'text> From<ImageGallery<'text>> for AccordionTabNodes<'text> {
+    fn from(value: ImageGallery<'text>) -> Self {
         Self::ImageGallery(value)
     }
 }
@@ -353,13 +353,13 @@ t**b**
                     ],
                 )
                 .into(),
-                Image::new(false, 'a', 'u').into(),
+                Image::new(false, "a", "u").into(),
                 ImageGallery::new_with_nodes(
+                    false,
                     vec![
                         Image::new(true, "a", "u").into(),
                         Image::new(true, "a2", "u2").into(),
                     ],
-                    false,
                 )
                 .into(),
                 Divider::new(false).into(),

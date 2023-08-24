@@ -15,10 +15,10 @@ use super::{
 pub enum YamdNodes<'text> {
     P(Paragraph<'text>),
     H(Heading<'text>),
-    Image(Image),
+    Image(Image<'text>),
     Code(Code<'text>),
     List(List<'text>),
-    ImageGallery(ImageGallery),
+    ImageGallery(ImageGallery<'text>),
     Highlight(Highlight<'text>),
     Divider(Divider),
     Embed(Embed<'text>),
@@ -38,8 +38,8 @@ impl<'text> From<Heading<'text>> for YamdNodes<'text> {
     }
 }
 
-impl From<Image> for YamdNodes<'_> {
-    fn from(value: Image) -> Self {
+impl<'text> From<Image<'text>> for YamdNodes<'text> {
+    fn from(value: Image<'text>) -> Self {
         YamdNodes::Image(value)
     }
 }
@@ -56,8 +56,8 @@ impl<'text> From<List<'text>> for YamdNodes<'text> {
     }
 }
 
-impl From<ImageGallery> for YamdNodes<'_> {
-    fn from(value: ImageGallery) -> Self {
+impl<'text> From<ImageGallery<'text>> for YamdNodes<'text> {
+    fn from(value: ImageGallery<'text>) -> Self {
         YamdNodes::ImageGallery(value)
     }
 }
@@ -345,13 +345,13 @@ end"#;
                         ]
                     )
                     .into(),
-                    Image::new(false, 'a', 'u').into(),
+                    Image::new(false, "a", "u").into(),
                     ImageGallery::new_with_nodes(
+                        false,
                         vec![
                             Image::new(true, "a", "u").into(),
                             Image::new(true, "a2", "u2").into()
                         ],
-                        false
                     )
                     .into(),
                     Highlight::new_with_nodes(
@@ -436,13 +436,13 @@ end"#;
                         ]
                     )
                     .into(),
-                    Image::new(false, 'a', 'u').into(),
+                    Image::new(false, "a", "u").into(),
                     ImageGallery::new_with_nodes(
+                        false,
                         vec![
                             Image::new(true, "a", "u").into(),
                             Image::new(true, "a2", "u2").into()
                         ],
-                        false
                     )
                     .into(),
                     Highlight::new_with_nodes(
