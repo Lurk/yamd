@@ -17,7 +17,7 @@ pub enum ListItemContentNodes<'text> {
     I(Italic<'text>),
     S(Strikethrough<'text>),
     Text(Text<'text>),
-    InlineCode(InlineCode),
+    InlineCode(InlineCode<'text>),
 }
 
 impl<'text> From<Anchor<'text>> for ListItemContentNodes<'text> {
@@ -50,8 +50,8 @@ impl<'text> From<Text<'text>> for ListItemContentNodes<'text> {
     }
 }
 
-impl From<InlineCode> for ListItemContentNodes<'_> {
-    fn from(value: InlineCode) -> Self {
+impl<'text> From<InlineCode<'text>> for ListItemContentNodes<'text> {
+    fn from(value: InlineCode<'text>) -> Self {
         ListItemContentNodes::InlineCode(value)
     }
 }

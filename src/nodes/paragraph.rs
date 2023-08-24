@@ -16,7 +16,7 @@ pub enum ParagraphNodes<'text> {
     I(Italic<'text>),
     S(Strikethrough<'text>),
     Text(Text<'text>),
-    InlineCode(InlineCode),
+    InlineCode(InlineCode<'text>),
 }
 
 impl<'text> From<Anchor<'text>> for ParagraphNodes<'text> {
@@ -49,8 +49,8 @@ impl<'text> From<Text<'text>> for ParagraphNodes<'text> {
     }
 }
 
-impl From<InlineCode> for ParagraphNodes<'_> {
-    fn from(value: InlineCode) -> Self {
+impl<'text> From<InlineCode<'text>> for ParagraphNodes<'text> {
+    fn from(value: InlineCode<'text>) -> Self {
         ParagraphNodes::InlineCode(value)
     }
 }
