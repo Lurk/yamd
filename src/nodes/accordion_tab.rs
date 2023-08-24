@@ -22,7 +22,7 @@ pub enum AccordionTabNodes<'text> {
     Embed(Embed),
     Accordion(Accordion<'text>),
     Divider(Divider),
-    Code(Code),
+    Code(Code<'text>),
 }
 
 impl Node<'_> for AccordionTabNodes<'_> {
@@ -111,8 +111,8 @@ impl From<Divider> for AccordionTabNodes<'_> {
     }
 }
 
-impl From<Code> for AccordionTabNodes<'_> {
-    fn from(value: Code) -> Self {
+impl<'text> From<Code<'text>> for AccordionTabNodes<'text> {
+    fn from(value: Code<'text>) -> Self {
         Self::Code(value)
     }
 }

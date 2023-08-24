@@ -16,7 +16,7 @@ pub enum YamdNodes<'text> {
     P(Paragraph<'text>),
     H(Heading<'text>),
     Image(Image),
-    Code(Code),
+    Code(Code<'text>),
     List(List<'text>),
     ImageGallery(ImageGallery),
     Highlight(Highlight<'text>),
@@ -44,8 +44,8 @@ impl From<Image> for YamdNodes<'_> {
     }
 }
 
-impl From<Code> for YamdNodes<'_> {
-    fn from(value: Code) -> Self {
+impl<'text> From<Code<'text>> for YamdNodes<'text> {
+    fn from(value: Code<'text>) -> Self {
         YamdNodes::Code(value)
     }
 }
