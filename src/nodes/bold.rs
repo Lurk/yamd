@@ -13,7 +13,7 @@ use crate::{
 #[derive(Debug, PartialEq)]
 pub enum BoldNodes<'text> {
     Text(Text<'text>),
-    I(Italic),
+    I(Italic<'text>),
     S(Strikethrough),
 }
 
@@ -23,8 +23,8 @@ impl<'text> From<Text<'text>> for BoldNodes<'text> {
     }
 }
 
-impl From<Italic> for BoldNodes<'_> {
-    fn from(value: Italic) -> Self {
+impl<'text> From<Italic<'text>> for BoldNodes<'text> {
+    fn from(value: Italic<'text>) -> Self {
         BoldNodes::I(value)
     }
 }

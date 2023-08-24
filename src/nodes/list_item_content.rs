@@ -14,7 +14,7 @@ use super::{
 pub enum ListItemContentNodes<'text> {
     A(Anchor<'text>),
     B(Bold<'text>),
-    I(Italic),
+    I(Italic<'text>),
     S(Strikethrough),
     Text(Text<'text>),
     InlineCode(InlineCode),
@@ -32,8 +32,8 @@ impl<'text> From<Bold<'text>> for ListItemContentNodes<'text> {
     }
 }
 
-impl From<Italic> for ListItemContentNodes<'_> {
-    fn from(value: Italic) -> Self {
+impl<'text> From<Italic<'text>> for ListItemContentNodes<'text> {
+    fn from(value: Italic<'text>) -> Self {
         ListItemContentNodes::I(value)
     }
 }

@@ -13,7 +13,7 @@ use crate::toolkit::{
 pub enum ParagraphNodes<'text> {
     A(Anchor<'text>),
     B(Bold<'text>),
-    I(Italic),
+    I(Italic<'text>),
     S(Strikethrough),
     Text(Text<'text>),
     InlineCode(InlineCode),
@@ -31,8 +31,8 @@ impl<'text> From<Bold<'text>> for ParagraphNodes<'text> {
     }
 }
 
-impl From<Italic> for ParagraphNodes<'_> {
-    fn from(value: Italic) -> Self {
+impl<'text> From<Italic<'text>> for ParagraphNodes<'text> {
+    fn from(value: Italic<'text>) -> Self {
         ParagraphNodes::I(value)
     }
 }
