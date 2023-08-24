@@ -5,17 +5,17 @@ use crate::{
 
 /// Representation of strike through
 #[derive(Debug, PartialEq)]
-pub struct Strikethrough {
-    pub text: String,
+pub struct Strikethrough<'text> {
+    pub text: &'text str,
 }
 
-impl Strikethrough {
-    pub fn new<IS: Into<String>>(text: IS) -> Self {
-        Strikethrough { text: text.into() }
+impl<'text> Strikethrough<'text> {
+    pub fn new(text: &'text str) -> Self {
+        Strikethrough { text }
     }
 }
 
-impl Node<'_> for Strikethrough {
+impl<'text> Node<'text> for Strikethrough<'text> {
     fn serialize(&self) -> String {
         format!("~~{}~~", self.text)
     }
@@ -24,7 +24,7 @@ impl Node<'_> for Strikethrough {
     }
 }
 
-impl<'text> Deserializer<'text> for Strikethrough {
+impl<'text> Deserializer<'text> for Strikethrough<'text> {
     fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(strikethrough) = matcher.get_match("~~", "~~", false) {

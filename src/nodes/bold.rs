@@ -14,7 +14,7 @@ use crate::{
 pub enum BoldNodes<'text> {
     Text(Text<'text>),
     I(Italic<'text>),
-    S(Strikethrough),
+    S(Strikethrough<'text>),
 }
 
 impl<'text> From<Text<'text>> for BoldNodes<'text> {
@@ -29,8 +29,8 @@ impl<'text> From<Italic<'text>> for BoldNodes<'text> {
     }
 }
 
-impl From<Strikethrough> for BoldNodes<'_> {
-    fn from(value: Strikethrough) -> Self {
+impl<'text> From<Strikethrough<'text>> for BoldNodes<'text> {
+    fn from(value: Strikethrough<'text>) -> Self {
         BoldNodes::S(value)
     }
 }

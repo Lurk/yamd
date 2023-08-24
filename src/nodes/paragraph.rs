@@ -14,7 +14,7 @@ pub enum ParagraphNodes<'text> {
     A(Anchor<'text>),
     B(Bold<'text>),
     I(Italic<'text>),
-    S(Strikethrough),
+    S(Strikethrough<'text>),
     Text(Text<'text>),
     InlineCode(InlineCode),
 }
@@ -37,8 +37,8 @@ impl<'text> From<Italic<'text>> for ParagraphNodes<'text> {
     }
 }
 
-impl From<Strikethrough> for ParagraphNodes<'_> {
-    fn from(value: Strikethrough) -> Self {
+impl<'text> From<Strikethrough<'text>> for ParagraphNodes<'text> {
+    fn from(value: Strikethrough<'text>) -> Self {
         ParagraphNodes::S(value)
     }
 }

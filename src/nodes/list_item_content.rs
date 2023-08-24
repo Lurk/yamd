@@ -15,7 +15,7 @@ pub enum ListItemContentNodes<'text> {
     A(Anchor<'text>),
     B(Bold<'text>),
     I(Italic<'text>),
-    S(Strikethrough),
+    S(Strikethrough<'text>),
     Text(Text<'text>),
     InlineCode(InlineCode),
 }
@@ -38,8 +38,8 @@ impl<'text> From<Italic<'text>> for ListItemContentNodes<'text> {
     }
 }
 
-impl From<Strikethrough> for ListItemContentNodes<'_> {
-    fn from(value: Strikethrough) -> Self {
+impl<'text> From<Strikethrough<'text>> for ListItemContentNodes<'text> {
+    fn from(value: Strikethrough<'text>) -> Self {
         ListItemContentNodes::S(value)
     }
 }
