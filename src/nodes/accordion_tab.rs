@@ -19,7 +19,7 @@ pub enum AccordionTabNodes<'text> {
     ImageGallery(ImageGallery),
     CloudinaryImageGallery(CloudinaryImageGallery<'text>),
     List(List<'text>),
-    Embed(Embed),
+    Embed(Embed<'text>),
     Accordion(Accordion<'text>),
     Divider(Divider),
     Code(Code<'text>),
@@ -93,8 +93,8 @@ impl<'text> From<List<'text>> for AccordionTabNodes<'text> {
     }
 }
 
-impl From<Embed> for AccordionTabNodes<'_> {
-    fn from(value: Embed) -> Self {
+impl<'text> From<Embed<'text>> for AccordionTabNodes<'text> {
+    fn from(value: Embed<'text>) -> Self {
         Self::Embed(value)
     }
 }
@@ -389,7 +389,7 @@ t**b**
                     .into()],
                 )
                 .into(),
-                Embed::new("youtube", "123", false).into(),
+                Embed::new(false, "youtube", "123").into(),
                 CloudinaryImageGallery::new("username", "tag", true).into(),
             ],
         );

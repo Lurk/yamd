@@ -21,7 +21,7 @@ pub enum YamdNodes<'text> {
     ImageGallery(ImageGallery),
     Highlight(Highlight<'text>),
     Divider(Divider),
-    Embed(Embed),
+    Embed(Embed<'text>),
     CloudinaryImageGallery(CloudinaryImageGallery<'text>),
     Accordion(Accordion<'text>),
 }
@@ -74,8 +74,8 @@ impl From<Divider> for YamdNodes<'_> {
     }
 }
 
-impl From<Embed> for YamdNodes<'_> {
-    fn from(value: Embed) -> Self {
+impl<'text> From<Embed<'text>> for YamdNodes<'text> {
+    fn from(value: Embed<'text>) -> Self {
         YamdNodes::Embed(value)
     }
 }
@@ -392,7 +392,7 @@ end"#;
                         .into()]
                     )
                     .into(),
-                    Embed::new("youtube", "123", false).into(),
+                    Embed::new(false, "youtube", "123").into(),
                     CloudinaryImageGallery::new("username", "tag", false).into(),
                     Accordion::new_with_nodes(
                         false,
@@ -485,7 +485,7 @@ end"#;
                         .into()]
                     )
                     .into(),
-                    Embed::new("youtube", "123", false).into(),
+                    Embed::new(false, "youtube", "123").into(),
                     CloudinaryImageGallery::new("username", "tag", false).into(),
                     Accordion::new_with_nodes(
                         false,
