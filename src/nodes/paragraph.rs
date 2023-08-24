@@ -12,10 +12,10 @@ use crate::toolkit::{
 #[derive(Debug, PartialEq)]
 pub enum ParagraphNodes<'text> {
     A(Anchor<'text>),
-    B(Bold),
+    B(Bold<'text>),
     I(Italic),
     S(Strikethrough),
-    Text(Text),
+    Text(Text<'text>),
     InlineCode(InlineCode),
 }
 
@@ -25,8 +25,8 @@ impl<'text> From<Anchor<'text>> for ParagraphNodes<'text> {
     }
 }
 
-impl From<Bold> for ParagraphNodes<'_> {
-    fn from(value: Bold) -> Self {
+impl<'text> From<Bold<'text>> for ParagraphNodes<'text> {
+    fn from(value: Bold<'text>) -> Self {
         ParagraphNodes::B(value)
     }
 }
@@ -43,8 +43,8 @@ impl From<Strikethrough> for ParagraphNodes<'_> {
     }
 }
 
-impl From<Text> for ParagraphNodes<'_> {
-    fn from(value: Text) -> Self {
+impl<'text> From<Text<'text>> for ParagraphNodes<'text> {
+    fn from(value: Text<'text>) -> Self {
         ParagraphNodes::Text(value)
     }
 }
