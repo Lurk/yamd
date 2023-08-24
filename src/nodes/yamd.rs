@@ -128,16 +128,16 @@ impl Node<'_> for YamdNodes<'_> {
 /// Yamd is a parent node for every node.
 #[derive(Debug, PartialEq)]
 pub struct Yamd<'text> {
-    pub metadata: Option<Metadata>,
+    pub metadata: Option<Metadata<'text>>,
     pub nodes: Vec<YamdNodes<'text>>,
 }
 
 impl<'text> Yamd<'text> {
-    pub fn new(metadata: Option<Metadata>) -> Self {
+    pub fn new(metadata: Option<Metadata<'text>>) -> Self {
         Self::new_with_nodes(metadata, vec![])
     }
 
-    pub fn new_with_nodes(metadata: Option<Metadata>, nodes: Vec<YamdNodes<'text>>) -> Self {
+    pub fn new_with_nodes(metadata: Option<Metadata<'text>>, nodes: Vec<YamdNodes<'text>>) -> Self {
         Self { metadata, nodes }
     }
 }
