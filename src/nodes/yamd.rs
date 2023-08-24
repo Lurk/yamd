@@ -355,9 +355,9 @@ end"#;
                     )
                     .into(),
                     Highlight::new_with_nodes(
+                        false,
                         Some("H"),
                         Some("I"),
-                        false,
                         vec![
                             Paragraph::new_with_nodes(false, vec![Strikethrough::new("s").into()])
                                 .into(),
@@ -446,9 +446,9 @@ end"#;
                     )
                     .into(),
                     Highlight::new_with_nodes(
+                        false,
                         Some("H"),
                         Some("I"),
-                        false,
                         vec![
                             Paragraph::new_with_nodes(false, vec![Strikethrough::new("s").into()])
                                 .into(),
