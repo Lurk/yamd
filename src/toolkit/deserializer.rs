@@ -6,7 +6,7 @@ where
 {
     fn push<CanBeNode: Into<BranchNodes>>(&mut self, node: CanBeNode);
     fn get_maybe_nodes() -> Vec<MaybeNode<'text, BranchNodes>>;
-    fn get_fallback_node() -> Option<DefinitelyNode<BranchNodes>>;
+    fn get_fallback_node() -> Option<DefinitelyNode<'text, BranchNodes>>;
     fn get_outer_token_length(&self) -> usize;
 
     fn parse_branch(input: &'text str, mut branch: Self) -> Option<Self>
@@ -60,10 +60,10 @@ where
 
 pub type MaybeNode<'text, BranchNodes> =
     Box<dyn Fn(&'text str, Option<Context>) -> Option<BranchNodes>>;
-pub type DefinitelyNode<BranchNodes> = Box<dyn Fn(&str) -> BranchNodes>;
+pub type DefinitelyNode<'text, BranchNodes> = Box<dyn Fn(&'text str) -> BranchNodes>;
 
-pub trait FallbackNode {
-    fn fallback_node<BranchNodes>() -> DefinitelyNode<BranchNodes>
+pub trait FallbackNode<'text> {
+    fn fallback_node<BranchNodes>() -> DefinitelyNode<'text, BranchNodes>
     where
         Self: Into<BranchNodes>;
 }

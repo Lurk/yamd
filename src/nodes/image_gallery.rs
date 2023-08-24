@@ -91,7 +91,7 @@ impl<'text> Branch<'text, ImageGalleryNodes> for ImageGallery {
         vec![Image::maybe_node()]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<ImageGalleryNodes>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<'text, ImageGalleryNodes>> {
         None
     }
 

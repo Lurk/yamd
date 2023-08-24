@@ -13,12 +13,12 @@ use super::{
 
 #[derive(Debug, PartialEq)]
 pub enum AccordionTabNodes<'text> {
-    Pargaraph(Paragraph),
+    Pargaraph(Paragraph<'text>),
     Heading(Heading<'text>),
     Image(Image),
     ImageGallery(ImageGallery),
     CloudinaryImageGallery(CloudinaryImageGallery<'text>),
-    List(List),
+    List(List<'text>),
     Embed(Embed),
     Accordion(Accordion<'text>),
     Divider(Divider),
@@ -57,8 +57,8 @@ impl Node<'_> for AccordionTabNodes<'_> {
     }
 }
 
-impl From<Paragraph> for AccordionTabNodes<'_> {
-    fn from(value: Paragraph) -> Self {
+impl<'text> From<Paragraph<'text>> for AccordionTabNodes<'text> {
+    fn from(value: Paragraph<'text>) -> Self {
         Self::Pargaraph(value)
     }
 }
@@ -87,8 +87,8 @@ impl<'text> From<CloudinaryImageGallery<'text>> for AccordionTabNodes<'text> {
     }
 }
 
-impl From<List> for AccordionTabNodes<'_> {
-    fn from(value: List) -> Self {
+impl<'text> From<List<'text>> for AccordionTabNodes<'text> {
+    fn from(value: List<'text>) -> Self {
         Self::List(value)
     }
 }
@@ -183,7 +183,7 @@ impl<'text> Branch<'text, AccordionTabNodes<'text>> for AccordionTab<'text> {
         ]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<AccordionTabNodes<'text>>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<'text, AccordionTabNodes<'text>>> {
         Some(Paragraph::fallback_node())
     }
 

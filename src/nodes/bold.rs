@@ -77,7 +77,7 @@ impl<'text> Branch<'text, BoldNodes> for Bold {
         vec![Italic::maybe_node(), Strikethrough::maybe_node()]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<BoldNodes>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<'text, BoldNodes>> {
         Some(Box::new(|str| Text::new(str).into()))
     }
     fn get_outer_token_length(&self) -> usize {

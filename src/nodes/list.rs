@@ -14,11 +14,11 @@ pub enum ListTypes {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum ListNodes {
-    ListItem(ListItem),
+pub enum ListNodes<'text> {
+    ListItem(ListItem<'text>),
 }
 
-impl Node<'_> for ListNodes {
+impl<'text> Node<'text> for ListNodes<'text> {
     fn serialize(&self) -> String {
         match self {
             ListNodes::ListItem(node) => node.serialize(),
@@ -31,21 +31,21 @@ impl Node<'_> for ListNodes {
     }
 }
 
-impl From<ListItem> for ListNodes {
-    fn from(value: ListItem) -> Self {
+impl<'text> From<ListItem<'text>> for ListNodes<'text> {
+    fn from(value: ListItem<'text>) -> Self {
         ListNodes::ListItem(value)
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub struct List {
+pub struct List<'text> {
     pub list_type: ListTypes,
     pub level: usize,
-    pub nodes: Vec<ListNodes>,
+    pub nodes: Vec<ListNodes<'text>>,
     consumed_all_input: bool,
 }
 
-impl List {
+impl<'text> List<'text> {
     pub fn new(consumed_all_input: bool, list_type: ListTypes, level: usize) -> Self {
         Self::new_with_nodes(consumed_all_input, list_type, level, vec![])
     }
@@ -54,7 +54,7 @@ impl List {
         consumed_all_input: bool,
         list_type: ListTypes,
         level: usize,
-        nodes: Vec<ListNodes>,
+        nodes: Vec<ListNodes<'text>>,
     ) -> Self {
         Self {
             list_type,
@@ -87,7 +87,7 @@ impl List {
     }
 }
 
-impl Node<'_> for List {
+impl<'text> Node<'text> for List<'text> {
     fn serialize(&self) -> String {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
         format!(
@@ -107,7 +107,7 @@ impl Node<'_> for List {
     }
 }
 
-impl<'text> Deserializer<'text> for List {
+impl<'text> Deserializer<'text> for List<'text> {
     fn deserialize_with_context(input: &'text str, ctx: Option<Context>) -> Option<Self> {
         let level = Self::get_level_from_context(&ctx);
         let mut matcher = Matcher::new(input);
@@ -134,16 +134,16 @@ impl<'text> Deserializer<'text> for List {
     }
 }
 
-impl<'text> Branch<'text, ListNodes> for List {
-    fn push<CanBeNode: Into<ListNodes>>(&mut self, node: CanBeNode) {
+impl<'text> Branch<'text, ListNodes<'text>> for List<'text> {
+    fn push<CanBeNode: Into<ListNodes<'text>>>(&mut self, node: CanBeNode) {
         self.nodes.push(node.into())
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<'text, ListNodes>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<'text, ListNodes<'text>>> {
         vec![ListItem::maybe_node()]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<ListNodes>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<'text, ListNodes<'text>>> {
         None
     }
 

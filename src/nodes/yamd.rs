@@ -13,21 +13,21 @@ use super::{
 
 #[derive(Debug, PartialEq)]
 pub enum YamdNodes<'text> {
-    P(Paragraph),
+    P(Paragraph<'text>),
     H(Heading<'text>),
     Image(Image),
     Code(Code),
-    List(List),
+    List(List<'text>),
     ImageGallery(ImageGallery),
-    Highlight(Highlight),
+    Highlight(Highlight<'text>),
     Divider(Divider),
     Embed(Embed),
     CloudinaryImageGallery(CloudinaryImageGallery<'text>),
     Accordion(Accordion<'text>),
 }
 
-impl From<Paragraph> for YamdNodes<'_> {
-    fn from(value: Paragraph) -> Self {
+impl<'text> From<Paragraph<'text>> for YamdNodes<'text> {
+    fn from(value: Paragraph<'text>) -> Self {
         YamdNodes::P(value)
     }
 }
@@ -50,8 +50,8 @@ impl From<Code> for YamdNodes<'_> {
     }
 }
 
-impl From<List> for YamdNodes<'_> {
-    fn from(value: List) -> Self {
+impl<'text> From<List<'text>> for YamdNodes<'text> {
+    fn from(value: List<'text>) -> Self {
         YamdNodes::List(value)
     }
 }
@@ -62,8 +62,8 @@ impl From<ImageGallery> for YamdNodes<'_> {
     }
 }
 
-impl From<Highlight> for YamdNodes<'_> {
-    fn from(value: Highlight) -> Self {
+impl<'text> From<Highlight<'text>> for YamdNodes<'text> {
+    fn from(value: Highlight<'text>) -> Self {
         YamdNodes::Highlight(value)
     }
 }
@@ -161,7 +161,7 @@ impl<'text> Branch<'text, YamdNodes<'text>> for Yamd<'text> {
         ]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<YamdNodes<'text>>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<'text, YamdNodes<'text>>> {
         Some(Paragraph::fallback_node())
     }
 

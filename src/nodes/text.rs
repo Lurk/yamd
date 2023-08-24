@@ -31,8 +31,8 @@ impl Node<'_> for Text {
     }
 }
 
-impl FallbackNode for Text {
-    fn fallback_node<BranchNodes>() -> DefinitelyNode<BranchNodes>
+impl<'text> FallbackNode<'text> for Text {
+    fn fallback_node<BranchNodes>() -> DefinitelyNode<'text, BranchNodes>
     where
         Self: Into<BranchNodes>,
     {

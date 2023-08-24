@@ -79,7 +79,7 @@ impl<'text> Branch<'text, AccordionNodes<'text>> for Accordion<'text> {
         vec![AccordionTab::maybe_node()]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<AccordionNodes<'text>>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<'text, AccordionNodes<'text>>> {
         None
     }
 

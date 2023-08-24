@@ -8,11 +8,11 @@ use crate::toolkit::{
 use super::paragraph::Paragraph;
 
 #[derive(Debug, PartialEq)]
-pub enum HighlightNodes {
-    Paragraph(Paragraph),
+pub enum HighlightNodes<'text> {
+    Paragraph(Paragraph<'text>),
 }
 
-impl Node<'_> for HighlightNodes {
+impl<'text> Node<'text> for HighlightNodes<'text> {
     fn serialize(&self) -> String {
         match self {
             HighlightNodes::Paragraph(node) => node.serialize(),
@@ -26,21 +26,21 @@ impl Node<'_> for HighlightNodes {
     }
 }
 
-impl From<Paragraph> for HighlightNodes {
-    fn from(value: Paragraph) -> Self {
+impl<'text> From<Paragraph<'text>> for HighlightNodes<'text> {
+    fn from(value: Paragraph<'text>) -> Self {
         Self::Paragraph(value)
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Highlight {
+pub struct Highlight<'text> {
     pub header: Option<String>,
     pub icon: Option<String>,
-    pub nodes: Vec<HighlightNodes>,
+    pub nodes: Vec<HighlightNodes<'text>>,
     consumed_all_input: bool,
 }
 
-impl Highlight {
+impl<'text> Highlight<'text> {
     pub fn new<H: Into<String>, I: Into<String>>(
         header: Option<H>,
         icon: Option<I>,
@@ -53,7 +53,7 @@ impl Highlight {
         header: Option<H>,
         icon: Option<I>,
         consumed_all_input: bool,
-        nodes: Vec<HighlightNodes>,
+        nodes: Vec<HighlightNodes<'text>>,
     ) -> Self {
         Self {
             header: header.map(|header| header.into()),
@@ -64,7 +64,7 @@ impl Highlight {
     }
 }
 
-impl Node<'_> for Highlight {
+impl<'text> Node<'text> for Highlight<'text> {
     fn serialize(&self) -> String {
         let header = match &self.header {
             Some(header) => format!(">> {header}\n"),
@@ -90,16 +90,16 @@ impl Node<'_> for Highlight {
     }
 }
 
-impl<'text> Branch<'text, HighlightNodes> for Highlight {
-    fn push<CanBeNode: Into<HighlightNodes>>(&mut self, node: CanBeNode) {
+impl<'text> Branch<'text, HighlightNodes<'text>> for Highlight<'text> {
+    fn push<CanBeNode: Into<HighlightNodes<'text>>>(&mut self, node: CanBeNode) {
         self.nodes.push(node.into());
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<'text, HighlightNodes>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<'text, HighlightNodes<'text>>> {
         vec![Paragraph::maybe_node()]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<HighlightNodes>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<'text, HighlightNodes<'text>>> {
         None
     }
 
@@ -118,7 +118,7 @@ impl<'text> Branch<'text, HighlightNodes> for Highlight {
     }
 }
 
-impl<'text> Deserializer<'text> for Highlight {
+impl<'text> Deserializer<'text> for Highlight<'text> {
     fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut outer_matcher = Matcher::new(input);
         if let Some(highlight) = outer_matcher.get_match(">>>\n", "\n>>>", false) {
