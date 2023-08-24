@@ -6,23 +6,23 @@ use super::{
 };
 
 #[derive(Debug, PartialEq)]
-pub struct ListItem {
+pub struct ListItem<'text> {
     pub list_type: ListTypes,
     pub level: usize,
-    pub text: ListItemContent,
-    pub nested_list: Option<List>,
+    pub text: ListItemContent<'text>,
+    pub nested_list: Option<List<'text>>,
 }
 
-impl ListItem {
-    pub fn new(list_type: ListTypes, level: usize, text: ListItemContent) -> Self {
+impl<'text> ListItem<'text> {
+    pub fn new(list_type: ListTypes, level: usize, text: ListItemContent<'text>) -> Self {
         Self::new_with_nested_list(list_type, level, text, None)
     }
 
     pub fn new_with_nested_list(
         list_type: ListTypes,
         level: usize,
-        text: ListItemContent,
-        nested_list: Option<List>,
+        text: ListItemContent<'text>,
+        nested_list: Option<List<'text>>,
     ) -> Self {
         Self {
             list_type,
@@ -50,7 +50,7 @@ impl ListItem {
     }
 }
 
-impl Node for ListItem {
+impl<'text> Node<'text> for ListItem<'text> {
     fn serialize(&self) -> String {
         let list_type = match self.list_type {
             ListTypes::Unordered => '-',
@@ -72,8 +72,8 @@ impl Node for ListItem {
     }
 }
 
-impl Deserializer for ListItem {
-    fn deserialize_with_context(input: &str, ctx: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for ListItem<'text> {
+    fn deserialize_with_context(input: &'text str, ctx: Option<Context>) -> Option<Self> {
         let level = Self::get_level_from_context(&ctx);
         let list_type = match Self::get_list_type_from_context(&ctx) {
             ListTypes::Unordered => "-",

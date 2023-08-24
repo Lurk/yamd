@@ -1,17 +1,17 @@
 use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
 #[derive(Debug, PartialEq)]
-pub struct InlineCode {
-    pub text: String,
+pub struct InlineCode<'text> {
+    pub text: &'text str,
 }
 
-impl InlineCode {
-    pub fn new<S: Into<String>>(text: S) -> Self {
-        InlineCode { text: text.into() }
+impl<'text> InlineCode<'text> {
+    pub fn new(text: &'text str) -> Self {
+        InlineCode { text }
     }
 }
 
-impl Node for InlineCode {
+impl<'text> Node<'text> for InlineCode<'text> {
     fn serialize(&self) -> String {
         format!("`{}`", self.text)
     }
@@ -20,8 +20,8 @@ impl Node for InlineCode {
     }
 }
 
-impl Deserializer for InlineCode {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for InlineCode<'text> {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(inline_code) = matcher.get_match("`", "`", false) {
             return Some(InlineCode::new(inline_code.body));
@@ -44,7 +44,7 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(InlineCode::deserialize("`1`"), Some(InlineCode::new('1')));
+        assert_eq!(InlineCode::deserialize("`1`"), Some(InlineCode::new("1")));
         assert_eq!(
             InlineCode::deserialize("`const \nfoo='bar'`"),
             Some(InlineCode::new("const \nfoo='bar'"))

@@ -11,7 +11,7 @@ impl Divider {
     }
 }
 
-impl Node for Divider {
+impl Node<'_> for Divider {
     fn serialize(&self) -> String {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
         format!("-----{end}")
@@ -26,8 +26,8 @@ impl Node for Divider {
     }
 }
 
-impl Deserializer for Divider {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Divider {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(divider) = matcher.get_match("-----", "\n\n", true) {
             return Some(Divider {

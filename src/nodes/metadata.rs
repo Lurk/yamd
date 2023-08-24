@@ -2,33 +2,33 @@ use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matc
 use chrono::{DateTime, FixedOffset};
 
 #[derive(Debug, PartialEq)]
-pub struct Metadata {
-    pub header: Option<String>,
+pub struct Metadata<'text> {
+    pub header: Option<&'text str>,
     pub timestamp: Option<DateTime<FixedOffset>>,
-    pub image: Option<String>,
-    pub preview: Option<String>,
-    pub tags: Option<Vec<String>>,
+    pub image: Option<&'text str>,
+    pub preview: Option<&'text str>,
+    pub tags: Option<Vec<&'text str>>,
 }
 
-impl Metadata {
-    pub fn new<S: Into<String>>(
-        header: Option<S>,
+impl<'text> Metadata<'text> {
+    pub fn new(
+        header: Option<&'text str>,
         timestamp: Option<DateTime<FixedOffset>>,
-        image: Option<S>,
-        preview: Option<S>,
-        tags: Option<Vec<S>>,
+        image: Option<&'text str>,
+        preview: Option<&'text str>,
+        tags: Option<Vec<&'text str>>,
     ) -> Self {
         Self {
-            header: header.map(|h| h.into()),
+            header,
             timestamp,
-            image: image.map(|i| i.into()),
-            preview: preview.map(|p| p.into()),
-            tags: tags.map(|t| t.into_iter().map(|tag| tag.into()).collect()),
+            image,
+            preview,
+            tags,
         }
     }
 }
 
-impl Node for Metadata {
+impl<'text> Node<'text> for Metadata<'text> {
     fn serialize(&self) -> String {
         format!(
             "{}{}{}{}{}^^^\n\n",
@@ -66,31 +66,23 @@ impl Node for Metadata {
     }
 }
 
-impl Deserializer for Metadata {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Metadata<'text> {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(metadata) = matcher.get_match("", "^^^\n\n", false) {
-            let mut meta = Self::new::<&str>(None, None, None, None, None);
+            let mut meta = Self::new(None, None, None, None, None);
             metadata.body.split('\n').for_each(|line| {
-                if line.starts_with("header: ") {
-                    meta.header = Some(line.replace("header: ", ""));
-                } else if line.starts_with("timestamp: ") {
-                    meta.timestamp = DateTime::parse_from_str(
-                        line.replace("timestamp: ", "").as_str(),
-                        "%Y-%m-%d %H:%M:%S %z",
-                    )
-                    .ok();
-                } else if line.starts_with("image: ") {
-                    meta.image = Some(line.replace("image: ", ""));
-                } else if line.starts_with("preview: ") {
-                    meta.preview = Some(line.replace("preview: ", ""));
-                } else if line.starts_with("tags: ") {
-                    meta.tags = Some(
-                        line.replace("tags: ", "")
-                            .split(", ")
-                            .map(|tag| tag.to_string())
-                            .collect(),
-                    );
+                if let Some(header) = line.strip_prefix("header: ") {
+                    meta.header = Some(header);
+                } else if let Some(timestamp) = line.strip_prefix("timestamp: ") {
+                    meta.timestamp =
+                        DateTime::parse_from_str(timestamp, "%Y-%m-%d %H:%M:%S %z").ok();
+                } else if let Some(image) = line.strip_prefix("image: ") {
+                    meta.image = Some(image);
+                } else if let Some(preview) = line.strip_prefix("preview: ") {
+                    meta.preview = Some(preview);
+                } else if let Some(tags) = line.strip_prefix("tags: ") {
+                    meta.tags = Some(tags.split(", ").collect());
                 }
             });
             return Some(meta);
@@ -173,7 +165,7 @@ mod tests {
     fn deserialize_empty() {
         assert_eq!(
             Metadata::deserialize("^^^\n\n"),
-            Some(Metadata::new::<&str>(None, None, None, None, None))
+            Some(Metadata::new(None, None, None, None, None))
         );
     }
 
@@ -194,7 +186,7 @@ mod tests {
     fn deserialize_wrong_date() {
         assert_eq!(
             Metadata::deserialize("timestamp: 2022-01-01 00:00:00\n^^^\n\n"),
-            Some(Metadata::new::<&str>(None, None, None, None, None))
+            Some(Metadata::new(None, None, None, None, None))
         );
     }
 }

@@ -6,33 +6,33 @@ use crate::toolkit::{
 
 /// Representation of a regular text
 #[derive(Debug, PartialEq)]
-pub struct Text {
-    pub text: String,
+pub struct Text<'text> {
+    pub text: &'text str,
 }
 
-impl Text {
-    pub fn new<S: Into<String>>(text: S) -> Self {
-        Text { text: text.into() }
+impl<'text> Text<'text> {
+    pub fn new(text: &'text str) -> Self {
+        Text { text }
     }
 }
 
-impl Deserializer for Text {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        Some(Text::new(input.to_string()))
+impl<'text> Deserializer<'text> for Text<'text> {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
+        Some(Text::new(input))
     }
 }
 
-impl Node for Text {
+impl<'text> Node<'text> for Text<'text> {
     fn serialize(&self) -> String {
-        self.text.clone()
+        self.text.to_string()
     }
     fn len(&self) -> usize {
         self.text.len()
     }
 }
 
-impl FallbackNode for Text {
-    fn fallback_node<BranchNodes>() -> DefinitelyNode<BranchNodes>
+impl<'text> FallbackNode<'text> for Text<'text> {
+    fn fallback_node<BranchNodes>() -> DefinitelyNode<'text, BranchNodes>
     where
         Self: Into<BranchNodes>,
     {

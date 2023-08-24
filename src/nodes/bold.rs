@@ -11,31 +11,31 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq)]
-pub enum BoldNodes {
-    Text(Text),
-    I(Italic),
-    S(Strikethrough),
+pub enum BoldNodes<'text> {
+    Text(Text<'text>),
+    I(Italic<'text>),
+    S(Strikethrough<'text>),
 }
 
-impl From<Text> for BoldNodes {
-    fn from(value: Text) -> Self {
+impl<'text> From<Text<'text>> for BoldNodes<'text> {
+    fn from(value: Text<'text>) -> Self {
         BoldNodes::Text(value)
     }
 }
 
-impl From<Italic> for BoldNodes {
-    fn from(value: Italic) -> Self {
+impl<'text> From<Italic<'text>> for BoldNodes<'text> {
+    fn from(value: Italic<'text>) -> Self {
         BoldNodes::I(value)
     }
 }
 
-impl From<Strikethrough> for BoldNodes {
-    fn from(value: Strikethrough) -> Self {
+impl<'text> From<Strikethrough<'text>> for BoldNodes<'text> {
+    fn from(value: Strikethrough<'text>) -> Self {
         BoldNodes::S(value)
     }
 }
 
-impl Node for BoldNodes {
+impl<'text> Node<'text> for BoldNodes<'text> {
     fn serialize(&self) -> String {
         match self {
             BoldNodes::Text(v) => v.serialize(),
@@ -54,30 +54,30 @@ impl Node for BoldNodes {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Bold {
-    pub nodes: Vec<BoldNodes>,
+pub struct Bold<'text> {
+    pub nodes: Vec<BoldNodes<'text>>,
 }
 
-impl Bold {
+impl<'text> Bold<'text> {
     pub fn new() -> Self {
         Self::new_with_nodes(vec![])
     }
 
-    pub fn new_with_nodes(nodes: Vec<BoldNodes>) -> Self {
+    pub fn new_with_nodes(nodes: Vec<BoldNodes<'text>>) -> Self {
         Self { nodes }
     }
 }
 
-impl Branch<BoldNodes> for Bold {
-    fn push<BC: Into<BoldNodes>>(&mut self, element: BC) {
+impl<'text> Branch<'text, BoldNodes<'text>> for Bold<'text> {
+    fn push<BC: Into<BoldNodes<'text>>>(&mut self, element: BC) {
         self.nodes.push(element.into());
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<BoldNodes>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<'text, BoldNodes<'text>>> {
         vec![Italic::maybe_node(), Strikethrough::maybe_node()]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<BoldNodes>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<'text, BoldNodes<'text>>> {
         Some(Box::new(|str| Text::new(str).into()))
     }
     fn get_outer_token_length(&self) -> usize {
@@ -85,13 +85,13 @@ impl Branch<BoldNodes> for Bold {
     }
 }
 
-impl Default for Bold {
+impl<'text> Default for Bold<'text> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Node for Bold {
+impl<'text> Node<'text> for Bold<'text> {
     fn serialize(&self) -> String {
         format!(
             "**{}**",
@@ -107,8 +107,8 @@ impl Node for Bold {
     }
 }
 
-impl Deserializer for Bold {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Bold<'text> {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(bold) = matcher.get_match("**", "**", false) {
             return Self::parse_branch(bold.body, Self::new());

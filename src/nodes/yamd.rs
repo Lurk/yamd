@@ -12,87 +12,87 @@ use super::{
 };
 
 #[derive(Debug, PartialEq)]
-pub enum YamdNodes {
-    P(Paragraph),
-    H(Heading),
-    Image(Image),
-    Code(Code),
-    List(List),
-    ImageGallery(ImageGallery),
-    Highlight(Highlight),
+pub enum YamdNodes<'text> {
+    P(Paragraph<'text>),
+    H(Heading<'text>),
+    Image(Image<'text>),
+    Code(Code<'text>),
+    List(List<'text>),
+    ImageGallery(ImageGallery<'text>),
+    Highlight(Highlight<'text>),
     Divider(Divider),
-    Embed(Embed),
-    CloudinaryImageGallery(CloudinaryImageGallery),
-    Accordion(Accordion),
+    Embed(Embed<'text>),
+    CloudinaryImageGallery(CloudinaryImageGallery<'text>),
+    Accordion(Accordion<'text>),
 }
 
-impl From<Paragraph> for YamdNodes {
-    fn from(value: Paragraph) -> Self {
+impl<'text> From<Paragraph<'text>> for YamdNodes<'text> {
+    fn from(value: Paragraph<'text>) -> Self {
         YamdNodes::P(value)
     }
 }
 
-impl From<Heading> for YamdNodes {
-    fn from(value: Heading) -> Self {
+impl<'text> From<Heading<'text>> for YamdNodes<'text> {
+    fn from(value: Heading<'text>) -> Self {
         YamdNodes::H(value)
     }
 }
 
-impl From<Image> for YamdNodes {
-    fn from(value: Image) -> Self {
+impl<'text> From<Image<'text>> for YamdNodes<'text> {
+    fn from(value: Image<'text>) -> Self {
         YamdNodes::Image(value)
     }
 }
 
-impl From<Code> for YamdNodes {
-    fn from(value: Code) -> Self {
+impl<'text> From<Code<'text>> for YamdNodes<'text> {
+    fn from(value: Code<'text>) -> Self {
         YamdNodes::Code(value)
     }
 }
 
-impl From<List> for YamdNodes {
-    fn from(value: List) -> Self {
+impl<'text> From<List<'text>> for YamdNodes<'text> {
+    fn from(value: List<'text>) -> Self {
         YamdNodes::List(value)
     }
 }
 
-impl From<ImageGallery> for YamdNodes {
-    fn from(value: ImageGallery) -> Self {
+impl<'text> From<ImageGallery<'text>> for YamdNodes<'text> {
+    fn from(value: ImageGallery<'text>) -> Self {
         YamdNodes::ImageGallery(value)
     }
 }
 
-impl From<Highlight> for YamdNodes {
-    fn from(value: Highlight) -> Self {
+impl<'text> From<Highlight<'text>> for YamdNodes<'text> {
+    fn from(value: Highlight<'text>) -> Self {
         YamdNodes::Highlight(value)
     }
 }
 
-impl From<Divider> for YamdNodes {
+impl From<Divider> for YamdNodes<'_> {
     fn from(value: Divider) -> Self {
         YamdNodes::Divider(value)
     }
 }
 
-impl From<Embed> for YamdNodes {
-    fn from(value: Embed) -> Self {
+impl<'text> From<Embed<'text>> for YamdNodes<'text> {
+    fn from(value: Embed<'text>) -> Self {
         YamdNodes::Embed(value)
     }
 }
 
-impl From<CloudinaryImageGallery> for YamdNodes {
-    fn from(value: CloudinaryImageGallery) -> Self {
+impl<'text> From<CloudinaryImageGallery<'text>> for YamdNodes<'text> {
+    fn from(value: CloudinaryImageGallery<'text>) -> Self {
         YamdNodes::CloudinaryImageGallery(value)
     }
 }
 
-impl From<Accordion> for YamdNodes {
-    fn from(value: Accordion) -> Self {
+impl<'text> From<Accordion<'text>> for YamdNodes<'text> {
+    fn from(value: Accordion<'text>) -> Self {
         YamdNodes::Accordion(value)
     }
 }
 
-impl Node for YamdNodes {
+impl Node<'_> for YamdNodes<'_> {
     fn serialize(&self) -> String {
         match self {
             YamdNodes::P(node) => node.serialize(),
@@ -127,26 +127,26 @@ impl Node for YamdNodes {
 
 /// Yamd is a parent node for every node.
 #[derive(Debug, PartialEq)]
-pub struct Yamd {
-    pub metadata: Option<Metadata>,
-    pub nodes: Vec<YamdNodes>,
+pub struct Yamd<'text> {
+    pub metadata: Option<Metadata<'text>>,
+    pub nodes: Vec<YamdNodes<'text>>,
 }
 
-impl Yamd {
-    pub fn new(metadata: Option<Metadata>) -> Self {
+impl<'text> Yamd<'text> {
+    pub fn new(metadata: Option<Metadata<'text>>) -> Self {
         Self::new_with_nodes(metadata, vec![])
     }
 
-    pub fn new_with_nodes(metadata: Option<Metadata>, nodes: Vec<YamdNodes>) -> Self {
+    pub fn new_with_nodes(metadata: Option<Metadata<'text>>, nodes: Vec<YamdNodes<'text>>) -> Self {
         Self { metadata, nodes }
     }
 }
-impl Branch<YamdNodes> for Yamd {
-    fn push<TC: Into<YamdNodes>>(&mut self, element: TC) {
+impl<'text> Branch<'text, YamdNodes<'text>> for Yamd<'text> {
+    fn push<TC: Into<YamdNodes<'text>>>(&mut self, element: TC) {
         self.nodes.push(element.into());
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<YamdNodes>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<'text, YamdNodes<'text>>> {
         vec![
             Heading::maybe_node(),
             Image::maybe_node(),
@@ -161,7 +161,7 @@ impl Branch<YamdNodes> for Yamd {
         ]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<YamdNodes>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<'text, YamdNodes<'text>>> {
         Some(Paragraph::fallback_node())
     }
 
@@ -170,21 +170,21 @@ impl Branch<YamdNodes> for Yamd {
     }
 }
 
-impl Deserializer for Yamd {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Yamd<'text> {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let metadata = Metadata::deserialize(input);
         let metadata_len = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
         Self::parse_branch(&input[metadata_len..], Self::new(metadata))
     }
 }
 
-impl Default for Yamd {
+impl Default for Yamd<'_> {
     fn default() -> Self {
         Self::new(None)
     }
 }
 
-impl Node for Yamd {
+impl Node<'_> for Yamd<'_> {
     fn serialize(&self) -> String {
         format!(
             "{}{}",
@@ -345,19 +345,19 @@ end"#;
                         ]
                     )
                     .into(),
-                    Image::new(false, 'a', 'u').into(),
+                    Image::new(false, "a", "u").into(),
                     ImageGallery::new_with_nodes(
+                        false,
                         vec![
                             Image::new(true, "a", "u").into(),
                             Image::new(true, "a2", "u2").into()
                         ],
-                        false
                     )
                     .into(),
                     Highlight::new_with_nodes(
+                        false,
                         Some("H"),
                         Some("I"),
-                        false,
                         vec![
                             Paragraph::new_with_nodes(false, vec![Strikethrough::new("s").into()])
                                 .into(),
@@ -392,7 +392,7 @@ end"#;
                         .into()]
                     )
                     .into(),
-                    Embed::new("youtube", "123", false).into(),
+                    Embed::new(false, "youtube", "123").into(),
                     CloudinaryImageGallery::new("username", "tag", false).into(),
                     Accordion::new_with_nodes(
                         false,
@@ -436,19 +436,19 @@ end"#;
                         ]
                     )
                     .into(),
-                    Image::new(false, 'a', 'u').into(),
+                    Image::new(false, "a", "u").into(),
                     ImageGallery::new_with_nodes(
+                        false,
                         vec![
                             Image::new(true, "a", "u").into(),
                             Image::new(true, "a2", "u2").into()
                         ],
-                        false
                     )
                     .into(),
                     Highlight::new_with_nodes(
+                        false,
                         Some("H"),
                         Some("I"),
-                        false,
                         vec![
                             Paragraph::new_with_nodes(false, vec![Strikethrough::new("s").into()])
                                 .into(),
@@ -485,7 +485,7 @@ end"#;
                         .into()]
                     )
                     .into(),
-                    Embed::new("youtube", "123", false).into(),
+                    Embed::new(false, "youtube", "123").into(),
                     CloudinaryImageGallery::new("username", "tag", false).into(),
                     Accordion::new_with_nodes(
                         false,

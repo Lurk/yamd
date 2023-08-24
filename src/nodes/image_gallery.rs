@@ -8,11 +8,11 @@ use crate::toolkit::{
 use super::image::Image;
 
 #[derive(Debug, PartialEq)]
-pub enum ImageGalleryNodes {
-    Image(Image),
+pub enum ImageGalleryNodes<'text> {
+    Image(Image<'text>),
 }
 
-impl Node for ImageGalleryNodes {
+impl<'text> Node<'text> for ImageGalleryNodes<'text> {
     fn serialize(&self) -> String {
         match self {
             ImageGalleryNodes::Image(node) => node.serialize(),
@@ -25,8 +25,8 @@ impl Node for ImageGalleryNodes {
     }
 }
 
-impl From<Image> for ImageGalleryNodes {
-    fn from(value: Image) -> Self {
+impl<'text> From<Image<'text>> for ImageGalleryNodes<'text> {
+    fn from(value: Image<'text>) -> Self {
         ImageGalleryNodes::Image(value)
     }
 }
@@ -34,17 +34,17 @@ impl From<Image> for ImageGalleryNodes {
 /// Image Gallery node is a node that contains multiple Image nodes
 /// it starts with `!!!\n` and ends with `\n!!!`
 #[derive(Debug, PartialEq)]
-pub struct ImageGallery {
-    pub nodes: Vec<ImageGalleryNodes>,
+pub struct ImageGallery<'text> {
+    pub nodes: Vec<ImageGalleryNodes<'text>>,
     consumed_all_input: bool,
 }
 
-impl ImageGallery {
+impl<'text> ImageGallery<'text> {
     pub fn new(consumed_all_input: bool) -> Self {
-        Self::new_with_nodes(vec![], consumed_all_input)
+        Self::new_with_nodes(consumed_all_input, vec![])
     }
 
-    pub fn new_with_nodes(nodes: Vec<ImageGalleryNodes>, consumed_all_input: bool) -> Self {
+    pub fn new_with_nodes(consumed_all_input: bool, nodes: Vec<ImageGalleryNodes<'text>>) -> Self {
         Self {
             nodes,
             consumed_all_input,
@@ -52,7 +52,7 @@ impl ImageGallery {
     }
 }
 
-impl Node for ImageGallery {
+impl<'text> Node<'text> for ImageGallery<'text> {
     fn serialize(&self) -> String {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
         format!(
@@ -69,8 +69,8 @@ impl Node for ImageGallery {
     }
 }
 
-impl Deserializer for ImageGallery {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for ImageGallery<'text> {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(image_gallery) = matcher.get_match("!!!\n", "!!!", false) {
             return Self::parse_branch(
@@ -82,16 +82,16 @@ impl Deserializer for ImageGallery {
     }
 }
 
-impl Branch<ImageGalleryNodes> for ImageGallery {
-    fn push<CanBeNode: Into<ImageGalleryNodes>>(&mut self, node: CanBeNode) {
+impl<'text> Branch<'text, ImageGalleryNodes<'text>> for ImageGallery<'text> {
+    fn push<CanBeNode: Into<ImageGalleryNodes<'text>>>(&mut self, node: CanBeNode) {
         self.nodes.push(node.into())
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<ImageGalleryNodes>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<'text, ImageGalleryNodes<'text>>> {
         vec![Image::maybe_node()]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<ImageGalleryNodes>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<'text, ImageGalleryNodes<'text>>> {
         None
     }
 
@@ -117,22 +117,22 @@ mod tests {
     fn serialize() {
         assert_eq!(
             ImageGallery::new_with_nodes(
+                true,
                 vec![
                     Image::new(true, "a", "u").into(),
                     Image::new(true, "a2", "u2").into()
                 ],
-                true
             )
             .serialize(),
             "!!!\n![a](u)\n![a2](u2)\n!!!"
         );
         assert_eq!(
             ImageGallery::new_with_nodes(
+                false,
                 vec![
                     Image::new(true, "a", "u").into(),
                     Image::new(true, "a2", "u2").into()
                 ],
-                false
             )
             .serialize(),
             "!!!\n![a](u)\n![a2](u2)\n!!!\n\n"
@@ -143,22 +143,22 @@ mod tests {
     fn len() {
         assert_eq!(
             ImageGallery::new_with_nodes(
+                true,
                 vec![
                     Image::new(true, "a", "u").into(),
                     Image::new(true, "a2", "u2").into()
                 ],
-                true
             )
             .len(),
             25
         );
         assert_eq!(
             ImageGallery::new_with_nodes(
+                false,
                 vec![
                     Image::new(true, "a", "u").into(),
                     Image::new(true, "a2", "u2").into()
                 ],
-                false
             )
             .len(),
             27
@@ -170,21 +170,21 @@ mod tests {
         assert_eq!(
             ImageGallery::deserialize("!!!\n![a](u)\n![a2](u2)\n!!!"),
             Some(ImageGallery::new_with_nodes(
+                true,
                 vec![
                     Image::new(true, "a", "u").into(),
                     Image::new(true, "a2", "u2").into()
                 ],
-                true
             ))
         );
         assert_eq!(
             ImageGallery::deserialize("!!!\n![a](u)\n![a2](u2)\n!!!\n\n"),
             Some(ImageGallery::new_with_nodes(
+                false,
                 vec![
                     Image::new(true, "a", "u").into(),
                     Image::new(true, "a2", "u2").into()
                 ],
-                false
             ))
         );
     }

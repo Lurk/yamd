@@ -1,23 +1,23 @@
 use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
 #[derive(Debug, PartialEq)]
-pub struct Image {
-    pub alt: String,
-    pub url: String,
+pub struct Image<'text> {
+    pub alt: &'text str,
+    pub url: &'text str,
     consumed_all_input: bool,
 }
 
-impl Image {
-    pub fn new<S: Into<String>>(consumed_all_input: bool, alt: S, url: S) -> Self {
+impl<'text> Image<'text> {
+    pub fn new(consumed_all_input: bool, alt: &'text str, url: &'text str) -> Self {
         Self {
-            alt: alt.into(),
-            url: url.into(),
+            alt,
+            url,
             consumed_all_input,
         }
     }
 }
 
-impl Node for Image {
+impl<'text> Node<'text> for Image<'text> {
     fn serialize(&self) -> String {
         let end = if self.consumed_all_input {
             "\n"
@@ -32,8 +32,8 @@ impl Node for Image {
     }
 }
 
-impl Deserializer for Image {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Image<'text> {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(alt) = matcher.get_match("![", "]", false) {
             if let Some(url) = matcher.get_match("(", ")\n", false) {
@@ -54,19 +54,19 @@ mod tests {
     #[test]
     fn serializer() {
         assert_eq!(
-            Image::new(true, 'a', 'u').serialize(),
+            Image::new(true, "a", "u").serialize(),
             String::from("![a](u)\n")
         );
         assert_eq!(
-            Image::new(false, 'a', 'u').serialize(),
+            Image::new(false, "a", "u").serialize(),
             String::from("![a](u)\n\n")
         )
     }
 
     #[test]
     fn len() {
-        assert_eq!(Image::new(true, 'a', 'u').len(), 8);
-        assert_eq!(Image::new(false, 'a', 'u').len(), 9);
+        assert_eq!(Image::new(true, "a", "u").len(), 8);
+        assert_eq!(Image::new(false, "a", "u").len(), 9);
     }
 
     #[test]

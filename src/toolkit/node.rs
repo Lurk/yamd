@@ -3,12 +3,12 @@ use super::{
     deserializer::{Deserializer, MaybeNode},
 };
 
-pub trait Node {
+pub trait Node<'text> {
     fn serialize(&self) -> String;
     fn len(&self) -> usize;
-    fn maybe_node<BranchNodes>() -> MaybeNode<BranchNodes>
+    fn maybe_node<BranchNodes>() -> MaybeNode<'text, BranchNodes>
     where
-        Self: Sized + Deserializer + Into<BranchNodes>,
+        Self: Sized + Deserializer<'text> + Into<BranchNodes>,
     {
         Box::new(|input, ctx| {
             if let Some(node) = Self::deserialize_with_context(input, ctx) {

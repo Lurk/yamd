@@ -8,11 +8,11 @@ use crate::toolkit::{
 use super::accordion_tab::AccordionTab;
 
 #[derive(Debug, PartialEq)]
-pub enum AccordionNodes {
-    AccordionTab(AccordionTab),
+pub enum AccordionNodes<'text> {
+    AccordionTab(AccordionTab<'text>),
 }
 
-impl Node for AccordionNodes {
+impl Node<'_> for AccordionNodes<'_> {
     fn serialize(&self) -> String {
         match self {
             AccordionNodes::AccordionTab(tab) => tab.serialize(),
@@ -26,24 +26,24 @@ impl Node for AccordionNodes {
     }
 }
 
-impl From<AccordionTab> for AccordionNodes {
-    fn from(tab: AccordionTab) -> Self {
+impl<'text> From<AccordionTab<'text>> for AccordionNodes<'text> {
+    fn from(tab: AccordionTab<'text>) -> Self {
         AccordionNodes::AccordionTab(tab)
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Accordion {
+pub struct Accordion<'text> {
     consumed_all_input: bool,
-    pub nodes: Vec<AccordionNodes>,
+    pub nodes: Vec<AccordionNodes<'text>>,
 }
 
-impl Accordion {
+impl<'text> Accordion<'text> {
     pub fn new(consumed_all_input: bool) -> Self {
         Self::new_with_nodes(consumed_all_input, vec![])
     }
 
-    pub fn new_with_nodes(consumed_all_input: bool, nodes: Vec<AccordionNodes>) -> Self {
+    pub fn new_with_nodes(consumed_all_input: bool, nodes: Vec<AccordionNodes<'text>>) -> Self {
         Accordion {
             consumed_all_input,
             nodes,
@@ -51,7 +51,7 @@ impl Accordion {
     }
 }
 
-impl Node for Accordion {
+impl Node<'_> for Accordion<'_> {
     fn serialize(&self) -> String {
         format!(
             "///\n{nodes}\n\\\\\\{end}",
@@ -70,16 +70,16 @@ impl Node for Accordion {
     }
 }
 
-impl Branch<AccordionNodes> for Accordion {
-    fn push<CanBeNode: Into<AccordionNodes>>(&mut self, node: CanBeNode) {
+impl<'text> Branch<'text, AccordionNodes<'text>> for Accordion<'text> {
+    fn push<CanBeNode: Into<AccordionNodes<'text>>>(&mut self, node: CanBeNode) {
         self.nodes.push(node.into());
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<AccordionNodes>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<'text, AccordionNodes<'text>>> {
         vec![AccordionTab::maybe_node()]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<AccordionNodes>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<'text, AccordionNodes<'text>>> {
         None
     }
 
@@ -88,8 +88,8 @@ impl Branch<AccordionNodes> for Accordion {
     }
 }
 
-impl Deserializer for Accordion {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self>
+impl<'text> Deserializer<'text> for Accordion<'text> {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self>
     where
         Self: Sized,
     {

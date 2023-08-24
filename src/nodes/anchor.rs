@@ -6,21 +6,18 @@ use crate::{
 
 /// Representation of an anchor
 #[derive(Debug, PartialEq)]
-pub struct Anchor {
-    pub text: String,
-    pub url: String,
+pub struct Anchor<'text> {
+    pub text: &'text str,
+    pub url: &'text str,
 }
 
-impl Anchor {
-    pub fn new<S: Into<String>>(text: S, url: S) -> Self {
-        Anchor {
-            text: text.into(),
-            url: url.into(),
-        }
+impl<'text> Anchor<'text> {
+    pub fn new(text: &'text str, url: &'text str) -> Self {
+        Anchor { text, url }
     }
 }
 
-impl Node for Anchor {
+impl<'text> Node<'text> for Anchor<'text> {
     fn serialize(&self) -> String {
         format!("[{}]({})", self.text, self.url)
     }
@@ -29,8 +26,8 @@ impl Node for Anchor {
     }
 }
 
-impl Deserializer for Anchor {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
+impl<'text> Deserializer<'text> for Anchor<'text> {
+    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(text) = matcher.get_match("[", "]", false) {
             if let Some(url) = matcher.get_match("(", ")", false) {
