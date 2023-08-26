@@ -333,7 +333,7 @@ end"#;
                     ),
                     Some("image"),
                     Some("preview"),
-                    Some(vec!["tag1", "tag2"]),
+                    Some(vec!["tag1".to_string(), "tag2".to_string()]),
                 )),
                 vec![
                     Heading::new(false, "hello", 1).into(),
@@ -424,7 +424,7 @@ end"#;
                     ),
                     Some("image"),
                     Some("preview"),
-                    Some(vec!["tag1", "tag2"]),
+                    Some(vec!["tag1".to_string(), "tag2".to_string()]),
                 )),
                 vec![
                     Heading::new(false, "hello", 1).into(),

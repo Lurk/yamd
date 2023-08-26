@@ -7,7 +7,7 @@ pub struct Metadata {
     pub timestamp: Option<DateTime<FixedOffset>>,
     pub image: Option<String>,
     pub preview: Option<String>,
-    pub tags: Option<Vec<String>>,
+    pub tags: Vec<String>,
 }
 
 impl Default for Metadata {
@@ -17,7 +17,7 @@ impl Default for Metadata {
             timestamp: None,
             image: None,
             preview: None,
-            tags: None,
+            tags: vec![],
         }
     }
 }
@@ -28,14 +28,14 @@ impl Metadata {
         timestamp: Option<DateTime<FixedOffset>>,
         image: Option<S>,
         preview: Option<S>,
-        tags: Option<Vec<S>>,
+        tags: Option<Vec<String>>,
     ) -> Self {
         Self {
             header: header.map(|h| h.into()),
             timestamp,
             image: image.map(|i| i.into()),
             preview: preview.map(|p| p.into()),
-            tags: tags.map(|t| t.into_iter().map(|tag| tag.into()).collect()),
+            tags: tags.unwrap_or(vec![]),
         }
     }
 }
@@ -59,9 +59,11 @@ impl Node for Metadata {
             self.preview
                 .as_ref()
                 .map_or("".to_string(), |p| format!("preview: {p}\n")),
-            self.tags
-                .as_ref()
-                .map_or("".to_string(), |t| format!("tags: {}\n", t.join(", "))),
+            if self.tags.is_empty() {
+                "".to_string()
+            } else {
+                format!("tags: {}\n", self.tags.join(", "))
+            },
         )
     }
 
@@ -73,11 +75,17 @@ impl Node for Metadata {
                 .map_or(0, |t| t.to_string().len() + 12)
             + self.image.as_ref().map_or(0, |i| i.len() + 8)
             + self.preview.as_ref().map_or(0, |p| p.len() + 10)
-            + self.tags.as_ref().map_or(0, |t| {
-                t.iter().map(|tag| tag.len()).sum::<usize>()
+            + if self.tags.is_empty() {
+                0
+            } else {
+                self.tags.iter().map(|tag| tag.len()).sum::<usize>()
                     + 7
-                    + if t.len() > 1 { (t.len() - 1) * 2 } else { 0 }
-            });
+                    + if self.tags.len() > 1 {
+                        (self.tags.len() - 1) * 2
+                    } else {
+                        0
+                    }
+            };
         if len > 0 {
             len + 5
         } else {
@@ -105,12 +113,11 @@ impl Deserializer for Metadata {
                 } else if line.starts_with("preview: ") {
                     meta.preview = Some(line.replace("preview: ", ""));
                 } else if line.starts_with("tags: ") {
-                    meta.tags = Some(
-                        line.replace("tags: ", "")
-                            .split(", ")
-                            .map(|tag| tag.to_string())
-                            .collect(),
-                    );
+                    meta.tags = line
+                        .replace("tags: ", "")
+                        .split(", ")
+                        .map(|tag| tag.to_string())
+                        .collect();
                 }
             });
             return Some(meta);
@@ -133,7 +140,7 @@ mod tests {
             ),
             Some("image"),
             Some("preview"),
-            Some(vec!["tag1", "tag2"]),
+            Some(vec!["tag1".to_string(), "tag2".to_string()]),
         );
         assert_eq!(
             metadata.serialize(),
@@ -151,7 +158,7 @@ mod tests {
             ),
             Some("image"),
             Some("preview"),
-            Some(vec!["tag1", "tag2"]),
+            Some(vec!["tag1".to_string(), "tag2".to_string()]),
         );
         assert_eq!(metadata.len(), metadata.serialize().len());
     }
@@ -166,7 +173,7 @@ mod tests {
             ),
             Some("image"),
             Some("preview"),
-            Some(vec!["tag1"]),
+            Some(vec!["tag1".to_string()]),
         );
         assert_eq!(metadata.len(), metadata.serialize().len());
     }
@@ -181,7 +188,7 @@ mod tests {
             ),
             Some("image"),
             Some("preview"),
-            Some(vec!["tag1", "tag2"]),
+            Some(vec!["tag1".to_string(), "tag2".to_string()]),
         );
         assert_eq!(
             Metadata::deserialize(metadata.serialize().as_str()),
