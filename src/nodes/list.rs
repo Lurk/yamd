@@ -14,11 +14,11 @@ pub enum ListTypes {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum ListNodes<'text> {
-    ListItem(ListItem<'text>),
+pub enum ListNodes {
+    ListItem(ListItem),
 }
 
-impl<'text> Node<'text> for ListNodes<'text> {
+impl Node for ListNodes {
     fn serialize(&self) -> String {
         match self {
             ListNodes::ListItem(node) => node.serialize(),
@@ -31,21 +31,21 @@ impl<'text> Node<'text> for ListNodes<'text> {
     }
 }
 
-impl<'text> From<ListItem<'text>> for ListNodes<'text> {
-    fn from(value: ListItem<'text>) -> Self {
+impl From<ListItem> for ListNodes {
+    fn from(value: ListItem) -> Self {
         ListNodes::ListItem(value)
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub struct List<'text> {
+pub struct List {
     pub list_type: ListTypes,
     pub level: usize,
-    pub nodes: Vec<ListNodes<'text>>,
+    pub nodes: Vec<ListNodes>,
     consumed_all_input: bool,
 }
 
-impl<'text> List<'text> {
+impl List {
     pub fn new(consumed_all_input: bool, list_type: ListTypes, level: usize) -> Self {
         Self::new_with_nodes(consumed_all_input, list_type, level, vec![])
     }
@@ -54,7 +54,7 @@ impl<'text> List<'text> {
         consumed_all_input: bool,
         list_type: ListTypes,
         level: usize,
-        nodes: Vec<ListNodes<'text>>,
+        nodes: Vec<ListNodes>,
     ) -> Self {
         Self {
             list_type,
@@ -87,7 +87,7 @@ impl<'text> List<'text> {
     }
 }
 
-impl<'text> Node<'text> for List<'text> {
+impl Node for List {
     fn serialize(&self) -> String {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
         format!(
@@ -107,8 +107,8 @@ impl<'text> Node<'text> for List<'text> {
     }
 }
 
-impl<'text> Deserializer<'text> for List<'text> {
-    fn deserialize_with_context(input: &'text str, ctx: Option<Context>) -> Option<Self> {
+impl Deserializer for List {
+    fn deserialize_with_context(input: &str, ctx: Option<Context>) -> Option<Self> {
         let level = Self::get_level_from_context(&ctx);
         let mut matcher = Matcher::new(input);
         if let Some(unordered_list) =
@@ -134,16 +134,16 @@ impl<'text> Deserializer<'text> for List<'text> {
     }
 }
 
-impl<'text> Branch<'text, ListNodes<'text>> for List<'text> {
-    fn push<CanBeNode: Into<ListNodes<'text>>>(&mut self, node: CanBeNode) {
+impl Branch<ListNodes> for List {
+    fn push<CanBeNode: Into<ListNodes>>(&mut self, node: CanBeNode) {
         self.nodes.push(node.into())
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<'text, ListNodes<'text>>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<ListNodes>> {
         vec![ListItem::maybe_node()]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<'text, ListNodes<'text>>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<ListNodes>> {
         None
     }
 

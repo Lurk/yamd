@@ -1,23 +1,23 @@
-use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
+use crate::toolkit::{deserializer::Deserializer, matcher::Matcher, node::Node};
 
 #[derive(Debug, PartialEq)]
-pub struct Embed<'text> {
-    pub url: &'text str,
-    pub kind: &'text str,
+pub struct Embed {
+    pub url: String,
+    pub kind: String,
     consumed_all_input: bool,
 }
 
-impl<'text> Embed<'text> {
-    pub fn new(consumed_all_input: bool, kind: &'text str, url: &'text str) -> Self {
+impl Embed {
+    pub fn new<S: Into<String>>(kind: S, url: S, consumed_all_input: bool) -> Self {
         Self {
-            kind,
-            url,
+            kind: kind.into(),
+            url: url.into(),
             consumed_all_input,
         }
     }
 }
 
-impl<'text> Node<'text> for Embed<'text> {
+impl Node for Embed {
     fn serialize(&self) -> String {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
         format!("{{{{{}|{}}}}}{end}", self.kind, self.url)
@@ -29,14 +29,21 @@ impl<'text> Node<'text> for Embed<'text> {
     }
 }
 
-impl<'text> Deserializer<'text> for Embed<'text> {
-    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
+impl Deserializer for Embed {
+    fn deserialize_with_context(
+        input: &str,
+        _: Option<crate::toolkit::context::Context>,
+    ) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(embed) = matcher.get_match("{{", "}}", false) {
             let mut embed = embed.body.split('|');
             if let (Some(kind), Some(url)) = (embed.next(), embed.next()) {
                 let consumed_all_input = matcher.get_match("\n\n", "", false).is_none();
-                return Some(Self::new(consumed_all_input, kind, url));
+                return Some(Self::new(
+                    kind.to_string(),
+                    url.to_string(),
+                    consumed_all_input,
+                ));
             }
         }
         None
@@ -54,23 +61,23 @@ mod tests {
     fn serializer() {
         assert_eq!(
             Embed::new(
-                false,
                 "youtube",
                 "https://www.youtube.com/embed/wsfdjlkjsdf",
+                false,
             )
             .serialize(),
             "{{youtube|https://www.youtube.com/embed/wsfdjlkjsdf}}\n\n"
         );
         assert_eq!(
-            Embed::new(true, "youtube", "https://www.youtube.com/embed/wsfdjlkjsdf").serialize(),
+            Embed::new("youtube", "https://www.youtube.com/embed/wsfdjlkjsdf", true).serialize(),
             "{{youtube|https://www.youtube.com/embed/wsfdjlkjsdf}}"
         );
     }
 
     #[test]
     fn len() {
-        assert_eq!(Embed::new(false, "y", "h").len(), 9);
-        assert_eq!(Embed::new(true, "y", "h").len(), 7);
+        assert_eq!(Embed::new("y", "h", false,).len(), 9);
+        assert_eq!(Embed::new("y", "h", true).len(), 7);
     }
 
     #[test]
@@ -81,9 +88,9 @@ mod tests {
                 None
             ),
             Some(Embed::new(
-                false,
                 "youtube",
                 "https://www.youtube.com/embed/wsfdjlkjsdf",
+                false,
             ))
         );
         assert_eq!(
@@ -92,9 +99,9 @@ mod tests {
                 None
             ),
             Some(Embed::new(
-                true,
                 "youtube",
                 "https://www.youtube.com/embed/wsfdjlkjsdf",
+                true,
             ))
         );
     }

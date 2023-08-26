@@ -1,29 +1,29 @@
 use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
 #[derive(Debug, PartialEq)]
-pub struct Heading<'text> {
+pub struct Heading {
     pub level: u8,
-    pub text: &'text str,
+    pub text: String,
     consumed_all_input: bool,
 }
 
-impl<'text> Heading<'text> {
-    pub fn new(consumed_all_input: bool, text: &'text str, level: u8) -> Self {
+impl Heading {
+    pub fn new<S: Into<String>>(consumed_all_input: bool, text: S, level: u8) -> Self {
         let normalized_level = match level {
             0 => 1,
             7.. => 6,
             l => l,
         };
         Heading {
-            text,
+            text: text.into(),
             level: normalized_level,
             consumed_all_input,
         }
     }
 }
 
-impl<'text> Deserializer<'text> for Heading<'text> {
-    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
+impl Deserializer for Heading {
+    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let start_tokens = ["###### ", "##### ", "#### ", "### ", "## ", "# "];
 
         for (i, start_token) in start_tokens.iter().enumerate() {
@@ -41,7 +41,7 @@ impl<'text> Deserializer<'text> for Heading<'text> {
     }
 }
 
-impl Node<'_> for Heading<'_> {
+impl Node for Heading {
     fn serialize(&self) -> String {
         let level = String::from('#').repeat(self.level as usize);
         let end = if self.consumed_all_input { "" } else { "\n\n" };

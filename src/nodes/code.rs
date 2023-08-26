@@ -1,23 +1,23 @@
 use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
 #[derive(Debug, PartialEq)]
-pub struct Code<'text> {
-    pub lang: &'text str,
-    pub code: &'text str,
+pub struct Code {
+    pub lang: String,
+    pub code: String,
     consumed_all_input: bool,
 }
 
-impl<'text> Code<'text> {
-    pub fn new(consumed_all_input: bool, lang: &'text str, code: &'text str) -> Self {
+impl Code {
+    pub fn new<S: Into<String>>(consumed_all_input: bool, lang: S, code: S) -> Self {
         Self {
-            lang,
-            code,
+            lang: lang.into(),
+            code: code.into(),
             consumed_all_input,
         }
     }
 }
 
-impl<'text> Node<'text> for Code<'text> {
+impl Node for Code {
     fn serialize(&self) -> String {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
         format!("```{}\n{}\n```{end}", self.lang, self.code)
@@ -28,8 +28,8 @@ impl<'text> Node<'text> for Code<'text> {
     }
 }
 
-impl<'text> Deserializer<'text> for Code<'text> {
-    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
+impl Deserializer for Code {
+    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(lang) = matcher.get_match("```", "\n", false) {
             if let Some(code) = matcher.get_match("", "\n```", false) {
@@ -63,8 +63,8 @@ mod tests {
 
     #[test]
     fn len() {
-        assert_eq!(Code::new(true, "r", "b").len(), 10);
-        assert_eq!(Code::new(false, "r", "b").len(), 12);
+        assert_eq!(Code::new(true, 'r', 'b').len(), 10);
+        assert_eq!(Code::new(false, 'r', 'b').len(), 12);
     }
 
     #[test]

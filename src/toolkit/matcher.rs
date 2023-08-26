@@ -17,8 +17,8 @@ impl<'input> Matcher<'input> {
 
     pub fn get_match(
         &mut self,
-        start_sequence: &str,
-        end_sequence: &str,
+        start_sequence: &'input str,
+        end_sequence: &'input str,
         match_end_of_input: bool,
     ) -> Option<Match<'input>> {
         if !match_end_of_input
@@ -64,8 +64,8 @@ impl<'input> Matcher<'input> {
 
     fn get_unbalanced_match(
         &mut self,
-        start_sequence: &str,
-        end_sequence: &str,
+        start_sequence: &'input str,
+        end_sequence: &'input str,
         match_end_of_input: bool,
     ) -> Option<Match<'input>> {
         if let Some((start_token_end_index, start_token_lenght)) =
@@ -93,8 +93,8 @@ impl<'input> Matcher<'input> {
 
     fn get_balanced_match(
         &mut self,
-        start_sequence: &str,
-        end_sequence: &str,
+        start_sequence: &'input str,
+        end_sequence: &'input str,
     ) -> Option<Match<'input>> {
         let mut balance = 1;
         if let Some((start_token_end_index, _)) =
