@@ -217,4 +217,14 @@ mod tests {
             Some(Metadata::new::<&str>(None, None, None, None, None))
         );
     }
+
+    #[test]
+    fn default() {
+        assert_eq!(
+            Metadata::default(),
+            Metadata::new::<&str>(None, None, None, None, None)
+        );
+        assert_eq!(Metadata::default().serialize(), "");
+        assert_eq!(Metadata::default().len(), 0);
+    }
 }
