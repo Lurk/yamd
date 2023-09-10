@@ -11,52 +11,52 @@ use super::{
 };
 
 #[derive(Debug, PartialEq)]
-pub enum ListItemContentNodes<'text> {
-    A(Anchor<'text>),
-    B(Bold<'text>),
-    I(Italic<'text>),
-    S(Strikethrough<'text>),
-    Text(Text<'text>),
-    InlineCode(InlineCode<'text>),
+pub enum ListItemContentNodes {
+    A(Anchor),
+    B(Bold),
+    I(Italic),
+    S(Strikethrough),
+    Text(Text),
+    InlineCode(InlineCode),
 }
 
-impl<'text> From<Anchor<'text>> for ListItemContentNodes<'text> {
-    fn from(value: Anchor<'text>) -> Self {
+impl From<Anchor> for ListItemContentNodes {
+    fn from(value: Anchor) -> Self {
         ListItemContentNodes::A(value)
     }
 }
 
-impl<'text> From<Bold<'text>> for ListItemContentNodes<'text> {
-    fn from(value: Bold<'text>) -> Self {
+impl From<Bold> for ListItemContentNodes {
+    fn from(value: Bold) -> Self {
         ListItemContentNodes::B(value)
     }
 }
 
-impl<'text> From<Italic<'text>> for ListItemContentNodes<'text> {
-    fn from(value: Italic<'text>) -> Self {
+impl From<Italic> for ListItemContentNodes {
+    fn from(value: Italic) -> Self {
         ListItemContentNodes::I(value)
     }
 }
 
-impl<'text> From<Strikethrough<'text>> for ListItemContentNodes<'text> {
-    fn from(value: Strikethrough<'text>) -> Self {
+impl From<Strikethrough> for ListItemContentNodes {
+    fn from(value: Strikethrough) -> Self {
         ListItemContentNodes::S(value)
     }
 }
 
-impl<'text> From<Text<'text>> for ListItemContentNodes<'text> {
-    fn from(value: Text<'text>) -> Self {
+impl From<Text> for ListItemContentNodes {
+    fn from(value: Text) -> Self {
         ListItemContentNodes::Text(value)
     }
 }
 
-impl<'text> From<InlineCode<'text>> for ListItemContentNodes<'text> {
-    fn from(value: InlineCode<'text>) -> Self {
+impl From<InlineCode> for ListItemContentNodes {
+    fn from(value: InlineCode) -> Self {
         ListItemContentNodes::InlineCode(value)
     }
 }
 
-impl Node<'_> for ListItemContentNodes<'_> {
+impl Node for ListItemContentNodes {
     fn serialize(&self) -> String {
         match self {
             ListItemContentNodes::A(node) => node.serialize(),
@@ -81,12 +81,12 @@ impl Node<'_> for ListItemContentNodes<'_> {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct ListItemContent<'text> {
+pub struct ListItemContent {
     consumed_all_input: bool,
-    pub nodes: Vec<ListItemContentNodes<'text>>,
+    pub nodes: Vec<ListItemContentNodes>,
 }
 
-impl<'text> Node<'text> for ListItemContent<'text> {
+impl Node for ListItemContent {
     fn serialize(&self) -> String {
         format!(
             "{}{}",
@@ -104,14 +104,11 @@ impl<'text> Node<'text> for ListItemContent<'text> {
     }
 }
 
-impl<'text> ListItemContent<'text> {
+impl ListItemContent {
     pub fn new(consumed_all_input: bool) -> Self {
         Self::new_with_nodes(consumed_all_input, vec![])
     }
-    pub fn new_with_nodes(
-        consumed_all_input: bool,
-        nodes: Vec<ListItemContentNodes<'text>>,
-    ) -> Self {
+    pub fn new_with_nodes(consumed_all_input: bool, nodes: Vec<ListItemContentNodes>) -> Self {
         ListItemContent {
             consumed_all_input,
             nodes,
@@ -119,12 +116,12 @@ impl<'text> ListItemContent<'text> {
     }
 }
 
-impl<'text> Branch<'text, ListItemContentNodes<'text>> for ListItemContent<'text> {
-    fn push<CanBeNode: Into<ListItemContentNodes<'text>>>(&mut self, node: CanBeNode) {
+impl Branch<ListItemContentNodes> for ListItemContent {
+    fn push<CanBeNode: Into<ListItemContentNodes>>(&mut self, node: CanBeNode) {
         self.nodes.push(node.into());
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<'text, ListItemContentNodes<'text>>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<ListItemContentNodes>> {
         vec![
             Anchor::maybe_node(),
             Bold::maybe_node(),
@@ -134,7 +131,7 @@ impl<'text> Branch<'text, ListItemContentNodes<'text>> for ListItemContent<'text
         ]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<'text, ListItemContentNodes<'text>>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<ListItemContentNodes>> {
         Some(Text::fallback_node())
     }
 
@@ -147,8 +144,8 @@ impl<'text> Branch<'text, ListItemContentNodes<'text>> for ListItemContent<'text
     }
 }
 
-impl<'text> Deserializer<'text> for ListItemContent<'text> {
-    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
+impl Deserializer for ListItemContent {
+    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut m = Matcher::new(input);
         if let Some(list_item_content) = m.get_match("", "\n", true) {
             return Self::parse_branch(

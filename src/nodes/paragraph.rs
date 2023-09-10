@@ -10,52 +10,52 @@ use crate::toolkit::{
 };
 
 #[derive(Debug, PartialEq)]
-pub enum ParagraphNodes<'text> {
-    A(Anchor<'text>),
-    B(Bold<'text>),
-    I(Italic<'text>),
-    S(Strikethrough<'text>),
-    Text(Text<'text>),
-    InlineCode(InlineCode<'text>),
+pub enum ParagraphNodes {
+    A(Anchor),
+    B(Bold),
+    I(Italic),
+    S(Strikethrough),
+    Text(Text),
+    InlineCode(InlineCode),
 }
 
-impl<'text> From<Anchor<'text>> for ParagraphNodes<'text> {
-    fn from(value: Anchor<'text>) -> Self {
+impl From<Anchor> for ParagraphNodes {
+    fn from(value: Anchor) -> Self {
         ParagraphNodes::A(value)
     }
 }
 
-impl<'text> From<Bold<'text>> for ParagraphNodes<'text> {
-    fn from(value: Bold<'text>) -> Self {
+impl From<Bold> for ParagraphNodes {
+    fn from(value: Bold) -> Self {
         ParagraphNodes::B(value)
     }
 }
 
-impl<'text> From<Italic<'text>> for ParagraphNodes<'text> {
-    fn from(value: Italic<'text>) -> Self {
+impl From<Italic> for ParagraphNodes {
+    fn from(value: Italic) -> Self {
         ParagraphNodes::I(value)
     }
 }
 
-impl<'text> From<Strikethrough<'text>> for ParagraphNodes<'text> {
-    fn from(value: Strikethrough<'text>) -> Self {
+impl From<Strikethrough> for ParagraphNodes {
+    fn from(value: Strikethrough) -> Self {
         ParagraphNodes::S(value)
     }
 }
 
-impl<'text> From<Text<'text>> for ParagraphNodes<'text> {
-    fn from(value: Text<'text>) -> Self {
+impl From<Text> for ParagraphNodes {
+    fn from(value: Text) -> Self {
         ParagraphNodes::Text(value)
     }
 }
 
-impl<'text> From<InlineCode<'text>> for ParagraphNodes<'text> {
-    fn from(value: InlineCode<'text>) -> Self {
+impl From<InlineCode> for ParagraphNodes {
+    fn from(value: InlineCode) -> Self {
         ParagraphNodes::InlineCode(value)
     }
 }
 
-impl Node<'_> for ParagraphNodes<'_> {
+impl Node for ParagraphNodes {
     fn serialize(&self) -> String {
         match self {
             ParagraphNodes::A(node) => node.serialize(),
@@ -79,16 +79,16 @@ impl Node<'_> for ParagraphNodes<'_> {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Paragraph<'text> {
+pub struct Paragraph {
     consumed_all_input: bool,
-    pub nodes: Vec<ParagraphNodes<'text>>,
+    pub nodes: Vec<ParagraphNodes>,
 }
 
-impl<'text> Paragraph<'text> {
+impl Paragraph {
     pub fn new(consumed_all_input: bool) -> Self {
         Self::new_with_nodes(consumed_all_input, vec![])
     }
-    pub fn new_with_nodes(consumed_all_input: bool, nodes: Vec<ParagraphNodes<'text>>) -> Self {
+    pub fn new_with_nodes(consumed_all_input: bool, nodes: Vec<ParagraphNodes>) -> Self {
         Self {
             consumed_all_input,
             nodes,
@@ -96,12 +96,12 @@ impl<'text> Paragraph<'text> {
     }
 }
 
-impl<'text> Branch<'text, ParagraphNodes<'text>> for Paragraph<'text> {
-    fn push<TP: Into<ParagraphNodes<'text>>>(&mut self, element: TP) {
+impl Branch<ParagraphNodes> for Paragraph {
+    fn push<TP: Into<ParagraphNodes>>(&mut self, element: TP) {
         self.nodes.push(element.into());
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<'text, ParagraphNodes<'text>>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<ParagraphNodes>> {
         vec![
             Anchor::maybe_node(),
             Bold::maybe_node(),
@@ -111,7 +111,7 @@ impl<'text> Branch<'text, ParagraphNodes<'text>> for Paragraph<'text> {
         ]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<'text, ParagraphNodes<'text>>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<ParagraphNodes>> {
         Some(Text::fallback_node())
     }
     fn get_outer_token_length(&self) -> usize {
@@ -123,8 +123,8 @@ impl<'text> Branch<'text, ParagraphNodes<'text>> for Paragraph<'text> {
     }
 }
 
-impl<'text> Deserializer<'text> for Paragraph<'text> {
-    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
+impl Deserializer for Paragraph {
+    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(paragraph) = matcher.get_match("", "\n\n", true) {
             return Self::parse_branch(paragraph.body, Self::new(paragraph.end_token.is_empty()));
@@ -133,7 +133,7 @@ impl<'text> Deserializer<'text> for Paragraph<'text> {
     }
 }
 
-impl<'text> Node<'text> for Paragraph<'text> {
+impl Node for Paragraph {
     fn serialize(&self) -> String {
         let end_token = match self.consumed_all_input {
             true => "",
@@ -155,8 +155,8 @@ impl<'text> Node<'text> for Paragraph<'text> {
     }
 }
 
-impl<'text> FallbackNode<'text> for Paragraph<'text> {
-    fn fallback_node<BranchNodes>() -> DefinitelyNode<'text, BranchNodes>
+impl FallbackNode for Paragraph {
+    fn fallback_node<BranchNodes>() -> DefinitelyNode<BranchNodes>
     where
         Self: Into<BranchNodes>,
     {

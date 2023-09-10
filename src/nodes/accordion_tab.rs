@@ -12,20 +12,20 @@ use super::{
 };
 
 #[derive(Debug, PartialEq)]
-pub enum AccordionTabNodes<'text> {
-    Pargaraph(Paragraph<'text>),
-    Heading(Heading<'text>),
-    Image(Image<'text>),
-    ImageGallery(ImageGallery<'text>),
-    CloudinaryImageGallery(CloudinaryImageGallery<'text>),
-    List(List<'text>),
-    Embed(Embed<'text>),
-    Accordion(Accordion<'text>),
+pub enum AccordionTabNodes {
+    Pargaraph(Paragraph),
+    Heading(Heading),
+    Image(Image),
+    ImageGallery(ImageGallery),
+    CloudinaryImageGallery(CloudinaryImageGallery),
+    List(List),
+    Embed(Embed),
+    Accordion(Accordion),
     Divider(Divider),
-    Code(Code<'text>),
+    Code(Code),
 }
 
-impl Node<'_> for AccordionTabNodes<'_> {
+impl Node for AccordionTabNodes {
     fn serialize(&self) -> String {
         match self {
             AccordionTabNodes::Pargaraph(node) => node.serialize(),
@@ -57,91 +57,91 @@ impl Node<'_> for AccordionTabNodes<'_> {
     }
 }
 
-impl<'text> From<Paragraph<'text>> for AccordionTabNodes<'text> {
-    fn from(value: Paragraph<'text>) -> Self {
+impl From<Paragraph> for AccordionTabNodes {
+    fn from(value: Paragraph) -> Self {
         Self::Pargaraph(value)
     }
 }
 
-impl<'text> From<Heading<'text>> for AccordionTabNodes<'text> {
-    fn from(value: Heading<'text>) -> Self {
+impl From<Heading> for AccordionTabNodes {
+    fn from(value: Heading) -> Self {
         Self::Heading(value)
     }
 }
 
-impl<'text> From<Image<'text>> for AccordionTabNodes<'text> {
-    fn from(value: Image<'text>) -> Self {
+impl From<Image> for AccordionTabNodes {
+    fn from(value: Image) -> Self {
         Self::Image(value)
     }
 }
 
-impl<'text> From<ImageGallery<'text>> for AccordionTabNodes<'text> {
-    fn from(value: ImageGallery<'text>) -> Self {
+impl From<ImageGallery> for AccordionTabNodes {
+    fn from(value: ImageGallery) -> Self {
         Self::ImageGallery(value)
     }
 }
 
-impl<'text> From<CloudinaryImageGallery<'text>> for AccordionTabNodes<'text> {
-    fn from(value: CloudinaryImageGallery<'text>) -> Self {
+impl From<CloudinaryImageGallery> for AccordionTabNodes {
+    fn from(value: CloudinaryImageGallery) -> Self {
         Self::CloudinaryImageGallery(value)
     }
 }
 
-impl<'text> From<List<'text>> for AccordionTabNodes<'text> {
-    fn from(value: List<'text>) -> Self {
+impl From<List> for AccordionTabNodes {
+    fn from(value: List) -> Self {
         Self::List(value)
     }
 }
 
-impl<'text> From<Embed<'text>> for AccordionTabNodes<'text> {
-    fn from(value: Embed<'text>) -> Self {
+impl From<Embed> for AccordionTabNodes {
+    fn from(value: Embed) -> Self {
         Self::Embed(value)
     }
 }
 
-impl<'text> From<Accordion<'text>> for AccordionTabNodes<'text> {
-    fn from(value: Accordion<'text>) -> Self {
+impl From<Accordion> for AccordionTabNodes {
+    fn from(value: Accordion) -> Self {
         Self::Accordion(value)
     }
 }
 
-impl From<Divider> for AccordionTabNodes<'_> {
+impl From<Divider> for AccordionTabNodes {
     fn from(value: Divider) -> Self {
         Self::Divider(value)
     }
 }
 
-impl<'text> From<Code<'text>> for AccordionTabNodes<'text> {
-    fn from(value: Code<'text>) -> Self {
+impl From<Code> for AccordionTabNodes {
+    fn from(value: Code) -> Self {
         Self::Code(value)
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub struct AccordionTab<'text> {
-    pub header: Option<&'text str>,
-    pub nodes: Vec<AccordionTabNodes<'text>>,
+pub struct AccordionTab {
+    pub header: Option<String>,
+    pub nodes: Vec<AccordionTabNodes>,
     consumed_all_input: bool,
 }
 
-impl<'text> AccordionTab<'text> {
-    pub fn new(consumed_all_input: bool, header: Option<&'text str>) -> Self {
+impl AccordionTab {
+    pub fn new<S: Into<String>>(consumed_all_input: bool, header: Option<S>) -> Self {
         Self::new_with_nodes(consumed_all_input, header, vec![])
     }
-    pub fn new_with_nodes(
+    pub fn new_with_nodes<S: Into<String>>(
         consumed_all_input: bool,
-        header: Option<&'text str>,
-        nodes: Vec<AccordionTabNodes<'text>>,
+        header: Option<S>,
+        nodes: Vec<AccordionTabNodes>,
     ) -> Self {
         Self {
             nodes,
             consumed_all_input,
-            header,
+            header: header.map(|s| s.into()),
         }
     }
 }
 
-impl Node<'_> for AccordionTab<'_> {
+impl Node for AccordionTab {
     fn serialize(&self) -> String {
         format!(
             "//\n{header}{nodes}\n\\\\{end}",
@@ -164,12 +164,12 @@ impl Node<'_> for AccordionTab<'_> {
     }
 }
 
-impl<'text> Branch<'text, AccordionTabNodes<'text>> for AccordionTab<'text> {
-    fn push<CanBeNode: Into<AccordionTabNodes<'text>>>(&mut self, node: CanBeNode) {
+impl Branch<AccordionTabNodes> for AccordionTab {
+    fn push<CanBeNode: Into<AccordionTabNodes>>(&mut self, node: CanBeNode) {
         self.nodes.push(node.into());
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<'text, AccordionTabNodes<'text>>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<AccordionTabNodes>> {
         vec![
             Heading::maybe_node(),
             Image::maybe_node(),
@@ -183,7 +183,7 @@ impl<'text> Branch<'text, AccordionTabNodes<'text>> for AccordionTab<'text> {
         ]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<'text, AccordionTabNodes<'text>>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<AccordionTabNodes>> {
         Some(Paragraph::fallback_node())
     }
 
@@ -193,8 +193,8 @@ impl<'text> Branch<'text, AccordionTabNodes<'text>> for AccordionTab<'text> {
     }
 }
 
-impl<'text> Deserializer<'text> for AccordionTab<'text> {
-    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
+impl Deserializer for AccordionTab {
+    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(tab) = matcher.get_match("//\n", "\n\\\\", false) {
             let mut inner_matcher = Matcher::new(tab.body);
@@ -243,7 +243,7 @@ mod cfg {
     fn test_accordion_tab_deserialize_with_no_header() {
         assert_eq!(
             AccordionTab::deserialize("//\nI am regular text\n\\\\\n\n"),
-            Some(AccordionTab::new_with_nodes(
+            Some(AccordionTab::new_with_nodes::<&str>(
                 false,
                 None,
                 vec![
@@ -258,7 +258,7 @@ mod cfg {
     fn test_accordion_tab_deserialize_with_no_header_and_no_newline() {
         assert_eq!(
             AccordionTab::deserialize("//\n![alt](url)\n\n\\\\"),
-            Some(AccordionTab::new_with_nodes(
+            Some(AccordionTab::new_with_nodes::<&str>(
                 true,
                 None,
                 vec![Image::new(true, "alt", "url").into()]
@@ -353,13 +353,13 @@ t**b**
                     ],
                 )
                 .into(),
-                Image::new(false, "a", "u").into(),
+                Image::new(false, 'a', 'u').into(),
                 ImageGallery::new_with_nodes(
-                    false,
                     vec![
                         Image::new(true, "a", "u").into(),
                         Image::new(true, "a2", "u2").into(),
                     ],
+                    false,
                 )
                 .into(),
                 Divider::new(false).into(),
@@ -389,7 +389,7 @@ t**b**
                     .into()],
                 )
                 .into(),
-                Embed::new(false, "youtube", "123").into(),
+                Embed::new("youtube", "123", false).into(),
                 CloudinaryImageGallery::new("username", "tag", true).into(),
             ],
         );

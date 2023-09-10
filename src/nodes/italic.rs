@@ -5,17 +5,17 @@ use crate::{
 
 /// Representation of an Italic text
 #[derive(Debug, PartialEq)]
-pub struct Italic<'text> {
-    pub text: &'text str,
+pub struct Italic {
+    pub text: String,
 }
 
-impl<'text> Italic<'text> {
-    pub fn new(text: &'text str) -> Self {
-        Italic { text }
+impl Italic {
+    pub fn new<S: Into<String>>(text: S) -> Self {
+        Italic { text: text.into() }
     }
 }
 
-impl<'text> Node<'text> for Italic<'text> {
+impl Node for Italic {
     fn serialize(&self) -> String {
         format!("_{}_", self.text)
     }
@@ -24,8 +24,8 @@ impl<'text> Node<'text> for Italic<'text> {
     }
 }
 
-impl<'text> Deserializer<'text> for Italic<'text> {
-    fn deserialize_with_context(input: &'text str, _: Option<Context>) -> Option<Self> {
+impl Deserializer for Italic {
+    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(italic) = matcher.get_match("_", "_", false) {
             return Some(Italic::new(italic.body));
