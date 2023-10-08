@@ -1,3 +1,7 @@
+use std::fmt::Display;
+
+use serde::Serialize;
+
 use crate::toolkit::{
     context::Context,
     deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
@@ -7,23 +11,26 @@ use crate::toolkit::{
 
 use super::list_item::ListItem;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize)]
 pub enum ListTypes {
     Unordered,
     Ordered,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum ListNodes {
     ListItem(ListItem),
 }
 
-impl Node for ListNodes {
-    fn serialize(&self) -> String {
+impl Display for ListNodes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ListNodes::ListItem(node) => node.serialize(),
+            ListNodes::ListItem(node) => write!(f, "{}", node),
         }
     }
+}
+
+impl Node for ListNodes {
     fn len(&self) -> usize {
         match self {
             ListNodes::ListItem(node) => node.len(),
@@ -37,7 +44,7 @@ impl From<ListItem> for ListNodes {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct List {
     pub list_type: ListTypes,
     pub level: usize,
@@ -87,18 +94,22 @@ impl List {
     }
 }
 
-impl Node for List {
-    fn serialize(&self) -> String {
+impl Display for List {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
-        format!(
+        write!(
+            f,
             "{}{end}",
             self.nodes
                 .iter()
-                .map(|node| node.serialize())
+                .map(|node| node.to_string())
                 .collect::<Vec<String>>()
                 .join("")
         )
     }
+}
+
+impl Node for List {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
     }
@@ -193,7 +204,7 @@ mod tests {
                     .into(),
                 ],
             }
-            .serialize(),
+            .to_string(),
             "- unordered list item\n- unordered list item"
         );
         assert_eq!(
@@ -222,7 +233,7 @@ mod tests {
                     .into(),
                 ],
             }
-            .serialize(),
+            .to_string(),
             "- unordered list item\n- unordered list item\n\n"
         );
     }
@@ -255,7 +266,7 @@ mod tests {
             ],
         );
 
-        assert_eq!(list.serialize(), "+ ordered list item\n+ ordered list item");
+        assert_eq!(list.to_string(), "+ ordered list item\n+ ordered list item");
     }
 
     #[test]

@@ -1,3 +1,7 @@
+use std::fmt::Display;
+
+use serde::Serialize;
+
 use crate::{
     nodes::italic::Italic,
     nodes::strikethrough::Strikethrough,
@@ -10,7 +14,7 @@ use crate::{
     },
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum BoldNodes {
     Text(Text),
     I(Italic),
@@ -35,15 +39,17 @@ impl From<Strikethrough> for BoldNodes {
     }
 }
 
-impl Node for BoldNodes {
-    fn serialize(&self) -> String {
+impl Display for BoldNodes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            BoldNodes::Text(v) => v.serialize(),
-            BoldNodes::I(v) => v.serialize(),
-            BoldNodes::S(v) => v.serialize(),
+            BoldNodes::Text(node) => write!(f, "{}", node),
+            BoldNodes::I(node) => write!(f, "{}", node),
+            BoldNodes::S(node) => write!(f, "{}", node),
         }
     }
+}
 
+impl Node for BoldNodes {
     fn len(&self) -> usize {
         match self {
             BoldNodes::Text(node) => node.len(),
@@ -53,7 +59,7 @@ impl Node for BoldNodes {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Bold {
     pub nodes: Vec<BoldNodes>,
 }
@@ -91,17 +97,21 @@ impl Default for Bold {
     }
 }
 
-impl Node for Bold {
-    fn serialize(&self) -> String {
-        format!(
+impl Display for Bold {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "**{}**",
             self.nodes
                 .iter()
-                .map(|element| { element.serialize() })
+                .map(|element| { element.to_string() })
                 .collect::<Vec<String>>()
                 .concat()
         )
     }
+}
+
+impl Node for Bold {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
     }
@@ -135,7 +145,7 @@ mod tests {
     fn only_text() {
         let mut b = Bold::new();
         b.push(Text::new("B as bold"));
-        let str = b.serialize();
+        let str = b.to_string();
         assert_eq!(str, "**B as bold**".to_string());
     }
 
@@ -146,7 +156,7 @@ mod tests {
             Italic::new("Italic").into(),
             Strikethrough::new("Strikethrough").into(),
         ])
-        .serialize();
+        .to_string();
         assert_eq!(b, "**B as bold _Italic_~~Strikethrough~~**".to_string());
     }
 

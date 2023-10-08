@@ -1,6 +1,10 @@
+use std::fmt::Display;
+
+use serde::Serialize;
+
 use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct InlineCode {
     pub text: String,
 }
@@ -11,10 +15,13 @@ impl InlineCode {
     }
 }
 
-impl Node for InlineCode {
-    fn serialize(&self) -> String {
-        format!("`{}`", self.text)
+impl Display for InlineCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "`{}`", self.text)
     }
+}
+
+impl Node for InlineCode {
     fn len(&self) -> usize {
         self.text.len() + 2
     }
@@ -33,12 +40,12 @@ impl Deserializer for InlineCode {
 #[cfg(test)]
 mod tests {
     use super::InlineCode;
-    use crate::toolkit::{deserializer::Deserializer, node::Node};
+    use crate::toolkit::deserializer::Deserializer;
     use pretty_assertions::assert_eq;
 
     #[test]
     fn to_string() {
-        let inline_code: String = InlineCode::new("const bar = 'baz'").serialize();
+        let inline_code: String = InlineCode::new("const bar = 'baz'").to_string();
         assert_eq!(inline_code, "`const bar = 'baz'`".to_string())
     }
 

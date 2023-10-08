@@ -1,6 +1,10 @@
+use std::fmt::Display;
+
+use serde::Serialize;
+
 use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Code {
     pub lang: String,
     pub code: String,
@@ -17,11 +21,14 @@ impl Code {
     }
 }
 
-impl Node for Code {
-    fn serialize(&self) -> String {
+impl Display for Code {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
-        format!("```{}\n{}\n```{end}", self.lang, self.code)
+        write!(f, "```{}\n{}\n```{}", self.lang, self.code, end)
     }
+}
+
+impl Node for Code {
     fn len(&self) -> usize {
         let end = if self.consumed_all_input { 0 } else { 2 };
         self.lang.len() + self.code.len() + 8 + end
@@ -52,11 +59,11 @@ mod tests {
     #[test]
     fn serialize() {
         assert_eq!(
-            Code::new(true, "rust", "let foo:usize=1;").serialize(),
+            Code::new(true, "rust", "let foo:usize=1;").to_string(),
             String::from("```rust\nlet foo:usize=1;\n```")
         );
         assert_eq!(
-            Code::new(false, "rust", "let foo:usize=1;").serialize(),
+            Code::new(false, "rust", "let foo:usize=1;").to_string(),
             String::from("```rust\nlet foo:usize=1;\n```\n\n")
         );
     }
