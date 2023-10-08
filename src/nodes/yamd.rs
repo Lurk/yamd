@@ -1,3 +1,7 @@
+use std::fmt::Display;
+
+use serde::Serialize;
+
 use crate::{
     nodes::heading::Heading,
     nodes::paragraph::Paragraph,
@@ -11,7 +15,7 @@ use super::{
     image_gallery::ImageGallery, list::List, metadata::Metadata,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum YamdNodes {
     P(Paragraph),
     H(Heading),
@@ -92,22 +96,25 @@ impl From<Accordion> for YamdNodes {
     }
 }
 
-impl Node for YamdNodes {
-    fn serialize(&self) -> String {
+impl Display for YamdNodes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            YamdNodes::P(node) => node.serialize(),
-            YamdNodes::H(node) => node.serialize(),
-            YamdNodes::Image(node) => node.serialize(),
-            YamdNodes::Code(node) => node.serialize(),
-            YamdNodes::List(node) => node.serialize(),
-            YamdNodes::ImageGallery(node) => node.serialize(),
-            YamdNodes::Highlight(node) => node.serialize(),
-            YamdNodes::Divider(node) => node.serialize(),
-            YamdNodes::Embed(node) => node.serialize(),
-            YamdNodes::CloudinaryImageGallery(node) => node.serialize(),
-            YamdNodes::Accordion(node) => node.serialize(),
+            YamdNodes::P(node) => write!(f, "{}", node),
+            YamdNodes::H(node) => write!(f, "{}", node),
+            YamdNodes::Image(node) => write!(f, "{}", node),
+            YamdNodes::Code(node) => write!(f, "{}", node),
+            YamdNodes::List(node) => write!(f, "{}", node),
+            YamdNodes::ImageGallery(node) => write!(f, "{}", node),
+            YamdNodes::Highlight(node) => write!(f, "{}", node),
+            YamdNodes::Divider(node) => write!(f, "{}", node),
+            YamdNodes::Embed(node) => write!(f, "{}", node),
+            YamdNodes::CloudinaryImageGallery(node) => write!(f, "{}", node),
+            YamdNodes::Accordion(node) => write!(f, "{}", node),
         }
     }
+}
+
+impl Node for YamdNodes {
     fn len(&self) -> usize {
         match self {
             YamdNodes::P(node) => node.len(),
@@ -126,7 +133,7 @@ impl Node for YamdNodes {
 }
 
 /// Yamd is a parent node for every node.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Yamd {
     pub metadata: Metadata,
     pub nodes: Vec<YamdNodes>,
@@ -188,19 +195,22 @@ impl Default for Yamd {
     }
 }
 
-impl Node for Yamd {
-    fn serialize(&self) -> String {
-        format!(
+impl Display for Yamd {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "{}{}",
-            self.metadata.serialize(),
+            self.metadata,
             self.nodes
                 .iter()
-                .map(|node| node.serialize())
+                .map(|node| node.to_string())
                 .collect::<Vec<String>>()
                 .join("")
         )
     }
+}
 
+impl Node for Yamd {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
     }
@@ -232,7 +242,7 @@ mod tests {
             text::Text,
         },
         toolkit::deserializer::Branch,
-        toolkit::{deserializer::Deserializer, node::Node},
+        toolkit::deserializer::Deserializer,
     };
     use chrono::DateTime;
     use pretty_assertions::assert_eq;
@@ -300,7 +310,7 @@ end"#;
             vec![Text::new("text").into()],
         ));
 
-        assert_eq!(t.serialize(), "# header\n\ntext".to_string());
+        assert_eq!(t.to_string(), "# header\n\ntext".to_string());
     }
 
     #[test]
@@ -312,7 +322,7 @@ end"#;
                 Paragraph::new_with_nodes(true, vec![Text::new("text").into()]).into(),
             ],
         )
-        .serialize();
+        .to_string();
 
         assert_eq!(t, "# header\n\ntext".to_string());
     }
@@ -499,13 +509,13 @@ end"#;
                     Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
                 ]
             )
-            .serialize(),
+            .to_string(),
             String::from(TEST_CASE)
         )
     }
 
     #[test]
     fn default() {
-        assert_eq!(Yamd::default().serialize(), String::new());
+        assert_eq!(Yamd::default().to_string(), String::new());
     }
 }

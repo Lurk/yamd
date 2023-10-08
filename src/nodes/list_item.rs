@@ -1,3 +1,7 @@
+use std::fmt::Display;
+
+use serde::Serialize;
+
 use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
 use super::{
@@ -5,7 +9,7 @@ use super::{
     list_item_content::ListItemContent,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct ListItem {
     pub list_type: ListTypes,
     pub level: usize,
@@ -50,23 +54,26 @@ impl ListItem {
     }
 }
 
-impl Node for ListItem {
-    fn serialize(&self) -> String {
+impl Display for ListItem {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let list_type = match self.list_type {
             ListTypes::Unordered => '-',
             ListTypes::Ordered => '+',
         };
-        format!(
+        write!(
+            f,
             "{}{} {}{}",
             String::from(' ').repeat(self.level),
             list_type,
-            self.text.serialize(),
+            self.text,
             self.nested_list
                 .as_ref()
-                .map_or("".to_string(), |list| list.serialize())
+                .map_or("".to_string(), |list| list.to_string())
         )
     }
+}
 
+impl Node for ListItem {
     fn len(&self) -> usize {
         self.nested_list.as_ref().map_or(0, |list| list.len()) + self.text.len() + self.level + 2
     }
@@ -137,7 +144,7 @@ mod tests {
                 0,
                 ListItemContent::new_with_nodes(true, vec![Text::new("test").into()])
             )
-            .serialize(),
+            .to_string(),
             "- test".to_string()
         );
 
@@ -147,7 +154,7 @@ mod tests {
                 0,
                 ListItemContent::new_with_nodes(true, vec![Text::new("test").into()])
             )
-            .serialize(),
+            .to_string(),
             "+ test".to_string()
         );
 
@@ -168,7 +175,7 @@ mod tests {
                     .into()]
                 ))
             )
-            .serialize(),
+            .to_string(),
             "- test\n - test".to_string()
         );
     }

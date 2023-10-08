@@ -1,3 +1,7 @@
+use std::fmt::Display;
+
+use serde::Serialize;
+
 use crate::toolkit::{
     context::Context,
     deserializer::{DefinitelyNode, Deserializer, FallbackNode},
@@ -5,7 +9,7 @@ use crate::toolkit::{
 };
 
 /// Representation of a regular text
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Text {
     pub text: String,
 }
@@ -22,10 +26,13 @@ impl Deserializer for Text {
     }
 }
 
-impl Node for Text {
-    fn serialize(&self) -> String {
-        self.text.clone()
+impl Display for Text {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.text)
     }
+}
+
+impl Node for Text {
     fn len(&self) -> usize {
         self.text.len()
     }
@@ -43,7 +50,7 @@ impl FallbackNode for Text {
 #[cfg(test)]
 mod tests {
     use super::Text;
-    use crate::toolkit::{deserializer::Deserializer, node::Node};
+    use crate::toolkit::deserializer::Deserializer;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -54,7 +61,7 @@ mod tests {
 
     #[test]
     fn to_string() {
-        let text: String = Text::new("shiny text").serialize();
+        let text: String = Text::new("shiny text").to_string();
         assert_eq!(text, "shiny text".to_string());
     }
 

@@ -1,6 +1,10 @@
+use std::fmt::Display;
+
+use serde::Serialize;
+
 use crate::toolkit::{deserializer::Deserializer, matcher::Matcher, node::Node};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Embed {
     pub url: String,
     pub kind: String,
@@ -17,12 +21,14 @@ impl Embed {
     }
 }
 
-impl Node for Embed {
-    fn serialize(&self) -> String {
+impl Display for Embed {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
-        format!("{{{{{}|{}}}}}{end}", self.kind, self.url)
+        write!(f, "{{{{{}|{}}}}}{}", self.kind, self.url, end)
     }
+}
 
+impl Node for Embed {
     fn len(&self) -> usize {
         let end = if self.consumed_all_input { 0 } else { 2 };
         5 + self.kind.len() + self.url.len() + end
@@ -65,11 +71,11 @@ mod tests {
                 "https://www.youtube.com/embed/wsfdjlkjsdf",
                 false,
             )
-            .serialize(),
+            .to_string(),
             "{{youtube|https://www.youtube.com/embed/wsfdjlkjsdf}}\n\n"
         );
         assert_eq!(
-            Embed::new("youtube", "https://www.youtube.com/embed/wsfdjlkjsdf", true).serialize(),
+            Embed::new("youtube", "https://www.youtube.com/embed/wsfdjlkjsdf", true).to_string(),
             "{{youtube|https://www.youtube.com/embed/wsfdjlkjsdf}}"
         );
     }

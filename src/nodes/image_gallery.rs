@@ -1,3 +1,7 @@
+use std::fmt::{Display, Formatter};
+
+use serde::Serialize;
+
 use crate::toolkit::{
     context::Context,
     deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
@@ -7,17 +11,20 @@ use crate::toolkit::{
 
 use super::image::Image;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum ImageGalleryNodes {
     Image(Image),
 }
 
-impl Node for ImageGalleryNodes {
-    fn serialize(&self) -> String {
+impl Display for ImageGalleryNodes {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ImageGalleryNodes::Image(node) => node.serialize(),
+            ImageGalleryNodes::Image(node) => write!(f, "{}", node),
         }
     }
+}
+
+impl Node for ImageGalleryNodes {
     fn len(&self) -> usize {
         match self {
             ImageGalleryNodes::Image(node) => node.len(),
@@ -33,7 +40,7 @@ impl From<Image> for ImageGalleryNodes {
 
 /// Image Gallery node is a node that contains multiple Image nodes
 /// it starts with `!!!\n` and ends with `\n!!!`
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct ImageGallery {
     pub nodes: Vec<ImageGalleryNodes>,
     consumed_all_input: bool,
@@ -52,18 +59,22 @@ impl ImageGallery {
     }
 }
 
-impl Node for ImageGallery {
-    fn serialize(&self) -> String {
+impl Display for ImageGallery {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
-        format!(
+        write!(
+            f,
             "!!!\n{}!!!{end}",
             self.nodes
                 .iter()
-                .map(|node| node.serialize())
+                .map(|node| node.to_string())
                 .collect::<Vec<String>>()
                 .join("")
         )
     }
+}
+
+impl Node for ImageGallery {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
     }
@@ -123,7 +134,7 @@ mod tests {
                 ],
                 true
             )
-            .serialize(),
+            .to_string(),
             "!!!\n![a](u)\n![a2](u2)\n!!!"
         );
         assert_eq!(
@@ -134,7 +145,7 @@ mod tests {
                 ],
                 false
             )
-            .serialize(),
+            .to_string(),
             "!!!\n![a](u)\n![a2](u2)\n!!!\n\n"
         );
     }

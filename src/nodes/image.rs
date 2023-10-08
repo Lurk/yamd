@@ -1,6 +1,10 @@
+use std::fmt::Display;
+
+use serde::Serialize;
+
 use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Image {
     pub alt: String,
     pub url: String,
@@ -17,15 +21,19 @@ impl Image {
     }
 }
 
-impl Node for Image {
-    fn serialize(&self) -> String {
+impl Display for Image {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let end = if self.consumed_all_input {
             "\n"
         } else {
             "\n\n"
         };
-        format!("![{}]({}){end}", self.alt, self.url)
+
+        write!(f, "![{}]({}){}", self.alt, self.url, end)
     }
+}
+
+impl Node for Image {
     fn len(&self) -> usize {
         let end = if self.consumed_all_input { 1 } else { 2 };
         self.alt.len() + self.url.len() + 5 + end
@@ -54,11 +62,11 @@ mod tests {
     #[test]
     fn serializer() {
         assert_eq!(
-            Image::new(true, 'a', 'u').serialize(),
+            Image::new(true, 'a', 'u').to_string(),
             String::from("![a](u)\n")
         );
         assert_eq!(
-            Image::new(false, 'a', 'u').serialize(),
+            Image::new(false, 'a', 'u').to_string(),
             String::from("![a](u)\n\n")
         )
     }

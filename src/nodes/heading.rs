@@ -1,6 +1,10 @@
+use std::fmt::Display;
+
+use serde::Serialize;
+
 use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Heading {
     pub level: u8,
     pub text: String,
@@ -41,12 +45,15 @@ impl Deserializer for Heading {
     }
 }
 
-impl Node for Heading {
-    fn serialize(&self) -> String {
+impl Display for Heading {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let level = String::from('#').repeat(self.level as usize);
         let end = if self.consumed_all_input { "" } else { "\n\n" };
-        format!("{} {}{end}", level, self.text)
+        write!(f, "{} {}{}", level, self.text, end)
     }
+}
+
+impl Node for Heading {
     fn len(&self) -> usize {
         let end = if self.consumed_all_input { 0 } else { 2 };
         self.text.len() + self.level as usize + 1 + end
@@ -61,27 +68,27 @@ mod tests {
 
     #[test]
     fn level_one() {
-        assert_eq!(Heading::new(true, "Header", 1).serialize(), "# Header");
-        assert_eq!(Heading::new(false, "Header", 1).serialize(), "# Header\n\n");
+        assert_eq!(Heading::new(true, "Header", 1).to_string(), "# Header");
+        assert_eq!(Heading::new(false, "Header", 1).to_string(), "# Header\n\n");
     }
 
     #[test]
     fn level_gt_six() {
-        let h = Heading::new(true, "Header", 7).serialize();
+        let h = Heading::new(true, "Header", 7).to_string();
         assert_eq!(h, "###### Header");
-        let h = Heading::new(true, "Header", 34).serialize();
+        let h = Heading::new(true, "Header", 34).to_string();
         assert_eq!(h, "###### Header");
     }
 
     #[test]
     fn level_eq_zero() {
-        let h = Heading::new(true, "Header", 0).serialize();
+        let h = Heading::new(true, "Header", 0).to_string();
         assert_eq!(h, "# Header");
     }
 
     #[test]
     fn level_eq_four() {
-        let h = Heading::new(true, "Header", 4).serialize();
+        let h = Heading::new(true, "Header", 4).to_string();
         assert_eq!(h, "#### Header");
     }
 

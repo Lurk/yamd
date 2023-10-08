@@ -1,10 +1,14 @@
+use std::fmt::{Display, Formatter};
+
+use serde::Serialize;
+
 use crate::{
     toolkit::{context::Context, deserializer::Deserializer},
     toolkit::{matcher::Matcher, node::Node},
 };
 
 /// Representation of an Italic text
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Italic {
     pub text: String,
 }
@@ -15,10 +19,13 @@ impl Italic {
     }
 }
 
-impl Node for Italic {
-    fn serialize(&self) -> String {
-        format!("_{}_", self.text)
+impl Display for Italic {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "_{}_", self.text)
     }
+}
+
+impl Node for Italic {
     fn len(&self) -> usize {
         self.text.len() + 2
     }
@@ -49,7 +56,7 @@ mod tests {
 
     #[test]
     fn to_string() {
-        let i = Italic::new("italic").serialize();
+        let i = Italic::new("italic").to_string();
         assert_eq!(i, "_italic_".to_string());
     }
 

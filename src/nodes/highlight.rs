@@ -1,3 +1,7 @@
+use std::fmt::Display;
+
+use serde::Serialize;
+
 use crate::toolkit::{
     context::Context,
     deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
@@ -7,18 +11,20 @@ use crate::toolkit::{
 
 use super::paragraph::Paragraph;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum HighlightNodes {
     Paragraph(Paragraph),
 }
 
-impl Node for HighlightNodes {
-    fn serialize(&self) -> String {
+impl Display for HighlightNodes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            HighlightNodes::Paragraph(node) => node.serialize(),
+            HighlightNodes::Paragraph(node) => write!(f, "{}", node),
         }
     }
+}
 
+impl Node for HighlightNodes {
     fn len(&self) -> usize {
         match self {
             HighlightNodes::Paragraph(node) => node.len(),
@@ -32,7 +38,7 @@ impl From<Paragraph> for HighlightNodes {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Highlight {
     pub header: Option<String>,
     pub icon: Option<String>,
@@ -64,8 +70,8 @@ impl Highlight {
     }
 }
 
-impl Node for Highlight {
-    fn serialize(&self) -> String {
+impl Display for Highlight {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let header = match &self.header {
             Some(header) => format!(">> {header}\n"),
             None => String::new(),
@@ -75,16 +81,22 @@ impl Node for Highlight {
             None => String::new(),
         };
         let end = if self.consumed_all_input { "" } else { "\n\n" };
-        format!(
+        write!(
+            f,
             ">>>\n{header}{icon}{}\n>>>{end}",
             self.nodes
                 .iter()
-                .map(|node| node.serialize())
+                .map(|node| node.to_string())
                 .collect::<Vec<String>>()
-                .join("")
+                .join(""),
+            header = header,
+            icon = icon,
+            end = end
         )
     }
+}
 
+impl Node for Highlight {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
     }
@@ -202,7 +214,7 @@ mod tests {
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
                 ]
             )
-            .serialize(),
+            .to_string(),
             String::from(">>>\n>> h\n> i\nt\n\nt\n>>>")
         );
         assert_eq!(
@@ -215,7 +227,7 @@ mod tests {
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
                 ]
             )
-            .serialize(),
+            .to_string(),
             String::from(">>>\n>> h\n> i\nt\n\nt\n>>>\n\n")
         );
         assert_eq!(
@@ -228,7 +240,7 @@ mod tests {
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
                 ]
             )
-            .serialize(),
+            .to_string(),
             String::from(">>>\nt\n\nt\n>>>\n\n")
         );
     }

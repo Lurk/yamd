@@ -12,4 +12,5 @@ keywords = ["markdown", "parser"]
 pretty_assertions = "1.4.0"
 
 [dependencies]
-chrono = "0.4.26"
+serde = { version = "1.0.188", features = ["derive"] }
+chrono = { version = "0.4.31", features = ["serde"] }

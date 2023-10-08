@@ -1,10 +1,14 @@
+use std::fmt::{Display, Formatter};
+
+use serde::Serialize;
+
 use crate::{
     toolkit::{context::Context, deserializer::Deserializer},
     toolkit::{matcher::Matcher, node::Node},
 };
 
 /// Representation of strike through
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Strikethrough {
     pub text: String,
 }
@@ -15,10 +19,13 @@ impl Strikethrough {
     }
 }
 
-impl Node for Strikethrough {
-    fn serialize(&self) -> String {
-        format!("~~{}~~", self.text)
+impl Display for Strikethrough {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "~~{}~~", self.text)
     }
+}
+
+impl Node for Strikethrough {
     fn len(&self) -> usize {
         self.text.len() + 4
     }
@@ -48,7 +55,7 @@ mod tests {
 
     #[test]
     fn to_string() {
-        let s: String = Strikethrough::new("2+2=5").serialize();
+        let s: String = Strikethrough::new("2+2=5").to_string();
         assert_eq!(s, "~~2+2=5~~".to_string());
     }
 
