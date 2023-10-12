@@ -88,8 +88,8 @@ impl Deserializer for ListItem {
         };
         let mut matcher = Matcher::new(input);
         if let Some(list_item) = matcher.get_match(
-            format!("{}{} ", " ".repeat(level), list_type.clone()).as_str(),
-            format!("\n{}{} ", " ".repeat(level), list_type.clone()).as_str(),
+            format!("{}{} ", " ".repeat(level), list_type).as_str(),
+            format!("\n{}{} ", " ".repeat(level), list_type).as_str(),
             true,
         ) {
             let content_body = if list_item.end_token.is_empty() {

@@ -146,7 +146,7 @@ impl Yamd {
 
     pub fn new_with_nodes(metadata: Option<Metadata>, nodes: Vec<YamdNodes>) -> Self {
         Self {
-            metadata: metadata.unwrap_or(Metadata::default()),
+            metadata: metadata.unwrap_or_default(),
             nodes,
         }
     }

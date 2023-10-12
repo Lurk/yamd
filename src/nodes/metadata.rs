@@ -26,7 +26,7 @@ impl Metadata {
             timestamp,
             image: image.map(|i| i.into()),
             preview: preview.map(|p| p.into()),
-            tags: tags.unwrap_or(vec![]),
+            tags: tags.unwrap_or_default(),
         }
     }
 }
