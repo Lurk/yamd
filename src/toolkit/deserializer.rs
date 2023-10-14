@@ -19,11 +19,6 @@ where
         while current_position < input.len() {
             let slice = &input[current_position..];
             current_position += slice.chars().next().unwrap().len_utf8();
-            if maybe_nodes.is_empty() {
-                current_position = branch.fallback(slice)?;
-                fallback_position = current_position;
-                continue;
-            }
             for parser in &maybe_nodes {
                 if let Some(node) = parser(slice, branch.context()) {
                     while fallback_position != current_position - 1 {
