@@ -15,6 +15,7 @@ use crate::{
 };
 
 #[derive(Debug, PartialEq, Serialize)]
+#[serde(tag = "type")]
 pub enum BoldNodes {
     Text(Text),
     I(Italic),

@@ -14,6 +14,7 @@ use crate::toolkit::{
 };
 
 #[derive(Debug, PartialEq, Serialize)]
+#[serde(tag = "type")]
 pub enum ParagraphNodes {
     A(Anchor),
     B(Bold),
@@ -87,6 +88,7 @@ impl Node for ParagraphNodes {
 
 #[derive(Debug, PartialEq, Serialize)]
 pub struct Paragraph {
+    #[serde(skip_serializing)]
     consumed_all_input: bool,
     pub nodes: Vec<ParagraphNodes>,
 }

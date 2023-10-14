@@ -8,6 +8,7 @@ use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matc
 pub struct Heading {
     pub level: u8,
     pub text: String,
+    #[serde(skip_serializing)]
     consumed_all_input: bool,
 }
 

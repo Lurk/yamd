@@ -15,6 +15,7 @@ use super::{
 };
 
 #[derive(Debug, PartialEq, Serialize)]
+#[serde(tag = "type")]
 pub enum ListItemContentNodes {
     A(Anchor),
     B(Bold),
@@ -88,6 +89,7 @@ impl Node for ListItemContentNodes {
 
 #[derive(Debug, PartialEq, Serialize)]
 pub struct ListItemContent {
+    #[serde(skip_serializing)]
     consumed_all_input: bool,
     pub nodes: Vec<ListItemContentNodes>,
 }

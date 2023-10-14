@@ -18,6 +18,7 @@ pub enum ListTypes {
 }
 
 #[derive(Debug, PartialEq, Serialize)]
+#[serde(tag = "type")]
 pub enum ListNodes {
     ListItem(ListItem),
 }
@@ -49,6 +50,7 @@ pub struct List {
     pub list_type: ListTypes,
     pub level: usize,
     pub nodes: Vec<ListNodes>,
+    #[serde(skip_serializing)]
     consumed_all_input: bool,
 }
 

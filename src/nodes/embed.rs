@@ -8,6 +8,7 @@ use crate::toolkit::{deserializer::Deserializer, matcher::Matcher, node::Node};
 pub struct Embed {
     pub url: String,
     pub kind: String,
+    #[serde(skip_serializing)]
     consumed_all_input: bool,
 }
 

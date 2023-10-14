@@ -8,6 +8,7 @@ use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matc
 pub struct CloudinaryImageGallery {
     username: String,
     pub tag: String,
+    #[serde(skip_serializing)]
     pub consumed_all_input: bool,
 }
 
