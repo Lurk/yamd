@@ -1,7 +1,12 @@
+use std::fmt::Display;
+
+use serde::Serialize;
+
 use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Divider {
+    #[serde(skip_serializing)]
     consumed_all_input: bool,
 }
 
@@ -11,12 +16,14 @@ impl Divider {
     }
 }
 
-impl Node for Divider {
-    fn serialize(&self) -> String {
+impl Display for Divider {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
-        format!("-----{end}")
+        write!(f, "-----{end}")
     }
+}
 
+impl Node for Divider {
     fn len(&self) -> usize {
         if self.consumed_all_input {
             5
@@ -71,7 +78,7 @@ mod tests {
 
     #[test]
     fn serialize() {
-        assert_eq!(Divider::new(true).serialize(), String::from("-----"));
-        assert_eq!(Divider::new(false).serialize(), String::from("-----\n\n"));
+        assert_eq!(Divider::new(true).to_string(), String::from("-----"));
+        assert_eq!(Divider::new(false).to_string(), String::from("-----\n\n"));
     }
 }

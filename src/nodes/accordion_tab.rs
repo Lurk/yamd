@@ -1,3 +1,7 @@
+use std::fmt::Display;
+
+use serde::Serialize;
+
 use crate::toolkit::{
     context::Context,
     deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
@@ -11,7 +15,8 @@ use super::{
     list::List, paragraph::Paragraph,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
+#[serde(tag = "type")]
 pub enum AccordionTabNodes {
     Pargaraph(Paragraph),
     Heading(Heading),
@@ -25,22 +30,24 @@ pub enum AccordionTabNodes {
     Code(Code),
 }
 
-impl Node for AccordionTabNodes {
-    fn serialize(&self) -> String {
+impl Display for AccordionTabNodes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AccordionTabNodes::Pargaraph(node) => node.serialize(),
-            AccordionTabNodes::Heading(node) => node.serialize(),
-            AccordionTabNodes::Image(node) => node.serialize(),
-            AccordionTabNodes::ImageGallery(node) => node.serialize(),
-            AccordionTabNodes::CloudinaryImageGallery(node) => node.serialize(),
-            AccordionTabNodes::List(node) => node.serialize(),
-            AccordionTabNodes::Embed(node) => node.serialize(),
-            AccordionTabNodes::Accordion(node) => node.serialize(),
-            AccordionTabNodes::Divider(node) => node.serialize(),
-            AccordionTabNodes::Code(node) => node.serialize(),
+            AccordionTabNodes::Pargaraph(node) => write!(f, "{}", node),
+            AccordionTabNodes::Heading(node) => write!(f, "{}", node),
+            AccordionTabNodes::Image(node) => write!(f, "{}", node),
+            AccordionTabNodes::ImageGallery(node) => write!(f, "{}", node),
+            AccordionTabNodes::CloudinaryImageGallery(node) => write!(f, "{}", node),
+            AccordionTabNodes::List(node) => write!(f, "{}", node),
+            AccordionTabNodes::Embed(node) => write!(f, "{}", node),
+            AccordionTabNodes::Accordion(node) => write!(f, "{}", node),
+            AccordionTabNodes::Divider(node) => write!(f, "{}", node),
+            AccordionTabNodes::Code(node) => write!(f, "{}", node),
         }
     }
+}
 
+impl Node for AccordionTabNodes {
     fn len(&self) -> usize {
         match self {
             AccordionTabNodes::Pargaraph(node) => node.len(),
@@ -117,10 +124,11 @@ impl From<Code> for AccordionTabNodes {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct AccordionTab {
     pub header: Option<String>,
     pub nodes: Vec<AccordionTabNodes>,
+    #[serde(skip_serializing)]
     consumed_all_input: bool,
 }
 
@@ -141,9 +149,10 @@ impl AccordionTab {
     }
 }
 
-impl Node for AccordionTab {
-    fn serialize(&self) -> String {
-        format!(
+impl Display for AccordionTab {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "//\n{header}{nodes}\n\\\\{end}",
             header = self
                 .header
@@ -152,13 +161,15 @@ impl Node for AccordionTab {
             nodes = self
                 .nodes
                 .iter()
-                .map(|node| node.serialize())
+                .map(|node| node.to_string())
                 .collect::<Vec<String>>()
                 .join(""),
             end = if self.consumed_all_input { "" } else { "\n" }
         )
     }
+}
 
+impl Node for AccordionTab {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
     }
@@ -298,7 +309,7 @@ mod cfg {
                 Some("Header"),
                 vec![Heading::new(true, "Heading", 1).into()]
             )
-            .serialize(),
+            .to_string(),
             "//\n/ Header\n# Heading\n\\\\\n"
         );
     }
@@ -393,7 +404,7 @@ t**b**
                 CloudinaryImageGallery::new("username", "tag", true).into(),
             ],
         );
-        assert_eq!(tab.serialize(), input);
+        assert_eq!(tab.to_string(), input);
         assert_eq!(AccordionTab::deserialize(input), Some(tab));
     }
 }

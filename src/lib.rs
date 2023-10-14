@@ -194,7 +194,7 @@
 //! ```
 
 use nodes::yamd::Yamd;
-use toolkit::{deserializer::Deserializer, node::Node};
+use toolkit::deserializer::Deserializer;
 
 pub mod nodes;
 mod toolkit;
@@ -219,7 +219,7 @@ pub fn deserialize(input: &str) -> Option<Yamd> {
 /// let output = serialize(&yamd);
 /// ```
 pub fn serialize(input: &Yamd) -> String {
-    input.serialize()
+    input.to_string()
 }
 
 #[cfg(test)]

@@ -1,3 +1,7 @@
+use std::fmt::{Display, Formatter};
+
+use serde::Serialize;
+
 use crate::{
     toolkit::context::Context,
     toolkit::deserializer::Deserializer,
@@ -5,7 +9,7 @@ use crate::{
 };
 
 /// Representation of an anchor
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Anchor {
     pub text: String,
     pub url: String,
@@ -20,10 +24,13 @@ impl Anchor {
     }
 }
 
-impl Node for Anchor {
-    fn serialize(&self) -> String {
-        format!("[{}]({})", self.text, self.url)
+impl Display for Anchor {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[{}]({})", self.text, self.url)
     }
+}
+
+impl Node for Anchor {
     fn len(&self) -> usize {
         self.text.len() + self.url.len() + 4
     }
@@ -56,7 +63,7 @@ mod tests {
 
     #[test]
     fn serialize() {
-        let a: String = Anchor::new("nice link", "https://test.io").serialize();
+        let a: String = Anchor::new("nice link", "https://test.io").to_string();
         assert_eq!(a, "[nice link](https://test.io)".to_string());
     }
 

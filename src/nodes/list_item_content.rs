@@ -1,3 +1,7 @@
+use std::fmt::Display;
+
+use serde::Serialize;
+
 use crate::toolkit::{
     context::Context,
     deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
@@ -10,7 +14,8 @@ use super::{
     strikethrough::Strikethrough, text::Text,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
+#[serde(tag = "type")]
 pub enum ListItemContentNodes {
     A(Anchor),
     B(Bold),
@@ -56,18 +61,20 @@ impl From<InlineCode> for ListItemContentNodes {
     }
 }
 
-impl Node for ListItemContentNodes {
-    fn serialize(&self) -> String {
+impl Display for ListItemContentNodes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ListItemContentNodes::A(node) => node.serialize(),
-            ListItemContentNodes::B(node) => node.serialize(),
-            ListItemContentNodes::I(node) => node.serialize(),
-            ListItemContentNodes::S(node) => node.serialize(),
-            ListItemContentNodes::Text(node) => node.serialize(),
-            ListItemContentNodes::InlineCode(node) => node.serialize(),
+            ListItemContentNodes::A(node) => write!(f, "{}", node),
+            ListItemContentNodes::B(node) => write!(f, "{}", node),
+            ListItemContentNodes::I(node) => write!(f, "{}", node),
+            ListItemContentNodes::S(node) => write!(f, "{}", node),
+            ListItemContentNodes::Text(node) => write!(f, "{}", node),
+            ListItemContentNodes::InlineCode(node) => write!(f, "{}", node),
         }
     }
+}
 
+impl Node for ListItemContentNodes {
     fn len(&self) -> usize {
         match self {
             ListItemContentNodes::A(node) => node.len(),
@@ -80,25 +87,29 @@ impl Node for ListItemContentNodes {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct ListItemContent {
+    #[serde(skip_serializing)]
     consumed_all_input: bool,
     pub nodes: Vec<ListItemContentNodes>,
 }
 
-impl Node for ListItemContent {
-    fn serialize(&self) -> String {
-        format!(
+impl Display for ListItemContent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "{}{}",
             self.nodes
                 .iter()
-                .map(|node| node.serialize())
+                .map(|node| node.to_string())
                 .collect::<Vec<String>>()
                 .join(""),
             if self.consumed_all_input { "" } else { "\n" }
         )
     }
+}
 
+impl Node for ListItemContent {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
     }
@@ -198,14 +209,14 @@ mod test {
 
     #[test]
     fn serialize() {
-        assert_eq!(ListItemContent::new(true).serialize(), "");
-        assert_eq!(ListItemContent::new(false).serialize(), "\n");
+        assert_eq!(ListItemContent::new(true).to_string(), "");
+        assert_eq!(ListItemContent::new(false).to_string(), "\n");
         assert_eq!(
-            ListItemContent::new_with_nodes(true, vec![Text::new("Hello").into()]).serialize(),
+            ListItemContent::new_with_nodes(true, vec![Text::new("Hello").into()]).to_string(),
             "Hello"
         );
         assert_eq!(
-            ListItemContent::new_with_nodes(false, vec![Text::new("Hello").into()]).serialize(),
+            ListItemContent::new_with_nodes(false, vec![Text::new("Hello").into()]).to_string(),
             "Hello\n"
         );
     }
@@ -252,7 +263,7 @@ mod test {
                     Strikethrough::new("S").into(),
                 ]
             )
-            .serialize()
+            .to_string()
         );
     }
 }

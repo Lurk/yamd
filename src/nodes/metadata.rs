@@ -1,25 +1,16 @@
+use std::fmt::Display;
+
 use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 use chrono::{DateTime, FixedOffset};
+use serde::Serialize;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Default)]
 pub struct Metadata {
     pub header: Option<String>,
     pub timestamp: Option<DateTime<FixedOffset>>,
     pub image: Option<String>,
     pub preview: Option<String>,
     pub tags: Vec<String>,
-}
-
-impl Default for Metadata {
-    fn default() -> Self {
-        Self {
-            header: None,
-            timestamp: None,
-            image: None,
-            preview: None,
-            tags: vec![],
-        }
-    }
 }
 
 impl Metadata {
@@ -35,17 +26,18 @@ impl Metadata {
             timestamp,
             image: image.map(|i| i.into()),
             preview: preview.map(|p| p.into()),
-            tags: tags.unwrap_or(vec![]),
+            tags: tags.unwrap_or_default(),
         }
     }
 }
 
-impl Node for Metadata {
-    fn serialize(&self) -> String {
+impl Display for Metadata {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.len() == 0 {
-            return "".to_string();
+            return write!(f, "");
         }
-        format!(
+        write!(
+            f,
             "{}{}{}{}{}^^^\n\n",
             self.header
                 .as_ref()
@@ -66,7 +58,9 @@ impl Node for Metadata {
             },
         )
     }
+}
 
+impl Node for Metadata {
     fn len(&self) -> usize {
         let len = self.header.as_ref().map_or(0, |h| h.len() + 9)
             + self
@@ -143,7 +137,7 @@ mod tests {
             Some(vec!["tag1".to_string(), "tag2".to_string()]),
         );
         assert_eq!(
-            metadata.serialize(),
+            metadata.to_string(),
             "header: header\ntimestamp: 2022-01-01 00:00:00 +02:00\nimage: image\npreview: preview\ntags: tag1, tag2\n^^^\n\n"
         );
     }
@@ -160,7 +154,7 @@ mod tests {
             Some("preview"),
             Some(vec!["tag1".to_string(), "tag2".to_string()]),
         );
-        assert_eq!(metadata.len(), metadata.serialize().len());
+        assert_eq!(metadata.len(), metadata.to_string().len());
     }
 
     #[test]
@@ -175,7 +169,7 @@ mod tests {
             Some("preview"),
             Some(vec!["tag1".to_string()]),
         );
-        assert_eq!(metadata.len(), metadata.serialize().len());
+        assert_eq!(metadata.len(), metadata.to_string().len());
     }
 
     #[test]
@@ -191,7 +185,7 @@ mod tests {
             Some(vec!["tag1".to_string(), "tag2".to_string()]),
         );
         assert_eq!(
-            Metadata::deserialize(metadata.serialize().as_str()),
+            Metadata::deserialize(metadata.to_string().as_str()),
             Some(metadata)
         );
     }
@@ -231,7 +225,7 @@ mod tests {
             Metadata::default(),
             Metadata::new::<&str>(None, None, None, None, None)
         );
-        assert_eq!(Metadata::default().serialize(), "");
+        assert_eq!(Metadata::default().to_string(), "");
         assert_eq!(Metadata::default().len(), 0);
     }
 }

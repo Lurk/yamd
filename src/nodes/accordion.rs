@@ -1,3 +1,7 @@
+use std::fmt::Display;
+
+use serde::Serialize;
+
 use crate::toolkit::{
     context::Context,
     deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
@@ -7,18 +11,21 @@ use crate::toolkit::{
 
 use super::accordion_tab::AccordionTab;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
+#[serde(tag = "type")]
 pub enum AccordionNodes {
     AccordionTab(AccordionTab),
 }
 
-impl Node for AccordionNodes {
-    fn serialize(&self) -> String {
+impl Display for AccordionNodes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AccordionNodes::AccordionTab(tab) => tab.serialize(),
+            AccordionNodes::AccordionTab(tab) => write!(f, "{}", tab),
         }
     }
+}
 
+impl Node for AccordionNodes {
     fn len(&self) -> usize {
         match self {
             AccordionNodes::AccordionTab(tab) => tab.len(),
@@ -32,8 +39,9 @@ impl From<AccordionTab> for AccordionNodes {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Accordion {
+    #[serde(skip_serializing)]
     consumed_all_input: bool,
     pub nodes: Vec<AccordionNodes>,
 }
@@ -51,20 +59,23 @@ impl Accordion {
     }
 }
 
-impl Node for Accordion {
-    fn serialize(&self) -> String {
-        format!(
+impl Display for Accordion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "///\n{nodes}\n\\\\\\{end}",
             nodes = self
                 .nodes
                 .iter()
-                .map(|n| n.serialize())
+                .map(|n| n.to_string())
                 .collect::<Vec<String>>()
                 .join(""),
             end = if self.consumed_all_input { "" } else { "\n\n" }
         )
     }
+}
 
+impl Node for Accordion {
     fn len(&self) -> usize {
         self.nodes.iter().map(|n| n.len()).sum::<usize>() + self.get_outer_token_length()
     }

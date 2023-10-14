@@ -1,3 +1,7 @@
+use std::fmt::Display;
+
+use serde::Serialize;
+
 use crate::nodes::{
     anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic,
     strikethrough::Strikethrough, text::Text,
@@ -9,7 +13,8 @@ use crate::toolkit::{
     matcher::Matcher,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
+#[serde(tag = "type")]
 pub enum ParagraphNodes {
     A(Anchor),
     B(Bold),
@@ -55,17 +60,20 @@ impl From<InlineCode> for ParagraphNodes {
     }
 }
 
-impl Node for ParagraphNodes {
-    fn serialize(&self) -> String {
+impl Display for ParagraphNodes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ParagraphNodes::A(node) => node.serialize(),
-            ParagraphNodes::B(node) => node.serialize(),
-            ParagraphNodes::I(node) => node.serialize(),
-            ParagraphNodes::S(node) => node.serialize(),
-            ParagraphNodes::Text(node) => node.serialize(),
-            ParagraphNodes::InlineCode(node) => node.serialize(),
+            ParagraphNodes::A(node) => write!(f, "{}", node),
+            ParagraphNodes::B(node) => write!(f, "{}", node),
+            ParagraphNodes::I(node) => write!(f, "{}", node),
+            ParagraphNodes::S(node) => write!(f, "{}", node),
+            ParagraphNodes::Text(node) => write!(f, "{}", node),
+            ParagraphNodes::InlineCode(node) => write!(f, "{}", node),
         }
     }
+}
+
+impl Node for ParagraphNodes {
     fn len(&self) -> usize {
         match self {
             ParagraphNodes::A(node) => node.len(),
@@ -78,8 +86,9 @@ impl Node for ParagraphNodes {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Paragraph {
+    #[serde(skip_serializing)]
     consumed_all_input: bool,
     pub nodes: Vec<ParagraphNodes>,
 }
@@ -133,23 +142,22 @@ impl Deserializer for Paragraph {
     }
 }
 
-impl Node for Paragraph {
-    fn serialize(&self) -> String {
-        let end_token = match self.consumed_all_input {
-            true => "",
-            false => "\n\n",
-        };
-        format!(
+impl Display for Paragraph {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "{}{}",
             self.nodes
                 .iter()
-                .map(|node| node.serialize())
+                .map(|node| node.to_string())
                 .collect::<Vec<String>>()
                 .concat(),
-            end_token
+            if self.consumed_all_input { "" } else { "\n\n" }
         )
     }
+}
 
+impl Node for Paragraph {
     fn len(&self) -> usize {
         self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
     }
@@ -190,7 +198,7 @@ mod tests {
         p.push(InlineCode::new("let foo='bar';"));
 
         assert_eq!(
-            p.serialize(),
+            p.to_string(),
             "simple text **bold text**`let foo='bar';`".to_string()
         );
     }
@@ -209,11 +217,11 @@ mod tests {
                     Strikethrough::new("S").into()
                 ],
             )
-            .serialize(),
+            .to_string(),
             "simple text **bold text**`let foo='bar';`[a](u)_I_~~S~~".to_string()
         );
         assert_eq!(
-            Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).serialize(),
+            Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).to_string(),
             "t\n\n".to_string()
         );
     }

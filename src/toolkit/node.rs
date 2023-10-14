@@ -4,7 +4,6 @@ use super::{
 };
 
 pub trait Node {
-    fn serialize(&self) -> String;
     fn len(&self) -> usize;
     fn maybe_node<BranchNodes>() -> MaybeNode<BranchNodes>
     where
