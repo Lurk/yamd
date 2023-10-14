@@ -534,4 +534,20 @@ end"#;
         let actual = Yamd::deserialize(input).unwrap();
         assert_eq!(expected, actual);
     }
+
+    #[test]
+    fn multiple_fallbacks_in_a_row_before_non_fallback() {
+        let input = "1\n\n2\n\n3\n\n# header";
+        let expected = Yamd::new_with_nodes(
+            None,
+            vec![
+                Paragraph::new_with_nodes(false, vec![Text::new("1").into()]).into(),
+                Paragraph::new_with_nodes(false, vec![Text::new("2").into()]).into(),
+                Paragraph::new_with_nodes(false, vec![Text::new("3").into()]).into(),
+                Heading::new(true, "header", 1).into(),
+            ],
+        );
+        let actual = Yamd::deserialize(input).unwrap();
+        assert_eq!(expected, actual);
+    }
 }
