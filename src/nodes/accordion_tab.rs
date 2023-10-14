@@ -16,6 +16,7 @@ use super::{
 };
 
 #[derive(Debug, PartialEq, Serialize)]
+#[serde(tag = "type")]
 pub enum AccordionTabNodes {
     Pargaraph(Paragraph),
     Heading(Heading),
@@ -127,6 +128,7 @@ impl From<Code> for AccordionTabNodes {
 pub struct AccordionTab {
     pub header: Option<String>,
     pub nodes: Vec<AccordionTabNodes>,
+    #[serde(skip_serializing)]
     consumed_all_input: bool,
 }
 

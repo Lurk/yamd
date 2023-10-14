@@ -12,6 +12,7 @@ use crate::toolkit::{
 use super::accordion_tab::AccordionTab;
 
 #[derive(Debug, PartialEq, Serialize)]
+#[serde(tag = "type")]
 pub enum AccordionNodes {
     AccordionTab(AccordionTab),
 }
@@ -40,6 +41,7 @@ impl From<AccordionTab> for AccordionNodes {
 
 #[derive(Debug, PartialEq, Serialize)]
 pub struct Accordion {
+    #[serde(skip_serializing)]
     consumed_all_input: bool,
     pub nodes: Vec<AccordionNodes>,
 }

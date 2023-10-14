@@ -16,6 +16,7 @@ use super::{
 };
 
 #[derive(Debug, PartialEq, Serialize)]
+#[serde(tag = "type")]
 pub enum YamdNodes {
     P(Paragraph),
     H(Heading),

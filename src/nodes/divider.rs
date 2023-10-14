@@ -6,6 +6,7 @@ use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matc
 
 #[derive(Debug, PartialEq, Serialize)]
 pub struct Divider {
+    #[serde(skip_serializing)]
     consumed_all_input: bool,
 }
 

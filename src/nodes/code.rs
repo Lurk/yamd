@@ -8,6 +8,7 @@ use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matc
 pub struct Code {
     pub lang: String,
     pub code: String,
+    #[serde(skip_serializing)]
     consumed_all_input: bool,
 }
 

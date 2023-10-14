@@ -7,7 +7,8 @@ use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matc
 #[derive(Debug, PartialEq, Serialize)]
 pub struct Image {
     pub alt: String,
-    pub url: String,
+    pub src: String,
+    #[serde(skip_serializing)]
     consumed_all_input: bool,
 }
 
@@ -15,7 +16,7 @@ impl Image {
     pub fn new<S: Into<String>>(consumed_all_input: bool, alt: S, url: S) -> Self {
         Self {
             alt: alt.into(),
-            url: url.into(),
+            src: url.into(),
             consumed_all_input,
         }
     }
@@ -29,14 +30,14 @@ impl Display for Image {
             "\n\n"
         };
 
-        write!(f, "![{}]({}){}", self.alt, self.url, end)
+        write!(f, "![{}]({}){}", self.alt, self.src, end)
     }
 }
 
 impl Node for Image {
     fn len(&self) -> usize {
         let end = if self.consumed_all_input { 1 } else { 2 };
-        self.alt.len() + self.url.len() + 5 + end
+        self.alt.len() + self.src.len() + 5 + end
     }
 }
 
