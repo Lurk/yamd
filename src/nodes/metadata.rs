@@ -97,11 +97,16 @@ impl Deserializer for Metadata {
                 if line.starts_with("header: ") {
                     meta.header = Some(line.replace("header: ", ""));
                 } else if line.starts_with("timestamp: ") {
-                    meta.timestamp = DateTime::parse_from_str(
-                        line.replace("timestamp: ", "").as_str(),
-                        "%Y-%m-%d %H:%M:%S %z",
-                    )
-                    .ok();
+                    // remove this when %:z works as expected
+                    if line.trim().chars().rev().nth(5) == Some('+') {
+                        meta.timestamp = DateTime::parse_from_str(
+                            line.replace("timestamp: ", "").as_str(),
+                            // %:z does not work as expected
+                            // https://github.com/chronotope/chrono/pull/1083
+                            "%Y-%m-%d %H:%M:%S %:z",
+                        )
+                        .ok();
+                    }
                 } else if line.starts_with("image: ") {
                     meta.image = Some(line.replace("image: ", ""));
                 } else if line.starts_with("preview: ") {
@@ -213,6 +218,10 @@ mod tests {
 
     #[test]
     fn deserialize_wrong_date() {
+        assert_eq!(
+            Metadata::deserialize("timestamp: 2022-01-01 00:00:00 +0200\n^^^\n\n"),
+            Some(Metadata::new::<&str>(None, None, None, None, None))
+        );
         assert_eq!(
             Metadata::deserialize("timestamp: 2022-01-01 00:00:00\n^^^\n\n"),
             Some(Metadata::new::<&str>(None, None, None, None, None))
