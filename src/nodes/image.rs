@@ -13,10 +13,10 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn new<S: Into<String>>(consumed_all_input: bool, alt: S, url: S) -> Self {
+    pub fn new<S: Into<String>>(consumed_all_input: bool, alt: S, src: S) -> Self {
         Self {
             alt: alt.into(),
-            src: url.into(),
+            src: src.into(),
             consumed_all_input,
         }
     }

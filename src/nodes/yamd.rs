@@ -519,4 +519,19 @@ end"#;
     fn default() {
         assert_eq!(Yamd::default().to_string(), String::new());
     }
+
+    #[test]
+    fn multiple_fallbacks_in_a_row() {
+        let input = "1\n\n2\n\n3";
+        let expected = Yamd::new_with_nodes(
+            None,
+            vec![
+                Paragraph::new_with_nodes(false, vec![Text::new("1").into()]).into(),
+                Paragraph::new_with_nodes(false, vec![Text::new("2").into()]).into(),
+                Paragraph::new_with_nodes(true, vec![Text::new("3").into()]).into(),
+            ],
+        );
+        let actual = Yamd::deserialize(input).unwrap();
+        assert_eq!(expected, actual);
+    }
 }

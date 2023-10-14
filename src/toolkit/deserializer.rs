@@ -15,31 +15,19 @@ where
     {
         let mut current_position = 0;
         let mut fallback_position = 0;
-        let fallback_node = Self::get_fallback_node();
         let maybe_nodes = Self::get_maybe_nodes();
         while current_position < input.len() {
             let slice = &input[current_position..];
             current_position += slice.chars().next().unwrap().len_utf8();
             if maybe_nodes.is_empty() {
-                match fallback_node.as_ref() {
-                    Some(fallback_node) => {
-                        branch.push(fallback_node(slice));
-                        current_position = branch.len() - branch.get_outer_token_length();
-                        fallback_position = current_position;
-                    }
-                    None => return None,
-                }
+                current_position = branch.fallback(slice)?;
+                fallback_position = current_position;
                 continue;
             }
             for parser in &maybe_nodes {
                 if let Some(node) = parser(slice, branch.context()) {
                     if fallback_position != current_position - 1 {
-                        match &fallback_node {
-                            Some(fallback_node) => branch.push(fallback_node(
-                                &input[fallback_position..current_position - 1],
-                            )),
-                            None => return None,
-                        }
+                        branch.fallback(&input[fallback_position..current_position - 1])?;
                     }
                     branch.push(node);
                     current_position = branch.len() - branch.get_outer_token_length();
@@ -47,14 +35,25 @@ where
                 }
             }
         }
-        if fallback_position < input.len() {
-            match fallback_node {
-                Some(fallback_node) => branch.push(fallback_node(&input[fallback_position..])),
-                None => return None,
-            }
+        while fallback_position < input.len() {
+            fallback_position = branch.fallback(&input[fallback_position..])?;
         }
 
         Some(branch)
+    }
+
+    fn fallback(self: &mut Self, slice: &str) -> Option<usize>
+    where
+        Self: Sized + Deserializer + Node,
+    {
+        let fallback_node = Self::get_fallback_node();
+        match fallback_node.as_ref() {
+            Some(fallback_node) => {
+                self.push(fallback_node(slice));
+                Some(self.len() - self.get_outer_token_length())
+            }
+            None => return None,
+        }
     }
 }
 
