@@ -11,7 +11,7 @@ use crate::toolkit::{
 
 use super::paragraph::Paragraph;
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 #[serde(tag = "type")]
 pub enum HighlightNodes {
     Paragraph(Paragraph),
@@ -39,7 +39,7 @@ impl From<Paragraph> for HighlightNodes {
     }
 }
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Highlight {
     pub header: Option<String>,
     pub icon: Option<String>,

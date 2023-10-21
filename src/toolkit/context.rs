@@ -20,7 +20,7 @@ impl From<char> for ContextValues {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Context {
     inner: HashMap<String, ContextValues>,
 }
@@ -48,12 +48,6 @@ impl Context {
             return Some(*value);
         }
         None
-    }
-}
-
-impl Default for Context {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

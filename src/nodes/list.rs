@@ -17,7 +17,7 @@ pub enum ListTypes {
     Ordered,
 }
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 #[serde(tag = "type")]
 pub enum ListNodes {
     ListItem(ListItem),
@@ -45,7 +45,7 @@ impl From<ListItem> for ListNodes {
     }
 }
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct List {
     pub list_type: ListTypes,
     pub level: usize,

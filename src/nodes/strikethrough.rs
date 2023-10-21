@@ -8,7 +8,7 @@ use crate::{
 };
 
 /// Representation of strike through
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Strikethrough {
     pub text: String,
 }

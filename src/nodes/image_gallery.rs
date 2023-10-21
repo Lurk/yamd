@@ -11,7 +11,7 @@ use crate::toolkit::{
 
 use super::image::Image;
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 #[serde(tag = "type")]
 pub enum ImageGalleryNodes {
     Image(Image),
@@ -41,7 +41,7 @@ impl From<Image> for ImageGalleryNodes {
 
 /// Image Gallery node is a node that contains multiple Image nodes
 /// it starts with `!!!\n` and ends with `\n!!!`
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct ImageGallery {
     pub nodes: Vec<ImageGalleryNodes>,
     #[serde(skip_serializing)]

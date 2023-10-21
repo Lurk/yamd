@@ -9,7 +9,7 @@ use super::{
     list_item_content::ListItemContent,
 };
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct ListItem {
     pub list_type: ListTypes,
     pub level: usize,

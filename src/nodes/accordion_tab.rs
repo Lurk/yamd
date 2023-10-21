@@ -15,7 +15,7 @@ use super::{
     list::List, paragraph::Paragraph,
 };
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 #[serde(tag = "type")]
 pub enum AccordionTabNodes {
     Pargaraph(Paragraph),
@@ -124,7 +124,7 @@ impl From<Code> for AccordionTabNodes {
     }
 }
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct AccordionTab {
     pub header: Option<String>,
     pub nodes: Vec<AccordionTabNodes>,

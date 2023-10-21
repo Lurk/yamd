@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct InlineCode {
     pub text: String,
 }

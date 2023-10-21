@@ -4,7 +4,7 @@ use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matc
 use chrono::{DateTime, FixedOffset};
 use serde::Serialize;
 
-#[derive(Debug, PartialEq, Serialize, Default)]
+#[derive(Debug, PartialEq, Serialize, Default, Clone)]
 pub struct Metadata {
     pub header: Option<String>,
     pub timestamp: Option<DateTime<FixedOffset>>,

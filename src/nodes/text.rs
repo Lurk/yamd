@@ -9,7 +9,7 @@ use crate::toolkit::{
 };
 
 /// Representation of a regular text
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Text {
     pub text: String,
 }
