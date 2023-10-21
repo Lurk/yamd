@@ -6,7 +6,7 @@ use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matc
 
 #[derive(Debug, PartialEq, Clone, Serialize)]
 pub struct CloudinaryImageGallery {
-    username: String,
+    pub cloud_name: String,
     pub tag: String,
     #[serde(skip_serializing)]
     pub consumed_all_input: bool,
@@ -15,7 +15,7 @@ pub struct CloudinaryImageGallery {
 impl CloudinaryImageGallery {
     pub fn new<S: Into<String>>(username: S, tag: S, consumed_all_input: bool) -> Self {
         Self {
-            username: username.into(),
+            cloud_name: username.into(),
             tag: tag.into(),
             consumed_all_input,
         }
@@ -25,13 +25,17 @@ impl CloudinaryImageGallery {
 impl Display for CloudinaryImageGallery {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
-        write!(f, "!!!!\n! {}\n! {}\n!!!!{}", self.username, self.tag, end)
+        write!(
+            f,
+            "!!!!\n! {}\n! {}\n!!!!{}",
+            self.cloud_name, self.tag, end
+        )
     }
 }
 
 impl Node for CloudinaryImageGallery {
     fn len(&self) -> usize {
-        self.username.len() + self.tag.len() + 15 + if self.consumed_all_input { 0 } else { 2 }
+        self.cloud_name.len() + self.tag.len() + 15 + if self.consumed_all_input { 0 } else { 2 }
     }
 }
 

@@ -8,7 +8,7 @@ use crate::{
 };
 
 /// Representation of an Italic text
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Italic {
     pub text: String,
 }

@@ -14,7 +14,7 @@ use crate::{
     },
 };
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 #[serde(tag = "type")]
 pub enum BoldNodes {
     Text(Text),
@@ -60,7 +60,7 @@ impl Node for BoldNodes {
     }
 }
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone, Default)]
 pub struct Bold {
     pub nodes: Vec<BoldNodes>,
 }
@@ -89,12 +89,6 @@ impl Branch<BoldNodes> for Bold {
     }
     fn get_outer_token_length(&self) -> usize {
         4
-    }
-}
-
-impl Default for Bold {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

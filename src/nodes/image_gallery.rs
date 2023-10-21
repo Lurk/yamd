@@ -11,7 +11,7 @@ use crate::toolkit::{
 
 use super::image::Image;
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 #[serde(tag = "type")]
 pub enum ImageGalleryNodes {
     Image(Image),
@@ -41,7 +41,7 @@ impl From<Image> for ImageGalleryNodes {
 
 /// Image Gallery node is a node that contains multiple Image nodes
 /// it starts with `!!!\n` and ends with `\n!!!`
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct ImageGallery {
     pub nodes: Vec<ImageGalleryNodes>,
     #[serde(skip_serializing)]
@@ -50,10 +50,10 @@ pub struct ImageGallery {
 
 impl ImageGallery {
     pub fn new(consumed_all_input: bool) -> Self {
-        Self::new_with_nodes(vec![], consumed_all_input)
+        Self::new_with_nodes(consumed_all_input, vec![])
     }
 
-    pub fn new_with_nodes(nodes: Vec<ImageGalleryNodes>, consumed_all_input: bool) -> Self {
+    pub fn new_with_nodes(consumed_all_input: bool, nodes: Vec<ImageGalleryNodes>) -> Self {
         Self {
             nodes,
             consumed_all_input,
@@ -130,22 +130,22 @@ mod tests {
     fn serialize() {
         assert_eq!(
             ImageGallery::new_with_nodes(
+                true,
                 vec![
                     Image::new(true, "a", "u").into(),
                     Image::new(true, "a2", "u2").into()
                 ],
-                true
             )
             .to_string(),
             "!!!\n![a](u)\n![a2](u2)\n!!!"
         );
         assert_eq!(
             ImageGallery::new_with_nodes(
+                false,
                 vec![
                     Image::new(true, "a", "u").into(),
                     Image::new(true, "a2", "u2").into()
                 ],
-                false
             )
             .to_string(),
             "!!!\n![a](u)\n![a2](u2)\n!!!\n\n"
@@ -156,22 +156,22 @@ mod tests {
     fn len() {
         assert_eq!(
             ImageGallery::new_with_nodes(
+                true,
                 vec![
                     Image::new(true, "a", "u").into(),
                     Image::new(true, "a2", "u2").into()
                 ],
-                true
             )
             .len(),
             25
         );
         assert_eq!(
             ImageGallery::new_with_nodes(
+                false,
                 vec![
                     Image::new(true, "a", "u").into(),
                     Image::new(true, "a2", "u2").into()
                 ],
-                false
             )
             .len(),
             27
@@ -183,21 +183,21 @@ mod tests {
         assert_eq!(
             ImageGallery::deserialize("!!!\n![a](u)\n![a2](u2)\n!!!"),
             Some(ImageGallery::new_with_nodes(
+                true,
                 vec![
                     Image::new(true, "a", "u").into(),
                     Image::new(true, "a2", "u2").into()
                 ],
-                true
             ))
         );
         assert_eq!(
             ImageGallery::deserialize("!!!\n![a](u)\n![a2](u2)\n!!!\n\n"),
             Some(ImageGallery::new_with_nodes(
+                false,
                 vec![
                     Image::new(true, "a", "u").into(),
                     Image::new(true, "a2", "u2").into()
                 ],
-                false
             ))
         );
     }

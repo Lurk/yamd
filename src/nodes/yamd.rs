@@ -15,7 +15,7 @@ use super::{
     image_gallery::ImageGallery, list::List, metadata::Metadata,
 };
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 #[serde(tag = "type")]
 pub enum YamdNodes {
     P(Paragraph),
@@ -134,7 +134,7 @@ impl Node for YamdNodes {
 }
 
 /// Yamd is a parent node for every node.
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone, Default)]
 pub struct Yamd {
     pub metadata: Metadata,
     pub nodes: Vec<YamdNodes>,
@@ -187,12 +187,6 @@ impl Deserializer for Yamd {
         let metadata = Metadata::deserialize(input);
         let metadata_len = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
         Self::parse_branch(&input[metadata_len..], Self::new(metadata))
-    }
-}
-
-impl Default for Yamd {
-    fn default() -> Self {
-        Self::new(None)
     }
 }
 
@@ -359,17 +353,17 @@ end"#;
                     .into(),
                     Image::new(false, 'a', 'u').into(),
                     ImageGallery::new_with_nodes(
+                        false,
                         vec![
                             Image::new(true, "a", "u").into(),
                             Image::new(true, "a2", "u2").into()
                         ],
-                        false
                     )
                     .into(),
                     Highlight::new_with_nodes(
+                        false,
                         Some("H"),
                         Some("I"),
-                        false,
                         vec![
                             Paragraph::new_with_nodes(false, vec![Strikethrough::new("s").into()])
                                 .into(),
@@ -450,17 +444,17 @@ end"#;
                     .into(),
                     Image::new(false, 'a', 'u').into(),
                     ImageGallery::new_with_nodes(
+                        false,
                         vec![
                             Image::new(true, "a", "u").into(),
                             Image::new(true, "a2", "u2").into()
                         ],
-                        false
                     )
                     .into(),
                     Highlight::new_with_nodes(
+                        false,
                         Some("H"),
                         Some("I"),
-                        false,
                         vec![
                             Paragraph::new_with_nodes(false, vec![Strikethrough::new("s").into()])
                                 .into(),

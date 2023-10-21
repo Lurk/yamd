@@ -13,7 +13,7 @@ use crate::toolkit::{
     matcher::Matcher,
 };
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 #[serde(tag = "type")]
 pub enum ParagraphNodes {
     A(Anchor),
@@ -86,7 +86,7 @@ impl Node for ParagraphNodes {
     }
 }
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Paragraph {
     #[serde(skip_serializing)]
     consumed_all_input: bool,

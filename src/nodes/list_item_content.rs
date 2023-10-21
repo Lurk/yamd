@@ -14,7 +14,7 @@ use super::{
     strikethrough::Strikethrough, text::Text,
 };
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 #[serde(tag = "type")]
 pub enum ListItemContentNodes {
     A(Anchor),
@@ -87,7 +87,7 @@ impl Node for ListItemContentNodes {
     }
 }
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct ListItemContent {
     #[serde(skip_serializing)]
     consumed_all_input: bool,

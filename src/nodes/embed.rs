@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use crate::toolkit::{deserializer::Deserializer, matcher::Matcher, node::Node};
 
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Embed {
     pub url: String,
     pub kind: String,

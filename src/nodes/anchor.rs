@@ -9,7 +9,7 @@ use crate::{
 };
 
 /// Representation of an anchor
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Anchor {
     pub text: String,
     pub url: String,
