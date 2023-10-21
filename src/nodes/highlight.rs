@@ -50,17 +50,17 @@ pub struct Highlight {
 
 impl Highlight {
     pub fn new<H: Into<String>, I: Into<String>>(
+        consumed_all_input: bool,
         header: Option<H>,
         icon: Option<I>,
-        consumed_all_input: bool,
     ) -> Self {
-        Self::new_with_nodes(header, icon, consumed_all_input, vec![])
+        Self::new_with_nodes(consumed_all_input, header, icon, vec![])
     }
 
     pub fn new_with_nodes<H: Into<String>, I: Into<String>>(
+        consumed_all_input: bool,
         header: Option<H>,
         icon: Option<I>,
-        consumed_all_input: bool,
         nodes: Vec<HighlightNodes>,
     ) -> Self {
         Self {
@@ -146,7 +146,7 @@ impl Deserializer for Highlight {
 
             return Self::parse_branch(
                 matcher.get_rest(),
-                Self::new(header, icon, consumed_all_input),
+                Self::new(consumed_all_input, header, icon),
             );
         }
 
@@ -166,9 +166,9 @@ mod tests {
     fn len() {
         assert_eq!(
             Highlight::new_with_nodes(
+                true,
                 Some("h"),
                 Some("i"),
-                true,
                 vec![
                     Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
@@ -179,9 +179,9 @@ mod tests {
         );
         assert_eq!(
             Highlight::new_with_nodes(
+                false,
                 Some("h"),
                 Some("i"),
-                false,
                 vec![
                     Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
@@ -192,9 +192,9 @@ mod tests {
         );
         assert_eq!(
             Highlight::new_with_nodes::<String, String>(
-                None,
-                None,
                 false,
+                None,
+                None,
                 vec![
                     Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
@@ -208,9 +208,9 @@ mod tests {
     fn serialize() {
         assert_eq!(
             Highlight::new_with_nodes(
+                true,
                 Some("h"),
                 Some("i"),
-                true,
                 vec![
                     Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
@@ -221,9 +221,9 @@ mod tests {
         );
         assert_eq!(
             Highlight::new_with_nodes(
+                false,
                 Some("h"),
                 Some("i"),
-                false,
                 vec![
                     Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
@@ -234,9 +234,9 @@ mod tests {
         );
         assert_eq!(
             Highlight::new_with_nodes::<String, String>(
-                None,
-                None,
                 false,
+                None,
+                None,
                 vec![
                     Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
@@ -252,9 +252,9 @@ mod tests {
         assert_eq!(
             Highlight::deserialize(">>>\n>> h\n> i\nt\n\nt\n>>>"),
             Some(Highlight::new_with_nodes(
+                true,
                 Some("h"),
                 Some("i"),
-                true,
                 vec![
                     Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
@@ -265,9 +265,9 @@ mod tests {
         assert_eq!(
             Highlight::deserialize(">>>\n>> h\n> i\nt\n\nt2\n>>>\n\n"),
             Some(Highlight::new_with_nodes(
+                false,
                 Some("h"),
                 Some("i"),
-                false,
                 vec![
                     Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
                     Paragraph::new_with_nodes(true, vec![Text::new("t2").into()]).into()

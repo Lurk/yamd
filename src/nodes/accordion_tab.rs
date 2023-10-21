@@ -366,11 +366,11 @@ t**b**
                 .into(),
                 Image::new(false, 'a', 'u').into(),
                 ImageGallery::new_with_nodes(
+                    false,
                     vec![
                         Image::new(true, "a", "u").into(),
                         Image::new(true, "a2", "u2").into(),
                     ],
-                    false,
                 )
                 .into(),
                 Divider::new(false).into(),

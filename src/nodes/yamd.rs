@@ -353,17 +353,17 @@ end"#;
                     .into(),
                     Image::new(false, 'a', 'u').into(),
                     ImageGallery::new_with_nodes(
+                        false,
                         vec![
                             Image::new(true, "a", "u").into(),
                             Image::new(true, "a2", "u2").into()
                         ],
-                        false
                     )
                     .into(),
                     Highlight::new_with_nodes(
+                        false,
                         Some("H"),
                         Some("I"),
-                        false,
                         vec![
                             Paragraph::new_with_nodes(false, vec![Strikethrough::new("s").into()])
                                 .into(),
@@ -444,17 +444,17 @@ end"#;
                     .into(),
                     Image::new(false, 'a', 'u').into(),
                     ImageGallery::new_with_nodes(
+                        false,
                         vec![
                             Image::new(true, "a", "u").into(),
                             Image::new(true, "a2", "u2").into()
                         ],
-                        false
                     )
                     .into(),
                     Highlight::new_with_nodes(
+                        false,
                         Some("H"),
                         Some("I"),
-                        false,
                         vec![
                             Paragraph::new_with_nodes(false, vec![Strikethrough::new("s").into()])
                                 .into(),
