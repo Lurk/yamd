@@ -241,7 +241,7 @@ mod tests {
     };
     use chrono::DateTime;
     use pretty_assertions::assert_eq;
-    const TEST_CASE: &str = r#"header: test
+    const TEST_CASE: &str = r#"title: test
 timestamp: 2022-01-01 00:00:00 +02:00
 image: image
 preview: preview
