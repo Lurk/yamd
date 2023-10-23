@@ -6,7 +6,7 @@ use serde::Serialize;
 
 #[derive(Debug, PartialEq, Serialize, Default, Clone)]
 pub struct Metadata {
-    pub header: Option<String>,
+    pub title: Option<String>,
     pub timestamp: Option<DateTime<FixedOffset>>,
     pub image: Option<String>,
     pub preview: Option<String>,
@@ -15,14 +15,14 @@ pub struct Metadata {
 
 impl Metadata {
     pub fn new<S: Into<String>>(
-        header: Option<S>,
+        title: Option<S>,
         timestamp: Option<DateTime<FixedOffset>>,
         image: Option<S>,
         preview: Option<S>,
         tags: Option<Vec<String>>,
     ) -> Self {
         Self {
-            header: header.map(|h| h.into()),
+            title: title.map(|h| h.into()),
             timestamp,
             image: image.map(|i| i.into()),
             preview: preview.map(|p| p.into()),
@@ -39,9 +39,9 @@ impl Display for Metadata {
         write!(
             f,
             "{}{}{}{}{}^^^\n\n",
-            self.header
+            self.title
                 .as_ref()
-                .map_or("".to_string(), |h| format!("header: {h}\n")),
+                .map_or("".to_string(), |h| format!("title: {h}\n")),
             self.timestamp
                 .as_ref()
                 .map_or("".to_string(), |t| format!("timestamp: {t}\n")),
@@ -62,7 +62,7 @@ impl Display for Metadata {
 
 impl Node for Metadata {
     fn len(&self) -> usize {
-        let len = self.header.as_ref().map_or(0, |h| h.len() + 9)
+        let len = self.title.as_ref().map_or(0, |h| h.len() + 8)
             + self
                 .timestamp
                 .as_ref()
@@ -94,8 +94,8 @@ impl Deserializer for Metadata {
         if let Some(metadata) = matcher.get_match("", "^^^\n\n", false) {
             let mut meta = Self::new::<&str>(None, None, None, None, None);
             metadata.body.split('\n').for_each(|line| {
-                if line.starts_with("header: ") {
-                    meta.header = Some(line.replace("header: ", ""));
+                if line.starts_with("title: ") {
+                    meta.title = Some(line.replace("title: ", ""));
                 } else if line.starts_with("timestamp: ") {
                     // remove this when %:z works as expected
                     if line.trim().chars().rev().nth(5) == Some('+') {
@@ -143,14 +143,14 @@ mod tests {
         );
         assert_eq!(
             metadata.to_string(),
-            "header: header\ntimestamp: 2022-01-01 00:00:00 +02:00\nimage: image\npreview: preview\ntags: tag1, tag2\n^^^\n\n"
+            "title: header\ntimestamp: 2022-01-01 00:00:00 +02:00\nimage: image\npreview: preview\ntags: tag1, tag2\n^^^\n\n"
         );
     }
 
     #[test]
     fn test_len() {
         let metadata = Metadata::new(
-            Some("header"),
+            Some("title"),
             Some(
                 DateTime::parse_from_str("2022-01-01 00:00:00 +02:00", "%Y-%m-%d %H:%M:%S %z")
                     .unwrap(),
@@ -165,7 +165,7 @@ mod tests {
     #[test]
     fn len_with_one_tag() {
         let metadata = Metadata::new(
-            Some("header"),
+            Some("title"),
             Some(
                 DateTime::parse_from_str("2022-01-01 00:00:00 +02:00", "%Y-%m-%d %H:%M:%S %z")
                     .unwrap(),
@@ -180,7 +180,7 @@ mod tests {
     #[test]
     fn test_deserialize() {
         let metadata = Metadata::new(
-            Some("header"),
+            Some("title"),
             Some(
                 DateTime::parse_from_str("2022-01-01 00:00:00 +02:00", "%Y-%m-%d %H:%M:%S %z")
                     .unwrap(),
@@ -209,9 +209,9 @@ mod tests {
     }
 
     #[test]
-    fn deserialize_only_with_header() {
+    fn deserialize_only_with_title() {
         assert_eq!(
-            Metadata::deserialize("header: header\n^^^\n\n"),
+            Metadata::deserialize("title: header\n^^^\n\n"),
             Some(Metadata::new(Some("header"), None, None, None, None))
         );
     }
