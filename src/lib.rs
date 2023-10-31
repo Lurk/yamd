@@ -85,17 +85,6 @@
 //! ![alt text](url)
 //! !!!
 //! ```
-//! ### CloudinaryImageGallery
-//!
-//! Element that allows to embed image gallery from cloudinary.com by providing username and tag.
-//!
-//! Example:
-//! ```text
-//! !!!
-//! ! username
-//! ! tag
-//! !!!
-//! ```
 //!
 //! ### Highlight
 //!
