@@ -9,7 +9,7 @@ pub struct Embed {
     pub args: String,
     pub kind: String,
     #[serde(skip_serializing)]
-    consumed_all_input: bool,
+    pub consumed_all_input: bool,
 }
 
 impl Embed {
