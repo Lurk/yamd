@@ -10,9 +10,8 @@ use crate::toolkit::{
 };
 
 use super::{
-    accordion::Accordion, cloudinary_image_gallery::CloudinaryImageGallery, code::Code,
-    divider::Divider, embed::Embed, heading::Heading, image::Image, image_gallery::ImageGallery,
-    list::List, paragraph::Paragraph,
+    accordion::Accordion, code::Code, divider::Divider, embed::Embed, heading::Heading,
+    image::Image, image_gallery::ImageGallery, list::List, paragraph::Paragraph,
 };
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
@@ -22,7 +21,6 @@ pub enum AccordionTabNodes {
     Heading(Heading),
     Image(Image),
     ImageGallery(ImageGallery),
-    CloudinaryImageGallery(CloudinaryImageGallery),
     List(List),
     Embed(Embed),
     Accordion(Accordion),
@@ -37,7 +35,6 @@ impl Display for AccordionTabNodes {
             AccordionTabNodes::Heading(node) => write!(f, "{}", node),
             AccordionTabNodes::Image(node) => write!(f, "{}", node),
             AccordionTabNodes::ImageGallery(node) => write!(f, "{}", node),
-            AccordionTabNodes::CloudinaryImageGallery(node) => write!(f, "{}", node),
             AccordionTabNodes::List(node) => write!(f, "{}", node),
             AccordionTabNodes::Embed(node) => write!(f, "{}", node),
             AccordionTabNodes::Accordion(node) => write!(f, "{}", node),
@@ -54,7 +51,6 @@ impl Node for AccordionTabNodes {
             AccordionTabNodes::Heading(node) => node.len(),
             AccordionTabNodes::Image(node) => node.len(),
             AccordionTabNodes::ImageGallery(node) => node.len(),
-            AccordionTabNodes::CloudinaryImageGallery(node) => node.len(),
             AccordionTabNodes::List(node) => node.len(),
             AccordionTabNodes::Embed(node) => node.len(),
             AccordionTabNodes::Accordion(node) => node.len(),
@@ -85,12 +81,6 @@ impl From<Image> for AccordionTabNodes {
 impl From<ImageGallery> for AccordionTabNodes {
     fn from(value: ImageGallery) -> Self {
         Self::ImageGallery(value)
-    }
-}
-
-impl From<CloudinaryImageGallery> for AccordionTabNodes {
-    fn from(value: CloudinaryImageGallery) -> Self {
-        Self::CloudinaryImageGallery(value)
     }
 }
 
@@ -185,7 +175,6 @@ impl Branch<AccordionTabNodes> for AccordionTab {
             Heading::maybe_node(),
             Image::maybe_node(),
             ImageGallery::maybe_node(),
-            CloudinaryImageGallery::maybe_node(),
             List::maybe_node(),
             Embed::maybe_node(),
             Accordion::maybe_node(),
@@ -229,9 +218,8 @@ mod cfg {
 
     use crate::{
         nodes::{
-            accordion_tab::AccordionTab, bold::Bold,
-            cloudinary_image_gallery::CloudinaryImageGallery, code::Code, divider::Divider,
-            embed::Embed, heading::Heading, image::Image, image_gallery::ImageGallery, list::List,
+            accordion_tab::AccordionTab, bold::Bold, code::Code, divider::Divider, embed::Embed,
+            heading::Heading, image::Image, image_gallery::ImageGallery, list::List,
             list::ListTypes::*, list_item::ListItem, list_item_content::ListItemContent,
             paragraph::Paragraph, text::Text,
         },
@@ -345,10 +333,7 @@ t**b**
 
 {{youtube|123}}
 
-!!!!
-! username
-! tag
-!!!!
+{{cloudinary_gallery|cloud_name&tag}}
 \\"#;
         let tab = AccordionTab::new_with_nodes(
             true,
@@ -401,7 +386,7 @@ t**b**
                 )
                 .into(),
                 Embed::new("youtube", "123", false).into(),
-                CloudinaryImageGallery::new("username", "tag", true).into(),
+                Embed::new("cloudinary_gallery", "cloud_name&tag", true).into(),
             ],
         );
         assert_eq!(tab.to_string(), input);

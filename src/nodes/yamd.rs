@@ -10,9 +10,8 @@ use crate::{
 };
 
 use super::{
-    accordion::Accordion, cloudinary_image_gallery::CloudinaryImageGallery, code::Code,
-    divider::Divider, embed::Embed, highlight::Highlight, image::Image,
-    image_gallery::ImageGallery, list::List, metadata::Metadata,
+    accordion::Accordion, code::Code, divider::Divider, embed::Embed, highlight::Highlight,
+    image::Image, image_gallery::ImageGallery, list::List, metadata::Metadata,
 };
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
@@ -27,7 +26,6 @@ pub enum YamdNodes {
     Highlight(Highlight),
     Divider(Divider),
     Embed(Embed),
-    CloudinaryImageGallery(CloudinaryImageGallery),
     Accordion(Accordion),
 }
 
@@ -85,12 +83,6 @@ impl From<Embed> for YamdNodes {
     }
 }
 
-impl From<CloudinaryImageGallery> for YamdNodes {
-    fn from(value: CloudinaryImageGallery) -> Self {
-        YamdNodes::CloudinaryImageGallery(value)
-    }
-}
-
 impl From<Accordion> for YamdNodes {
     fn from(value: Accordion) -> Self {
         YamdNodes::Accordion(value)
@@ -109,7 +101,6 @@ impl Display for YamdNodes {
             YamdNodes::Highlight(node) => write!(f, "{}", node),
             YamdNodes::Divider(node) => write!(f, "{}", node),
             YamdNodes::Embed(node) => write!(f, "{}", node),
-            YamdNodes::CloudinaryImageGallery(node) => write!(f, "{}", node),
             YamdNodes::Accordion(node) => write!(f, "{}", node),
         }
     }
@@ -127,7 +118,6 @@ impl Node for YamdNodes {
             YamdNodes::Highlight(node) => node.len(),
             YamdNodes::Divider(node) => node.len(),
             YamdNodes::Embed(node) => node.len(),
-            YamdNodes::CloudinaryImageGallery(node) => node.len(),
             YamdNodes::Accordion(node) => node.len(),
         }
     }
@@ -168,7 +158,6 @@ impl Branch<YamdNodes> for Yamd {
             Highlight::maybe_node(),
             Divider::maybe_node(),
             Embed::maybe_node(),
-            CloudinaryImageGallery::maybe_node(),
             Accordion::maybe_node(),
         ]
     }
@@ -221,7 +210,6 @@ mod tests {
             accordion::Accordion,
             accordion_tab::AccordionTab,
             bold::Bold,
-            cloudinary_image_gallery::CloudinaryImageGallery,
             code::Code,
             divider::Divider,
             embed::Embed,
@@ -278,10 +266,7 @@ _I_
 
 {{youtube|123}}
 
-!!!!
-! username
-! tag
-!!!!
+{{cloudinary_gallery|cloud_name&tag}}
 
 ///
 //
@@ -399,7 +384,7 @@ end"#;
                     )
                     .into(),
                     Embed::new("youtube", "123", false).into(),
-                    CloudinaryImageGallery::new("username", "tag", false).into(),
+                    Embed::new("cloudinary_gallery", "cloud_name&tag", false).into(),
                     Accordion::new_with_nodes(
                         false,
                         vec![
@@ -492,7 +477,7 @@ end"#;
                     )
                     .into(),
                     Embed::new("youtube", "123", false).into(),
-                    CloudinaryImageGallery::new("username", "tag", false).into(),
+                    Embed::new("cloudinary_gallery", "cloud_name&tag", false).into(),
                     Accordion::new_with_nodes(
                         false,
                         vec![

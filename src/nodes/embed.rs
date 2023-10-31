@@ -6,17 +6,17 @@ use crate::toolkit::{deserializer::Deserializer, matcher::Matcher, node::Node};
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Embed {
-    pub url: String,
+    pub args: String,
     pub kind: String,
     #[serde(skip_serializing)]
     consumed_all_input: bool,
 }
 
 impl Embed {
-    pub fn new<S: Into<String>>(kind: S, url: S, consumed_all_input: bool) -> Self {
+    pub fn new<S: Into<String>>(kind: S, args: S, consumed_all_input: bool) -> Self {
         Self {
             kind: kind.into(),
-            url: url.into(),
+            args: args.into(),
             consumed_all_input,
         }
     }
@@ -25,14 +25,14 @@ impl Embed {
 impl Display for Embed {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let end = if self.consumed_all_input { "" } else { "\n\n" };
-        write!(f, "{{{{{}|{}}}}}{}", self.kind, self.url, end)
+        write!(f, "{{{{{}|{}}}}}{}", self.kind, self.args, end)
     }
 }
 
 impl Node for Embed {
     fn len(&self) -> usize {
         let end = if self.consumed_all_input { 0 } else { 2 };
-        5 + self.kind.len() + self.url.len() + end
+        5 + self.kind.len() + self.args.len() + end
     }
 }
 
@@ -44,11 +44,11 @@ impl Deserializer for Embed {
         let mut matcher = Matcher::new(input);
         if let Some(embed) = matcher.get_match("{{", "}}", false) {
             let mut embed = embed.body.split('|');
-            if let (Some(kind), Some(url)) = (embed.next(), embed.next()) {
+            if let (Some(kind), Some(args)) = (embed.next(), embed.next()) {
                 let consumed_all_input = matcher.get_match("\n\n", "", false).is_none();
                 return Some(Self::new(
                     kind.to_string(),
-                    url.to_string(),
+                    args.to_string(),
                     consumed_all_input,
                 ));
             }
