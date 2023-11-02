@@ -163,7 +163,8 @@ impl Branch<YamdNodes> for Yamd {
     }
 
     fn get_outer_token_length(&self) -> usize {
-        0
+        let len = self.metadata.len();
+        len + if len == 0 { 0 } else { 2 }
     }
 
     fn is_empty(&self) -> bool {
@@ -174,7 +175,7 @@ impl Branch<YamdNodes> for Yamd {
 impl Deserializer for Yamd {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let metadata = Metadata::deserialize(input);
-        let metadata_len = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
+        let metadata_len = metadata.as_ref().map(|m| m.len() + 2).unwrap_or(0);
         Self::parse_branch(&input[metadata_len..], "\n\n", Self::new(metadata, vec![]))
     }
 }
@@ -183,8 +184,9 @@ impl Display for Yamd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}{}",
+            "{}{}{}",
             self.metadata,
+            if self.metadata.len() == 0 { "" } else { "\n\n" },
             self.nodes
                 .iter()
                 .map(|node| node.to_string())
@@ -201,7 +203,9 @@ impl Node for Yamd {
         } else {
             (self.nodes.len() - 1) * 2
         };
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + delimeter_len
+        self.nodes.iter().map(|node| node.len()).sum::<usize>()
+            + delimeter_len
+            + self.get_outer_token_length()
     }
 }
 
@@ -234,12 +238,15 @@ mod tests {
     };
     use chrono::DateTime;
     use pretty_assertions::assert_eq;
-    const TEST_CASE: &str = r#"title: test
-timestamp: 2022-01-01 00:00:00 +02:00
+    const TEST_CASE: &str = r#"---
+title: test
+date: 2022-01-01T00:00:00+02:00
 image: image
 preview: preview
-tags: tag1, tag2
-^^^
+tags:
+- tag1
+- tag2
+---
 
 # hello
 
