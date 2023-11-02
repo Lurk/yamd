@@ -45,8 +45,9 @@ where
         while fallback_position < input.len() {
             if Self::get_fallback_node().is_none() {
                 return None;
+            } else {
+                fallback_position = branch.fallback(&input[fallback_position..], delimeter);
             }
-            fallback_position = branch.fallback(&input[fallback_position..], delimeter);
         }
         Some(branch)
     }
