@@ -66,11 +66,7 @@ pub struct Bold {
 }
 
 impl Bold {
-    pub fn new() -> Self {
-        Self::new_with_nodes(vec![])
-    }
-
-    pub fn new_with_nodes(nodes: Vec<BoldNodes>) -> Self {
+    pub fn new(nodes: Vec<BoldNodes>) -> Self {
         Self { nodes }
     }
 }
@@ -87,8 +83,13 @@ impl Branch<BoldNodes> for Bold {
     fn get_fallback_node() -> Option<DefinitelyNode<BoldNodes>> {
         Some(Box::new(|str| Text::new(str).into()))
     }
+
     fn get_outer_token_length(&self) -> usize {
         4
+    }
+
+    fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
     }
 }
 
@@ -108,7 +109,7 @@ impl Display for Bold {
 
 impl Node for Bold {
     fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
+        self.nodes.iter().map(|node| node.len()).sum::<usize>() + 4
     }
 }
 
@@ -116,7 +117,7 @@ impl Deserializer for Bold {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(bold) = matcher.get_match("**", "**", false) {
-            return Self::parse_branch(bold.body, Self::new());
+            return Self::parse_branch(bold.body, "", Self::default());
         }
         None
     }
@@ -138,7 +139,7 @@ mod tests {
 
     #[test]
     fn only_text() {
-        let mut b = Bold::new();
+        let mut b = Bold::default();
         b.push(Text::new("B as bold"));
         let str = b.to_string();
         assert_eq!(str, "**B as bold**".to_string());
@@ -146,7 +147,7 @@ mod tests {
 
     #[test]
     fn from_vec() {
-        let b: String = Bold::new_with_nodes(vec![
+        let b: String = Bold::new(vec![
             Text::new("B as bold ").into(),
             Italic::new("Italic").into(),
             Strikethrough::new("Strikethrough").into(),
@@ -159,12 +160,12 @@ mod tests {
     fn from_string() {
         assert_eq!(
             Bold::deserialize("**b**"),
-            Some(Bold::new_with_nodes(vec![Text::new("b").into()]))
+            Some(Bold::new(vec![Text::new("b").into()]))
         );
 
         assert_eq!(
             Bold::deserialize("**b ~~st~~ _i t_**"),
-            Some(Bold::new_with_nodes(vec![
+            Some(Bold::new(vec![
                 Text::new("b ").into(),
                 Strikethrough::new("st").into(),
                 Text::new(" ").into(),
@@ -175,15 +176,15 @@ mod tests {
 
     #[test]
     fn len() {
-        assert_eq!(Bold::new_with_nodes(vec![Text::new("T").into()]).len(), 5);
+        assert_eq!(Bold::new(vec![Text::new("T").into()]).len(), 5);
         assert_eq!(
-            Bold::new_with_nodes(vec![Text::new("T").into(), Strikethrough::new("S").into()]).len(),
+            Bold::new(vec![Text::new("T").into(), Strikethrough::new("S").into()]).len(),
             10
         );
     }
 
     #[test]
     fn default() {
-        assert_eq!(Bold::default(), Bold::new());
+        assert_eq!(Bold::default(), Bold::default());
     }
 }

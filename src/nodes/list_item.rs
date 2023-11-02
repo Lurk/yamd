@@ -68,14 +68,17 @@ impl Display for ListItem {
             self.text,
             self.nested_list
                 .as_ref()
-                .map_or("".to_string(), |list| list.to_string())
+                .map_or("".to_string(), |list| format!("\n{}", list))
         )
     }
 }
 
 impl Node for ListItem {
     fn len(&self) -> usize {
-        self.nested_list.as_ref().map_or(0, |list| list.len()) + self.text.len() + self.level + 2
+        self.nested_list.as_ref().map_or(0, |list| list.len() + 1)
+            + self.text.len()
+            + self.level
+            + 2
     }
 }
 
@@ -92,19 +95,13 @@ impl Deserializer for ListItem {
             format!("\n{}{} ", " ".repeat(level), list_type).as_str(),
             true,
         ) {
-            let content_body = if list_item.end_token.is_empty() {
-                list_item.body
-            } else {
-                &input[list_item.start_token.len()
-                    ..list_item.start_token.len() + list_item.body.len() + 1]
-            };
-            if let Some(text) = ListItemContent::deserialize(content_body) {
+            if let Some(text) = ListItemContent::deserialize(list_item.body) {
                 let mut nested_list = None;
-                if text.len() < list_item.body.len() {
+                if text.len() + 1 < list_item.body.len() {
                     let mut ctx = Context::new();
                     ctx.add("level", level);
                     if let Some(list) =
-                        List::deserialize_with_context(&list_item.body[text.len()..], Some(ctx))
+                        List::deserialize_with_context(&list_item.body[text.len() + 1..], Some(ctx))
                     {
                         nested_list = Some(list);
                     } else {
@@ -142,7 +139,7 @@ mod tests {
             ListItem::new(
                 ListTypes::Unordered,
                 0,
-                ListItemContent::new_with_nodes(true, vec![Text::new("test").into()])
+                ListItemContent::new(vec![Text::new("test").into()])
             )
             .to_string(),
             "- test".to_string()
@@ -152,7 +149,7 @@ mod tests {
             ListItem::new(
                 ListTypes::Ordered,
                 0,
-                ListItemContent::new_with_nodes(true, vec![Text::new("test").into()])
+                ListItemContent::new(vec![Text::new("test").into()])
             )
             .to_string(),
             "+ test".to_string()
@@ -162,15 +159,14 @@ mod tests {
             ListItem::new_with_nested_list(
                 ListTypes::Unordered,
                 0,
-                ListItemContent::new_with_nodes(false, vec![Text::new("test").into()]),
-                Some(List::new_with_nodes(
-                    true,
+                ListItemContent::new(vec![Text::new("test").into()]),
+                Some(List::new(
                     ListTypes::Unordered,
                     1,
                     vec![ListItem::new(
                         ListTypes::Unordered,
                         1,
-                        ListItemContent::new_with_nodes(true, vec![Text::new("test").into()])
+                        ListItemContent::new(vec![Text::new("test").into()])
                     )
                     .into()]
                 ))
@@ -186,7 +182,7 @@ mod tests {
             ListItem::new(
                 ListTypes::Unordered,
                 0,
-                ListItemContent::new_with_nodes(true, vec![Text::new("test").into()])
+                ListItemContent::new(vec![Text::new("test").into()])
             )
             .len(),
             6
@@ -196,15 +192,14 @@ mod tests {
             ListItem::new_with_nested_list(
                 ListTypes::Unordered,
                 0,
-                ListItemContent::new_with_nodes(false, vec![Text::new("test").into()]),
-                Some(List::new_with_nodes(
-                    true,
+                ListItemContent::new(vec![Text::new("test").into()]),
+                Some(List::new(
                     ListTypes::Unordered,
                     1,
                     vec![ListItem::new(
                         ListTypes::Unordered,
                         1,
-                        ListItemContent::new_with_nodes(true, vec![Text::new("test").into()])
+                        ListItemContent::new(vec![Text::new("test").into()])
                     )
                     .into()]
                 ))
@@ -221,7 +216,7 @@ mod tests {
             ListItem::new(
                 ListTypes::Unordered,
                 0,
-                ListItemContent::new_with_nodes(true, vec![Text::new("test").into()])
+                ListItemContent::new(vec![Text::new("test").into()])
             )
         );
     }
@@ -233,15 +228,14 @@ mod tests {
             Some(ListItem::new_with_nested_list(
                 ListTypes::Unordered,
                 0,
-                ListItemContent::new_with_nodes(false, vec![Text::new("111111").into()]),
-                Some(List::new_with_nodes(
-                    true,
+                ListItemContent::new(vec![Text::new("111111").into()]),
+                Some(List::new(
                     ListTypes::Unordered,
                     1,
                     vec![ListItem::new(
                         ListTypes::Unordered,
                         1,
-                        ListItemContent::new_with_nodes(true, vec![Text::new("22222").into()])
+                        ListItemContent::new(vec![Text::new("22222").into()])
                     )
                     .into()]
                 ))

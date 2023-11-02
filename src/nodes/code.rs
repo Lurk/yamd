@@ -8,31 +8,26 @@ use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matc
 pub struct Code {
     pub lang: String,
     pub code: String,
-    #[serde(skip_serializing)]
-    consumed_all_input: bool,
 }
 
 impl Code {
-    pub fn new<S: Into<String>>(consumed_all_input: bool, lang: S, code: S) -> Self {
+    pub fn new<S: Into<String>>(lang: S, code: S) -> Self {
         Self {
             lang: lang.into(),
             code: code.into(),
-            consumed_all_input,
         }
     }
 }
 
 impl Display for Code {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let end = if self.consumed_all_input { "" } else { "\n\n" };
-        write!(f, "```{}\n{}\n```{}", self.lang, self.code, end)
+        write!(f, "```{}\n{}\n```", self.lang, self.code)
     }
 }
 
 impl Node for Code {
     fn len(&self) -> usize {
-        let end = if self.consumed_all_input { 0 } else { 2 };
-        self.lang.len() + self.code.len() + 8 + end
+        self.lang.len() + self.code.len() + 8
     }
 }
 
@@ -41,8 +36,7 @@ impl Deserializer for Code {
         let mut matcher = Matcher::new(input);
         if let Some(lang) = matcher.get_match("```", "\n", false) {
             if let Some(code) = matcher.get_match("", "\n```", false) {
-                let consumed_all_input = matcher.get_match("\n\n", "", false).is_none();
-                return Some(Self::new(consumed_all_input, lang.body, code.body));
+                return Some(Self::new(lang.body, code.body));
             }
         }
         None
@@ -60,30 +54,25 @@ mod tests {
     #[test]
     fn serialize() {
         assert_eq!(
-            Code::new(true, "rust", "let foo:usize=1;").to_string(),
+            Code::new("rust", "let foo:usize=1;").to_string(),
             String::from("```rust\nlet foo:usize=1;\n```")
-        );
-        assert_eq!(
-            Code::new(false, "rust", "let foo:usize=1;").to_string(),
-            String::from("```rust\nlet foo:usize=1;\n```\n\n")
         );
     }
 
     #[test]
     fn len() {
-        assert_eq!(Code::new(true, 'r', 'b').len(), 10);
-        assert_eq!(Code::new(false, 'r', 'b').len(), 12);
+        assert_eq!(Code::new('r', 'b').len(), 10);
     }
 
     #[test]
     fn deserializer() {
         assert_eq!(
             Code::deserialize("```rust\nlet a=1;\n```"),
-            Some(Code::new(true, "rust", "let a=1;"))
+            Some(Code::new("rust", "let a=1;"))
         );
         assert_eq!(
             Code::deserialize("```rust\nlet a=1;\n```\n\n"),
-            Some(Code::new(false, "rust", "let a=1;"))
+            Some(Code::new("rust", "let a=1;"))
         );
         assert_eq!(Code::deserialize("```rust\nlet a=1;\n"), None);
     }

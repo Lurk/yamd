@@ -41,21 +41,18 @@ impl From<AccordionTab> for AccordionNodes {
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Accordion {
-    #[serde(skip_serializing)]
-    consumed_all_input: bool,
     pub nodes: Vec<AccordionNodes>,
 }
 
 impl Accordion {
-    pub fn new(consumed_all_input: bool) -> Self {
-        Self::new_with_nodes(consumed_all_input, vec![])
+    pub fn new(nodes: Vec<AccordionNodes>) -> Self {
+        Accordion { nodes }
     }
+}
 
-    pub fn new_with_nodes(consumed_all_input: bool, nodes: Vec<AccordionNodes>) -> Self {
-        Accordion {
-            consumed_all_input,
-            nodes,
-        }
+impl Default for Accordion {
+    fn default() -> Self {
+        Accordion::new(vec![])
     }
 }
 
@@ -63,21 +60,27 @@ impl Display for Accordion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "///\n{nodes}\n\\\\\\{end}",
+            "///\n{nodes}\n\\\\\\",
             nodes = self
                 .nodes
                 .iter()
                 .map(|n| n.to_string())
                 .collect::<Vec<String>>()
-                .join(""),
-            end = if self.consumed_all_input { "" } else { "\n\n" }
+                .join("\n"),
         )
     }
 }
 
 impl Node for Accordion {
     fn len(&self) -> usize {
-        self.nodes.iter().map(|n| n.len()).sum::<usize>() + self.get_outer_token_length()
+        let delimiter_len = if self.nodes.is_empty() {
+            0
+        } else {
+            self.nodes.len() - 1
+        };
+        self.nodes.iter().map(|n| n.len()).sum::<usize>()
+            + self.get_outer_token_length()
+            + delimiter_len
     }
 }
 
@@ -95,7 +98,11 @@ impl Branch<AccordionNodes> for Accordion {
     }
 
     fn get_outer_token_length(&self) -> usize {
-        8 + if self.consumed_all_input { 0 } else { 2 }
+        8
+    }
+
+    fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
     }
 }
 
@@ -107,8 +114,7 @@ impl Deserializer for Accordion {
         let mut matcher = Matcher::new(input);
 
         if let Some(accordion) = matcher.get_match("///\n", "\n\\\\\\", false) {
-            let consumed_all_input = matcher.get_match("\n\n", "", false).is_none();
-            return Self::parse_branch(accordion.body, Self::new(consumed_all_input));
+            return Self::parse_branch(accordion.body, "\n", Self::default());
         }
         None
     }
@@ -126,7 +132,7 @@ mod test {
     #[test]
     fn test_deserialize_empty() {
         let input = "///\n\n\\\\\\";
-        assert_eq!(Accordion::deserialize(input), Some(Accordion::new(true)));
+        assert_eq!(Accordion::deserialize(input), Some(Accordion::default()));
     }
 
     #[test]
@@ -143,20 +149,11 @@ mod test {
 \\\"#;
         assert_eq!(
             Accordion::deserialize(input),
-            Some(Accordion::new_with_nodes(
-                true,
-                vec![
-                    AccordionTab::new(false, Some("header")).into(),
-                    AccordionTab::new(true, Some("one more")).into()
-                ]
-            ))
+            Some(Accordion::new(vec![
+                AccordionTab::new(Some("header"), vec![]).into(),
+                AccordionTab::new(Some("one more"), vec![]).into()
+            ]))
         );
-    }
-
-    #[test]
-    fn consumed_all_input() {
-        let input = "///\n\n\\\\\\\n\n";
-        assert_eq!(Accordion::deserialize(input), Some(Accordion::new(false)));
     }
 
     #[test]
@@ -180,28 +177,16 @@ mod test {
             Accordion::deserialize(
                 "///\n//\n/ header\n///\n//\n/ hi from nested\ncontent\n\\\\\n\\\\\\\n\\\\\n\\\\\\"
             ),
-            Some(Accordion::new_with_nodes(
-                true,
-                vec![AccordionTab::new_with_nodes(
-                    true,
-                    Some("header"),
-                    vec![Accordion::new_with_nodes(
-                        true,
-                        vec![AccordionTab::new_with_nodes(
-                            true,
-                            Some("hi from nested"),
-                            vec![Paragraph::new_with_nodes(
-                                true,
-                                vec![Text::new("content").into()]
-                            )
-                            .into()]
-                        )
-                        .into()]
-                    )
-                    .into()]
+            Some(Accordion::new(vec![AccordionTab::new(
+                Some("header"),
+                vec![Accordion::new(vec![AccordionTab::new(
+                    Some("hi from nested"),
+                    vec![Paragraph::new(vec![Text::new("content").into()]).into()]
                 )
+                .into()])
                 .into()]
-            ))
+            )
+            .into()]))
         );
     }
 }

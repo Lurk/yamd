@@ -89,8 +89,6 @@ impl Node for ListItemContentNodes {
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct ListItemContent {
-    #[serde(skip_serializing)]
-    consumed_all_input: bool,
     pub nodes: Vec<ListItemContentNodes>,
 }
 
@@ -98,32 +96,31 @@ impl Display for ListItemContent {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{}{}",
+            "{}",
             self.nodes
                 .iter()
                 .map(|node| node.to_string())
                 .collect::<Vec<String>>()
                 .join(""),
-            if self.consumed_all_input { "" } else { "\n" }
         )
     }
 }
 
 impl Node for ListItemContent {
     fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
+        self.nodes.iter().map(|node| node.len()).sum::<usize>()
     }
 }
 
 impl ListItemContent {
-    pub fn new(consumed_all_input: bool) -> Self {
-        Self::new_with_nodes(consumed_all_input, vec![])
+    pub fn new(nodes: Vec<ListItemContentNodes>) -> Self {
+        ListItemContent { nodes }
     }
-    pub fn new_with_nodes(consumed_all_input: bool, nodes: Vec<ListItemContentNodes>) -> Self {
-        ListItemContent {
-            consumed_all_input,
-            nodes,
-        }
+}
+
+impl Default for ListItemContent {
+    fn default() -> Self {
+        Self::new(vec![])
     }
 }
 
@@ -147,11 +144,11 @@ impl Branch<ListItemContentNodes> for ListItemContent {
     }
 
     fn get_outer_token_length(&self) -> usize {
-        if self.consumed_all_input {
-            0
-        } else {
-            1
-        }
+        0
+    }
+
+    fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
     }
 }
 
@@ -159,10 +156,7 @@ impl Deserializer for ListItemContent {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut m = Matcher::new(input);
         if let Some(list_item_content) = m.get_match("", "\n", true) {
-            return Self::parse_branch(
-                list_item_content.body,
-                Self::new(list_item_content.end_token.is_empty()),
-            );
+            return Self::parse_branch(list_item_content.body, "", Self::default());
         }
         None
     }
@@ -183,41 +177,32 @@ mod test {
     #[test]
     fn test_consume_all() {
         let input = "This is a list item content";
-        let expected = ListItemContent::new_with_nodes(true, vec![Text::new(input).into()]);
+        let expected = ListItemContent::new(vec![Text::new(input).into()]);
         assert_eq!(ListItemContent::deserialize(input), Some(expected));
     }
 
     #[test]
     fn test_consume_all_with_newline() {
         let input = "This is a list item content\nAnd this is not";
-        let expected = ListItemContent::new_with_nodes(
-            false,
-            vec![Text::new("This is a list item content").into()],
-        );
+        let expected = ListItemContent::new(vec![Text::new("This is a list item content").into()]);
         assert_eq!(ListItemContent::deserialize(input), Some(expected));
     }
 
     #[test]
     fn len() {
-        assert_eq!(ListItemContent::new(true).len(), 0);
-        assert_eq!(ListItemContent::new(false).len(), 1);
+        assert_eq!(ListItemContent::default().len(), 0);
         assert_eq!(
-            ListItemContent::new_with_nodes(true, vec![Text::new("Hello").into()]).len(),
+            ListItemContent::new(vec![Text::new("Hello").into()]).len(),
             5
         );
     }
 
     #[test]
     fn serialize() {
-        assert_eq!(ListItemContent::new(true).to_string(), "");
-        assert_eq!(ListItemContent::new(false).to_string(), "\n");
+        assert_eq!(ListItemContent::default().to_string(), "");
         assert_eq!(
-            ListItemContent::new_with_nodes(true, vec![Text::new("Hello").into()]).to_string(),
+            ListItemContent::new(vec![Text::new("Hello").into()]).to_string(),
             "Hello"
-        );
-        assert_eq!(
-            ListItemContent::new_with_nodes(false, vec![Text::new("Hello").into()]).to_string(),
-            "Hello\n"
         );
     }
 
@@ -227,42 +212,36 @@ mod test {
             ListItemContent::deserialize(
                 "simple text **bold text** `let foo='bar';` [a](u) _I_ ~~S~~"
             ),
-            Some(ListItemContent::new_with_nodes(
-                true,
-                vec![
-                    Text::new("simple text ").into(),
-                    Bold::new_with_nodes(vec![Text::new("bold text").into()]).into(),
-                    Text::new(" ").into(),
-                    InlineCode::new("let foo='bar';").into(),
-                    Text::new(" ").into(),
-                    Anchor::new("a", "u").into(),
-                    Text::new(" ").into(),
-                    Italic::new("I").into(),
-                    Text::new(" ").into(),
-                    Strikethrough::new("S").into(),
-                ]
-            ))
+            Some(ListItemContent::new(vec![
+                Text::new("simple text ").into(),
+                Bold::new(vec![Text::new("bold text").into()]).into(),
+                Text::new(" ").into(),
+                InlineCode::new("let foo='bar';").into(),
+                Text::new(" ").into(),
+                Anchor::new("a", "u").into(),
+                Text::new(" ").into(),
+                Italic::new("I").into(),
+                Text::new(" ").into(),
+                Strikethrough::new("S").into(),
+            ]))
         );
     }
     #[test]
     fn serialize_with_all_nodes() {
         assert_eq!(
             "simple text **bold text** `let foo='bar';` [a](u) _I_ ~~S~~",
-            ListItemContent::new_with_nodes(
-                true,
-                vec![
-                    Text::new("simple text ").into(),
-                    Bold::new_with_nodes(vec![Text::new("bold text").into()]).into(),
-                    Text::new(" ").into(),
-                    InlineCode::new("let foo='bar';").into(),
-                    Text::new(" ").into(),
-                    Anchor::new("a", "u").into(),
-                    Text::new(" ").into(),
-                    Italic::new("I").into(),
-                    Text::new(" ").into(),
-                    Strikethrough::new("S").into(),
-                ]
-            )
+            ListItemContent::new(vec![
+                Text::new("simple text ").into(),
+                Bold::new(vec![Text::new("bold text").into()]).into(),
+                Text::new(" ").into(),
+                InlineCode::new("let foo='bar';").into(),
+                Text::new(" ").into(),
+                Anchor::new("a", "u").into(),
+                Text::new(" ").into(),
+                Italic::new("I").into(),
+                Text::new(" ").into(),
+                Strikethrough::new("S").into(),
+            ])
             .to_string()
         );
     }

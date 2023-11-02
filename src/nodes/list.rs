@@ -50,26 +50,14 @@ pub struct List {
     pub list_type: ListTypes,
     pub level: usize,
     pub nodes: Vec<ListNodes>,
-    #[serde(skip_serializing)]
-    consumed_all_input: bool,
 }
 
 impl List {
-    pub fn new(consumed_all_input: bool, list_type: ListTypes, level: usize) -> Self {
-        Self::new_with_nodes(consumed_all_input, list_type, level, vec![])
-    }
-
-    pub fn new_with_nodes(
-        consumed_all_input: bool,
-        list_type: ListTypes,
-        level: usize,
-        nodes: Vec<ListNodes>,
-    ) -> Self {
+    pub fn new(list_type: ListTypes, level: usize, nodes: Vec<ListNodes>) -> Self {
         Self {
             list_type,
             level,
             nodes,
-            consumed_all_input,
         }
     }
 
@@ -98,22 +86,26 @@ impl List {
 
 impl Display for List {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let end = if self.consumed_all_input { "" } else { "\n\n" };
         write!(
             f,
-            "{}{end}",
+            "{}",
             self.nodes
                 .iter()
                 .map(|node| node.to_string())
                 .collect::<Vec<String>>()
-                .join("")
+                .join("\n")
         )
     }
 }
 
 impl Node for List {
     fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
+        let add = if self.nodes.is_empty() {
+            0
+        } else {
+            self.nodes.len() - 1
+        };
+        self.nodes.iter().map(|node| node.len()).sum::<usize>() + add
     }
     fn context(&self) -> Option<Context> {
         Some(Self::create_context(self.level, &self.list_type))
@@ -129,19 +121,18 @@ impl Deserializer for List {
         {
             return Self::parse_branch(
                 &input[..unordered_list.start_token.len() + unordered_list.body.len()],
-                Self::new(
-                    unordered_list.end_token.is_empty(),
-                    ListTypes::Unordered,
-                    level,
-                ),
+                "\n",
+                Self::new(ListTypes::Unordered, level, vec![]),
             );
         } else if let Some(ordered_list) =
             matcher.get_match(format!("{}+ ", " ".repeat(level)).as_str(), "\n\n", true)
         {
-            return Self::parse_branch(
+            let res = Self::parse_branch(
                 &input[..ordered_list.start_token.len() + ordered_list.body.len()],
-                Self::new(ordered_list.end_token.is_empty(), ListTypes::Ordered, level),
+                "\n",
+                Self::new(ListTypes::Ordered, level, vec![]),
             );
+            return res;
         }
         None
     }
@@ -161,11 +152,11 @@ impl Branch<ListNodes> for List {
     }
 
     fn get_outer_token_length(&self) -> usize {
-        if self.consumed_all_input {
-            0
-        } else {
-            2
-        }
+        0
+    }
+
+    fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
     }
 }
 
@@ -184,24 +175,17 @@ mod tests {
             List {
                 list_type: ListTypes::Unordered,
                 level: 0,
-                consumed_all_input: true,
                 nodes: vec![
                     ListItem::new(
                         ListTypes::Unordered,
                         0,
-                        ListItemContent::new_with_nodes(
-                            false,
-                            vec![Text::new("unordered list item").into()],
-                        )
+                        ListItemContent::new(vec![Text::new("unordered list item").into()],)
                     )
                     .into(),
                     ListItem::new(
                         ListTypes::Unordered,
                         0,
-                        ListItemContent::new_with_nodes(
-                            true,
-                            vec![Text::new("unordered list item").into()],
-                        )
+                        ListItemContent::new(vec![Text::new("unordered list item").into()],)
                     )
                     .into(),
                 ],
@@ -213,56 +197,42 @@ mod tests {
             List {
                 list_type: ListTypes::Unordered,
                 level: 0,
-                consumed_all_input: false,
                 nodes: vec![
                     ListItem::new(
                         ListTypes::Unordered,
                         0,
-                        ListItemContent::new_with_nodes(
-                            false,
-                            vec![Text::new("unordered list item").into()],
-                        )
+                        ListItemContent::new(vec![Text::new("unordered list item").into()],)
                     )
                     .into(),
                     ListItem::new(
                         ListTypes::Unordered,
                         0,
-                        ListItemContent::new_with_nodes(
-                            true,
-                            vec![Text::new("unordered list item").into()],
-                        )
+                        ListItemContent::new(vec![Text::new("unordered list item").into()],)
                     )
                     .into(),
                 ],
             }
             .to_string(),
-            "- unordered list item\n- unordered list item\n\n"
+            "- unordered list item\n- unordered list item"
         );
     }
 
     #[test]
     fn serialize_ordered() {
-        let list = List::new_with_nodes(
-            true,
+        let list = List::new(
             ListTypes::Ordered,
             0,
             vec![
                 ListItem::new(
                     ListTypes::Ordered,
                     0,
-                    ListItemContent::new_with_nodes(
-                        false,
-                        vec![Text::new("ordered list item").into()],
-                    ),
+                    ListItemContent::new(vec![Text::new("ordered list item").into()]),
                 )
                 .into(),
                 ListItem::new(
                     ListTypes::Ordered,
                     0,
-                    ListItemContent::new_with_nodes(
-                        true,
-                        vec![Text::new("ordered list item").into()],
-                    ),
+                    ListItemContent::new(vec![Text::new("ordered list item").into()]),
                 )
                 .into(),
             ],
@@ -286,21 +256,20 @@ mod tests {
     fn deserialize_unordered() {
         assert_eq!(
             List::deserialize("- level 0\n- level 0"),
-            Some(List::new_with_nodes(
-                true,
+            Some(List::new(
                 ListTypes::Unordered,
                 0,
                 vec![
                     ListItem::new(
                         ListTypes::Unordered,
                         0,
-                        ListItemContent::new_with_nodes(false, vec![Text::new("level 0").into()])
+                        ListItemContent::new(vec![Text::new("level 0").into()])
                     )
                     .into(),
                     ListItem::new(
                         ListTypes::Unordered,
                         0,
-                        ListItemContent::new_with_nodes(true, vec![Text::new("level 0").into()])
+                        ListItemContent::new(vec![Text::new("level 0").into()])
                     )
                     .into(),
                 ],
@@ -308,21 +277,20 @@ mod tests {
         );
         assert_eq!(
             List::deserialize("- level 0\n- level 0\n\n"),
-            Some(List::new_with_nodes(
-                false,
+            Some(List::new(
                 ListTypes::Unordered,
                 0,
                 vec![
                     ListItem::new(
                         ListTypes::Unordered,
                         0,
-                        ListItemContent::new_with_nodes(false, vec![Text::new("level 0").into()])
+                        ListItemContent::new(vec![Text::new("level 0").into()])
                     )
                     .into(),
                     ListItem::new(
                         ListTypes::Unordered,
                         0,
-                        ListItemContent::new_with_nodes(true, vec![Text::new("level 0").into()])
+                        ListItemContent::new(vec![Text::new("level 0").into()])
                     )
                     .into(),
                 ],
@@ -334,21 +302,20 @@ mod tests {
     fn deserialize_ordered() {
         assert_eq!(
             List::deserialize("+ level 0\n+ level 0"),
-            Some(List::new_with_nodes(
-                true,
+            Some(List::new(
                 ListTypes::Ordered,
                 0,
                 vec![
                     ListItem::new(
                         ListTypes::Ordered,
                         0,
-                        ListItemContent::new_with_nodes(false, vec![Text::new("level 0").into()])
+                        ListItemContent::new(vec![Text::new("level 0").into()])
                     )
                     .into(),
                     ListItem::new(
                         ListTypes::Ordered,
                         0,
-                        ListItemContent::new_with_nodes(true, vec![Text::new("level 0").into()])
+                        ListItemContent::new(vec![Text::new("level 0").into()])
                     )
                     .into(),
                 ],
@@ -356,21 +323,20 @@ mod tests {
         );
         assert_eq!(
             List::deserialize("+ level 0\n+ level 0\n\n"),
-            Some(List::new_with_nodes(
-                false,
+            Some(List::new(
                 ListTypes::Ordered,
                 0,
                 vec![
                     ListItem::new(
                         ListTypes::Ordered,
                         0,
-                        ListItemContent::new_with_nodes(false, vec![Text::new("level 0").into()])
+                        ListItemContent::new(vec![Text::new("level 0").into()])
                     )
                     .into(),
                     ListItem::new(
                         ListTypes::Ordered,
                         0,
-                        ListItemContent::new_with_nodes(true, vec![Text::new("level 0").into()])
+                        ListItemContent::new(vec![Text::new("level 0").into()])
                     )
                     .into(),
                 ],
@@ -380,22 +346,20 @@ mod tests {
 
     #[test]
     fn deserialize_mixed() {
-        let list = List::new_with_nodes(
-            true,
+        let list = List::new(
             ListTypes::Ordered,
             0,
             vec![ListItem::new_with_nested_list(
                 ListTypes::Ordered,
                 0,
-                ListItemContent::new_with_nodes(false, vec![Text::new("level 0").into()]),
-                Some(List::new_with_nodes(
-                    true,
+                ListItemContent::new(vec![Text::new("level 0").into()]),
+                Some(List::new(
                     ListTypes::Unordered,
                     1,
                     vec![ListItem::new(
                         ListTypes::Unordered,
                         1,
-                        ListItemContent::new_with_nodes(true, vec![Text::new("level 0").into()]),
+                        ListItemContent::new(vec![Text::new("level 0").into()]),
                     )
                     .into()],
                 )),
@@ -408,22 +372,20 @@ mod tests {
 
     #[test]
     fn deserialized_nested() {
-        let list = List::new_with_nodes(
-            false,
+        let list = List::new(
             ListTypes::Unordered,
             0,
             vec![ListItem::new_with_nested_list(
                 ListTypes::Unordered,
                 0,
-                ListItemContent::new_with_nodes(false, vec![Text::new("one").into()]).into(),
-                Some(List::new_with_nodes(
-                    true,
+                ListItemContent::new(vec![Text::new("one").into()]).into(),
+                Some(List::new(
                     ListTypes::Unordered,
                     1,
                     vec![ListItem::new(
                         ListTypes::Unordered,
                         1,
-                        ListItemContent::new_with_nodes(true, vec![Text::new("two").into()]),
+                        ListItemContent::new(vec![Text::new("two").into()]),
                     )
                     .into()],
                 )),
@@ -440,48 +402,24 @@ mod tests {
 
     #[test]
     fn len() {
-        let list = List::new_with_nodes(
-            true,
+        let list = List::new(
             ListTypes::Ordered,
             0,
             vec![
                 ListItem::new(
                     ListTypes::Ordered,
                     0,
-                    ListItemContent::new_with_nodes(false, vec![Text::new("l").into()]),
+                    ListItemContent::new(vec![Text::new("l").into()]),
                 )
                 .into(),
                 ListItem::new(
                     ListTypes::Ordered,
                     0,
-                    ListItemContent::new_with_nodes(true, vec![Text::new("l").into()]),
+                    ListItemContent::new(vec![Text::new("l").into()]),
                 )
                 .into(),
             ],
         );
         assert_eq!(list.len(), 7);
-        assert_eq!(
-            List::new_with_nodes(
-                false,
-                ListTypes::Ordered,
-                0,
-                vec![
-                    ListItem::new(
-                        ListTypes::Ordered,
-                        0,
-                        ListItemContent::new_with_nodes(false, vec![Text::new("l").into()])
-                    )
-                    .into(),
-                    ListItem::new(
-                        ListTypes::Ordered,
-                        0,
-                        ListItemContent::new_with_nodes(true, vec![Text::new("l").into()])
-                    )
-                    .into(),
-                ],
-            )
-            .len(),
-            9
-        );
     }
 }
