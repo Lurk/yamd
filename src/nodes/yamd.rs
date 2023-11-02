@@ -131,11 +131,7 @@ pub struct Yamd {
 }
 
 impl Yamd {
-    pub fn new(metadata: Option<Metadata>) -> Self {
-        Self::new_with_nodes(metadata, vec![])
-    }
-
-    pub fn new_with_nodes(metadata: Option<Metadata>, nodes: Vec<YamdNodes>) -> Self {
+    pub fn new(metadata: Option<Metadata>, nodes: Vec<YamdNodes>) -> Self {
         Self {
             metadata: metadata.unwrap_or_default(),
             nodes,
@@ -167,7 +163,7 @@ impl Branch<YamdNodes> for Yamd {
     }
 
     fn get_outer_token_length(&self) -> usize {
-        self.metadata.len()
+        0
     }
 }
 
@@ -175,7 +171,7 @@ impl Deserializer for Yamd {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let metadata = Metadata::deserialize(input);
         let metadata_len = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
-        Self::parse_branch(&input[metadata_len..], Self::new(metadata))
+        Self::parse_branch(&input[metadata_len..], "\n\n", Self::new(metadata, vec![]))
     }
 }
 
@@ -189,14 +185,19 @@ impl Display for Yamd {
                 .iter()
                 .map(|node| node.to_string())
                 .collect::<Vec<String>>()
-                .join("")
+                .join("\n\n")
         )
     }
 }
 
 impl Node for Yamd {
     fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
+        let delimeter_len = if self.nodes.is_empty() {
+            0
+        } else {
+            (self.nodes.len() - 1) * 2
+        };
+        self.nodes.iter().map(|node| node.len()).sum::<usize>() + delimeter_len
     }
 }
 
@@ -225,7 +226,7 @@ mod tests {
             text::Text,
         },
         toolkit::deserializer::Branch,
-        toolkit::deserializer::Deserializer,
+        toolkit::{deserializer::Deserializer, node::Node},
     };
     use chrono::DateTime;
     use pretty_assertions::assert_eq;
@@ -283,23 +284,20 @@ end"#;
 
     #[test]
     fn push() {
-        let mut t = Yamd::new(None);
-        t.push(Heading::new(false, "header", 1));
-        t.push(Paragraph::new_with_nodes(
-            true,
-            vec![Text::new("text").into()],
-        ));
+        let mut t = Yamd::new(None, vec![]);
+        t.push(Heading::new("header", 1));
+        t.push(Paragraph::new(vec![Text::new("text").into()]));
 
         assert_eq!(t.to_string(), "# header\n\ntext".to_string());
     }
 
     #[test]
     fn from_vec() {
-        let t: String = Yamd::new_with_nodes(
+        let t: String = Yamd::new(
             None,
             vec![
-                Heading::new(false, "header", 1).into(),
-                Paragraph::new_with_nodes(true, vec![Text::new("text").into()]).into(),
+                Heading::new("header", 1).into(),
+                Paragraph::new(vec![Text::new("text").into()]).into(),
             ],
         )
         .to_string();
@@ -311,7 +309,7 @@ end"#;
     fn deserialize() {
         assert_eq!(
             Yamd::deserialize(TEST_CASE),
-            Some(Yamd::new_with_nodes(
+            Some(Yamd::new(
                 Some(Metadata::new(
                     Some("test"),
                     Some(
@@ -326,56 +324,43 @@ end"#;
                     Some(vec!["tag1".to_string(), "tag2".to_string()]),
                 )),
                 vec![
-                    Heading::new(false, "hello", 1).into(),
-                    Code::new(false, "rust", "let a=1;").into(),
-                    Paragraph::new_with_nodes(
-                        false,
-                        vec![
-                            Text::new("t").into(),
-                            Bold::new_with_nodes(vec![Text::new("b").into()]).into()
-                        ]
-                    )
+                    Heading::new("hello", 1).into(),
+                    Code::new("rust", "let a=1;").into(),
+                    Paragraph::new(vec![
+                        Text::new("t").into(),
+                        Bold::new(vec![Text::new("b").into()]).into()
+                    ])
                     .into(),
-                    Image::new(false, 'a', 'u').into(),
-                    ImageGallery::new_with_nodes(
-                        false,
-                        vec![
-                            Image::new(true, "a", "u").into(),
-                            Image::new(true, "a2", "u2").into()
-                        ],
-                    )
+                    Image::new('a', 'u').into(),
+                    ImageGallery::new(vec![
+                        Image::new("a", "u").into(),
+                        Image::new("a2", "u2").into()
+                    ],)
                     .into(),
-                    Highlight::new_with_nodes(
-                        false,
+                    Highlight::new(
                         Some("H"),
                         Some("I"),
                         vec![
-                            Paragraph::new_with_nodes(false, vec![Strikethrough::new("s").into()])
-                                .into(),
-                            Paragraph::new_with_nodes(true, vec![Italic::new("I").into()]).into()
+                            Paragraph::new(vec![Strikethrough::new("s").into()]).into(),
+                            Paragraph::new(vec![Italic::new("I").into()]).into()
                         ]
                     )
                     .into(),
-                    Divider::new(false).into(),
-                    List::new_with_nodes(
-                        false,
+                    Divider::new().into(),
+                    List::new(
                         Unordered,
                         0,
                         vec![ListItem::new_with_nested_list(
                             Unordered,
                             0,
-                            ListItemContent::new_with_nodes(false, vec![Text::new("one").into()]),
-                            Some(List::new_with_nodes(
-                                true,
+                            ListItemContent::new(vec![Text::new("one").into()]),
+                            Some(List::new(
                                 Unordered,
                                 1,
                                 vec![ListItem::new(
                                     Unordered,
                                     1,
-                                    ListItemContent::new_with_nodes(
-                                        true,
-                                        vec![Text::new("two").into()]
-                                    )
+                                    ListItemContent::new(vec![Text::new("two").into()])
                                 )
                                 .into()]
                             ))
@@ -383,17 +368,14 @@ end"#;
                         .into()]
                     )
                     .into(),
-                    Embed::new("youtube", "123", false).into(),
-                    Embed::new("cloudinary_gallery", "cloud_name&tag", false).into(),
-                    Accordion::new_with_nodes(
-                        false,
-                        vec![
-                            AccordionTab::new(false, Some("accordeon tab"),).into(),
-                            AccordionTab::new(true, Some("one more accordeon tab"),).into()
-                        ]
-                    )
+                    Embed::new("youtube", "123",).into(),
+                    Embed::new("cloudinary_gallery", "cloud_name&tag",).into(),
+                    Accordion::new(vec![
+                        AccordionTab::new(Some("accordeon tab"), vec![]).into(),
+                        AccordionTab::new(Some("one more accordeon tab"), vec![]).into()
+                    ])
                     .into(),
-                    Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
+                    Paragraph::new(vec![Text::new("end").into()]).into()
                 ]
             ))
         );
@@ -402,7 +384,7 @@ end"#;
     #[test]
     fn serialize() {
         assert_eq!(
-            Yamd::new_with_nodes(
+            Yamd::new(
                 Some(Metadata::new(
                     Some("test"),
                     Some(
@@ -417,57 +399,43 @@ end"#;
                     Some(vec!["tag1".to_string(), "tag2".to_string()]),
                 )),
                 vec![
-                    Heading::new(false, "hello", 1).into(),
-                    Code::new(false, "rust", "let a=1;").into(),
-                    Paragraph::new_with_nodes(
-                        false,
-                        vec![
-                            Text::new("t").into(),
-                            Bold::new_with_nodes(vec![Text::new("b").into()]).into()
-                        ]
-                    )
+                    Heading::new("hello", 1).into(),
+                    Code::new("rust", "let a=1;").into(),
+                    Paragraph::new(vec![
+                        Text::new("t").into(),
+                        Bold::new(vec![Text::new("b").into()]).into()
+                    ])
                     .into(),
-                    Image::new(false, 'a', 'u').into(),
-                    ImageGallery::new_with_nodes(
-                        false,
-                        vec![
-                            Image::new(true, "a", "u").into(),
-                            Image::new(true, "a2", "u2").into()
-                        ],
-                    )
+                    Image::new('a', 'u').into(),
+                    ImageGallery::new(vec![
+                        Image::new("a", "u").into(),
+                        Image::new("a2", "u2").into()
+                    ],)
                     .into(),
-                    Highlight::new_with_nodes(
-                        false,
+                    Highlight::new(
                         Some("H"),
                         Some("I"),
                         vec![
-                            Paragraph::new_with_nodes(false, vec![Strikethrough::new("s").into()])
-                                .into(),
-                            Paragraph::new_with_nodes(true, vec![Italic::new("I").into()]).into()
+                            Paragraph::new(vec![Strikethrough::new("s").into()]).into(),
+                            Paragraph::new(vec![Italic::new("I").into()]).into()
                         ]
                     )
                     .into(),
-                    Divider::new(false).into(),
-                    List::new_with_nodes(
-                        false,
+                    Divider::new().into(),
+                    List::new(
                         Unordered,
                         0,
                         vec![ListItem::new_with_nested_list(
                             Unordered,
                             0,
-                            ListItemContent::new_with_nodes(false, vec![Text::new("one").into()])
-                                .into(),
-                            List::new_with_nodes(
-                                true,
+                            ListItemContent::new(vec![Text::new("one").into()]).into(),
+                            List::new(
                                 Unordered,
                                 1,
                                 vec![ListItem::new(
                                     Unordered,
                                     1,
-                                    ListItemContent::new_with_nodes(
-                                        true,
-                                        vec![Text::new("two").into()]
-                                    )
+                                    ListItemContent::new(vec![Text::new("two").into()])
                                 )
                                 .into()]
                             )
@@ -476,17 +444,14 @@ end"#;
                         .into()]
                     )
                     .into(),
-                    Embed::new("youtube", "123", false).into(),
-                    Embed::new("cloudinary_gallery", "cloud_name&tag", false).into(),
-                    Accordion::new_with_nodes(
-                        false,
-                        vec![
-                            AccordionTab::new(false, Some("accordeon tab"),).into(),
-                            AccordionTab::new(true, Some("one more accordeon tab"),).into()
-                        ]
-                    )
+                    Embed::new("youtube", "123",).into(),
+                    Embed::new("cloudinary_gallery", "cloud_name&tag",).into(),
+                    Accordion::new(vec![
+                        AccordionTab::new(Some("accordeon tab"), vec![]).into(),
+                        AccordionTab::new(Some("one more accordeon tab"), vec![]).into()
+                    ])
                     .into(),
-                    Paragraph::new_with_nodes(true, vec![Text::new("end").into()]).into()
+                    Paragraph::new(vec![Text::new("end").into()]).into()
                 ]
             )
             .to_string(),
@@ -502,12 +467,12 @@ end"#;
     #[test]
     fn multiple_fallbacks_in_a_row() {
         let input = "1\n\n2\n\n3";
-        let expected = Yamd::new_with_nodes(
+        let expected = Yamd::new(
             None,
             vec![
-                Paragraph::new_with_nodes(false, vec![Text::new("1").into()]).into(),
-                Paragraph::new_with_nodes(false, vec![Text::new("2").into()]).into(),
-                Paragraph::new_with_nodes(true, vec![Text::new("3").into()]).into(),
+                Paragraph::new(vec![Text::new("1").into()]).into(),
+                Paragraph::new(vec![Text::new("2").into()]).into(),
+                Paragraph::new(vec![Text::new("3").into()]).into(),
             ],
         );
         let actual = Yamd::deserialize(input).unwrap();
@@ -517,16 +482,22 @@ end"#;
     #[test]
     fn multiple_fallbacks_in_a_row_before_non_fallback() {
         let input = "1\n\n2\n\n3\n\n# header";
-        let expected = Yamd::new_with_nodes(
+        let expected = Yamd::new(
             None,
             vec![
-                Paragraph::new_with_nodes(false, vec![Text::new("1").into()]).into(),
-                Paragraph::new_with_nodes(false, vec![Text::new("2").into()]).into(),
-                Paragraph::new_with_nodes(false, vec![Text::new("3").into()]).into(),
-                Heading::new(true, "header", 1).into(),
+                Paragraph::new(vec![Text::new("1").into()]).into(),
+                Paragraph::new(vec![Text::new("2").into()]).into(),
+                Paragraph::new(vec![Text::new("3").into()]).into(),
+                Heading::new("header", 1).into(),
             ],
         );
         let actual = Yamd::deserialize(input).unwrap();
         assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn empty_yamd() {
+        let yamd = Yamd::new(None, vec![]);
+        assert_eq!(yamd.len(), 0);
     }
 }

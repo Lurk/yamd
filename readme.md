@@ -5,7 +5,7 @@
 
 ## Status
 
-It is ready to poke around. There is no significant API changes expected.
+It is not ready to poke around. There is significant API changes expected.
 
 ## Why?
 

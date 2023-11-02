@@ -44,21 +44,10 @@ pub struct Highlight {
     pub header: Option<String>,
     pub icon: Option<String>,
     pub nodes: Vec<HighlightNodes>,
-    #[serde(skip_serializing)]
-    consumed_all_input: bool,
 }
 
 impl Highlight {
     pub fn new<H: Into<String>, I: Into<String>>(
-        consumed_all_input: bool,
-        header: Option<H>,
-        icon: Option<I>,
-    ) -> Self {
-        Self::new_with_nodes(consumed_all_input, header, icon, vec![])
-    }
-
-    pub fn new_with_nodes<H: Into<String>, I: Into<String>>(
-        consumed_all_input: bool,
         header: Option<H>,
         icon: Option<I>,
         nodes: Vec<HighlightNodes>,
@@ -67,7 +56,6 @@ impl Highlight {
             header: header.map(|header| header.into()),
             icon: icon.map(|icon| icon.into()),
             nodes,
-            consumed_all_input,
         }
     }
 }
@@ -82,25 +70,30 @@ impl Display for Highlight {
             Some(icon) => format!("> {icon}\n"),
             None => String::new(),
         };
-        let end = if self.consumed_all_input { "" } else { "\n\n" };
         write!(
             f,
-            ">>>\n{header}{icon}{}\n>>>{end}",
+            ">>>\n{header}{icon}{}\n>>>",
             self.nodes
                 .iter()
                 .map(|node| node.to_string())
                 .collect::<Vec<String>>()
-                .join(""),
+                .join("\n\n"),
             header = header,
             icon = icon,
-            end = end
         )
     }
 }
 
 impl Node for Highlight {
     fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
+        let delimiter_length = if self.nodes.is_empty() {
+            0
+        } else {
+            (self.nodes.len() - 1) * 2
+        };
+        self.nodes.iter().map(|node| node.len()).sum::<usize>()
+            + delimiter_length
+            + self.get_outer_token_length()
     }
 }
 
@@ -118,17 +111,8 @@ impl Branch<HighlightNodes> for Highlight {
     }
 
     fn get_outer_token_length(&self) -> usize {
-        let header = match &self.header {
-            Some(header) => header.len() + 4,
-            None => 0,
-        };
-        let icon = match &self.icon {
-            Some(icon) => icon.len() + 3,
-            None => 0,
-        };
-        let end = if self.consumed_all_input { 0 } else { 2 };
-
-        8 + icon + header + end
+        8 + self.header.as_ref().map_or(0, |header| header.len() + 4)
+            + self.icon.as_ref().map_or(0, |icon| icon.len() + 3)
     }
 }
 
@@ -142,12 +126,8 @@ impl Deserializer for Highlight {
                 .map(|header| header.body);
 
             let icon = matcher.get_match("> ", "\n", false).map(|icon| icon.body);
-            let consumed_all_input = outer_matcher.get_match("\n", "", false).is_none();
 
-            return Self::parse_branch(
-                matcher.get_rest(),
-                Self::new(consumed_all_input, header, icon),
-            );
+            return Self::parse_branch(matcher.get_rest(), "\n\n", Self::new(header, icon, vec![]));
         }
 
         None
@@ -165,85 +145,55 @@ mod tests {
     #[test]
     fn len() {
         assert_eq!(
-            Highlight::new_with_nodes(
-                true,
+            Highlight::new(
                 Some("h"),
                 Some("i"),
                 vec![
-                    Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
-                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
+                    Paragraph::new(vec![Text::new("t").into()]).into(),
+                    Paragraph::new(vec![Text::new("t").into()]).into()
                 ]
             )
             .len(),
             21
         );
         assert_eq!(
-            Highlight::new_with_nodes(
-                false,
-                Some("h"),
-                Some("i"),
-                vec![
-                    Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
-                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
-                ]
-            )
-            .len(),
-            23
-        );
-        assert_eq!(
-            Highlight::new_with_nodes::<String, String>(
-                false,
+            Highlight::new::<String, String>(
                 None,
                 None,
                 vec![
-                    Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
-                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
+                    Paragraph::new(vec![Text::new("t").into()]).into(),
+                    Paragraph::new(vec![Text::new("t").into()]).into()
                 ]
             )
             .len(),
-            14
+            12
         );
     }
     #[test]
     fn serialize() {
         assert_eq!(
-            Highlight::new_with_nodes(
-                true,
+            Highlight::new(
                 Some("h"),
                 Some("i"),
                 vec![
-                    Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
-                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
+                    Paragraph::new(vec![Text::new("t").into()]).into(),
+                    Paragraph::new(vec![Text::new("t").into()]).into()
                 ]
             )
             .to_string(),
             String::from(">>>\n>> h\n> i\nt\n\nt\n>>>")
         );
         assert_eq!(
-            Highlight::new_with_nodes(
-                false,
-                Some("h"),
-                Some("i"),
-                vec![
-                    Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
-                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
-                ]
-            )
-            .to_string(),
-            String::from(">>>\n>> h\n> i\nt\n\nt\n>>>\n\n")
-        );
-        assert_eq!(
-            Highlight::new_with_nodes::<String, String>(
-                false,
+            Highlight::new::<String, String>(
                 None,
                 None,
                 vec![
-                    Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
-                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
+                    Paragraph::new(vec![Text::new("t").into()]).into(),
+                    Paragraph::new(vec![Text::new("t").into()]).into()
                 ]
             )
             .to_string(),
-            String::from(">>>\nt\n\nt\n>>>\n\n")
+            String::from(">>>\nt\n\nt\n>>>")
         );
     }
 
@@ -251,28 +201,32 @@ mod tests {
     fn deserialize() {
         assert_eq!(
             Highlight::deserialize(">>>\n>> h\n> i\nt\n\nt\n>>>"),
-            Some(Highlight::new_with_nodes(
-                true,
+            Some(Highlight::new(
                 Some("h"),
                 Some("i"),
                 vec![
-                    Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
-                    Paragraph::new_with_nodes(true, vec![Text::new("t").into()]).into()
+                    Paragraph::new(vec![Text::new("t").into()]).into(),
+                    Paragraph::new(vec![Text::new("t").into()]).into()
                 ]
             ))
         );
 
         assert_eq!(
             Highlight::deserialize(">>>\n>> h\n> i\nt\n\nt2\n>>>\n\n"),
-            Some(Highlight::new_with_nodes(
-                false,
+            Some(Highlight::new(
                 Some("h"),
                 Some("i"),
                 vec![
-                    Paragraph::new_with_nodes(false, vec![Text::new("t").into()]).into(),
-                    Paragraph::new_with_nodes(true, vec![Text::new("t2").into()]).into()
+                    Paragraph::new(vec![Text::new("t").into()]).into(),
+                    Paragraph::new(vec![Text::new("t2").into()]).into()
                 ]
             ))
         )
+    }
+
+    #[test]
+    fn empty_highlight() {
+        let highlight = Highlight::new::<String, String>(None, None, vec![]);
+        assert_eq!(highlight.len(), 8);
     }
 }

@@ -4,42 +4,32 @@ use serde::Serialize;
 
 use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
-#[derive(Debug, PartialEq, Serialize, Clone)]
-pub struct Divider {
-    #[serde(skip_serializing)]
-    consumed_all_input: bool,
-}
+#[derive(Debug, PartialEq, Serialize, Clone, Default)]
+pub struct Divider {}
 
 impl Divider {
-    pub fn new(consumed_all_input: bool) -> Self {
-        Self { consumed_all_input }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 
 impl Display for Divider {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let end = if self.consumed_all_input { "" } else { "\n\n" };
-        write!(f, "-----{end}")
+        write!(f, "-----")
     }
 }
 
 impl Node for Divider {
     fn len(&self) -> usize {
-        if self.consumed_all_input {
-            5
-        } else {
-            7
-        }
+        5
     }
 }
 
 impl Deserializer for Divider {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(divider) = matcher.get_match("-----", "\n\n", true) {
-            return Some(Divider {
-                consumed_all_input: divider.end_token.is_empty(),
-            });
+        if matcher.get_match("-----", "\n\n", true).is_some() {
+            return Some(Divider {});
         }
         None
     }
@@ -55,30 +45,17 @@ mod tests {
 
     #[test]
     fn deserialize() {
-        assert_eq!(
-            Divider::deserialize("-----"),
-            Some(Divider {
-                consumed_all_input: true
-            })
-        );
-        assert_eq!(
-            Divider::deserialize("-----\n\n"),
-            Some(Divider {
-                consumed_all_input: false
-            })
-        );
+        assert_eq!(Divider::deserialize("-----"), Some(Divider {}));
         assert_eq!(Divider::deserialize("----\n\n"), None);
     }
 
     #[test]
     fn len() {
-        assert_eq!(Divider::new(true).len(), 5);
-        assert_eq!(Divider::new(false).len(), 7);
+        assert_eq!(Divider::new().len(), 5);
     }
 
     #[test]
     fn serialize() {
-        assert_eq!(Divider::new(true).to_string(), String::from("-----"));
-        assert_eq!(Divider::new(false).to_string(), String::from("-----\n\n"));
+        assert_eq!(Divider::new().to_string(), String::from("-----"));
     }
 }

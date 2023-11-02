@@ -118,22 +118,12 @@ impl From<Code> for AccordionTabNodes {
 pub struct AccordionTab {
     pub header: Option<String>,
     pub nodes: Vec<AccordionTabNodes>,
-    #[serde(skip_serializing)]
-    consumed_all_input: bool,
 }
 
 impl AccordionTab {
-    pub fn new<S: Into<String>>(consumed_all_input: bool, header: Option<S>) -> Self {
-        Self::new_with_nodes(consumed_all_input, header, vec![])
-    }
-    pub fn new_with_nodes<S: Into<String>>(
-        consumed_all_input: bool,
-        header: Option<S>,
-        nodes: Vec<AccordionTabNodes>,
-    ) -> Self {
+    pub fn new<S: Into<String>>(header: Option<S>, nodes: Vec<AccordionTabNodes>) -> Self {
         Self {
             nodes,
-            consumed_all_input,
             header: header.map(|s| s.into()),
         }
     }
@@ -143,7 +133,7 @@ impl Display for AccordionTab {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "//\n{header}{nodes}\n\\\\{end}",
+            "//\n{header}{nodes}\n\\\\",
             header = self
                 .header
                 .as_ref()
@@ -153,15 +143,21 @@ impl Display for AccordionTab {
                 .iter()
                 .map(|node| node.to_string())
                 .collect::<Vec<String>>()
-                .join(""),
-            end = if self.consumed_all_input { "" } else { "\n" }
+                .join("\n\n"),
         )
     }
 }
 
 impl Node for AccordionTab {
     fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + self.get_outer_token_length()
+        let delimeter_len = if self.nodes.is_empty() {
+            0
+        } else {
+            (self.nodes.len() - 1) * 2
+        };
+        self.nodes.iter().map(|node| node.len()).sum::<usize>()
+            + delimeter_len
+            + self.get_outer_token_length()
     }
 }
 
@@ -189,7 +185,6 @@ impl Branch<AccordionTabNodes> for AccordionTab {
 
     fn get_outer_token_length(&self) -> usize {
         6 + self.header.as_ref().map_or(0, |header| header.len() + 3)
-            + if self.consumed_all_input { 0 } else { 1 }
     }
 }
 
@@ -202,11 +197,7 @@ impl Deserializer for AccordionTab {
                 .get_match("/ ", "\n", false)
                 .map(|header| header.body);
 
-            let consumed_all_input = matcher.get_match("\n", "", false).is_none();
-            return Self::parse_branch(
-                inner_matcher.get_rest(),
-                Self::new(consumed_all_input, header),
-            );
+            return Self::parse_branch(inner_matcher.get_rest(), "\n\n", Self::new(header, vec![]));
         }
         None
     }
@@ -230,10 +221,9 @@ mod cfg {
     fn test_accordion_tab_deserialize() {
         assert_eq!(
             AccordionTab::deserialize("//\n/ Header\n# Heading\n\\\\\n\n"),
-            Some(AccordionTab::new_with_nodes(
-                false,
+            Some(AccordionTab::new(
                 Some("Header"),
-                vec![Heading::new(true, "Heading", 1).into()]
+                vec![Heading::new("Heading", 1).into()]
             ))
         );
     }
@@ -242,13 +232,9 @@ mod cfg {
     fn test_accordion_tab_deserialize_with_no_header() {
         assert_eq!(
             AccordionTab::deserialize("//\nI am regular text\n\\\\\n\n"),
-            Some(AccordionTab::new_with_nodes::<&str>(
-                false,
+            Some(AccordionTab::new::<&str>(
                 None,
-                vec![
-                    Paragraph::new_with_nodes(true, vec![Text::new("I am regular text").into()])
-                        .into()
-                ]
+                vec![Paragraph::new(vec![Text::new("I am regular text").into()]).into()]
             ))
         );
     }
@@ -256,11 +242,10 @@ mod cfg {
     #[test]
     fn test_accordion_tab_deserialize_with_no_header_and_no_newline() {
         assert_eq!(
-            AccordionTab::deserialize("//\n![alt](url)\n\n\\\\"),
-            Some(AccordionTab::new_with_nodes::<&str>(
-                true,
+            AccordionTab::deserialize("//\n![alt](url)\n\\\\"),
+            Some(AccordionTab::new::<&str>(
                 None,
-                vec![Image::new(true, "alt", "url").into()]
+                vec![Image::new("alt", "url").into()]
             ))
         );
     }
@@ -268,37 +253,17 @@ mod cfg {
     #[test]
     fn test_accordion_tab_len() {
         assert_eq!(
-            AccordionTab::new_with_nodes(
-                false,
-                Some("Header"),
-                vec![Heading::new(true, "Heading", 1).into()]
-            )
-            .len(),
-            25
-        );
-        assert_eq!(
-            AccordionTab::new_with_nodes(
-                true,
-                Some("Header"),
-                vec![Heading::new(true, "Heading", 1).into()]
-            )
-            .len(),
+            AccordionTab::new(Some("Header"), vec![Heading::new("Heading", 1).into()]).len(),
             24
         );
-        assert_eq!(AccordionTab::new(true, Some("Header")).len(), 15);
-        assert_eq!(AccordionTab::new(false, Some("Header")).len(), 16);
+        assert_eq!(AccordionTab::new(Some("Header"), vec![]).len(), 15);
     }
 
     #[test]
     fn test_accordion_tab_serialize() {
         assert_eq!(
-            AccordionTab::new_with_nodes(
-                false,
-                Some("Header"),
-                vec![Heading::new(true, "Heading", 1).into()]
-            )
-            .to_string(),
-            "//\n/ Header\n# Heading\n\\\\\n"
+            AccordionTab::new(Some("Header"), vec![Heading::new("Heading", 1).into()]).to_string(),
+            "//\n/ Header\n# Heading\n\\\\"
         );
     }
 
@@ -322,8 +287,8 @@ t**b**
 ![a](u)
 
 !!!
-![a](u)
 ![a2](u2)
+![a3](u3)
 !!!
 
 -----
@@ -335,49 +300,37 @@ t**b**
 
 {{cloudinary_gallery|cloud_name&tag}}
 \\"#;
-        let tab = AccordionTab::new_with_nodes(
-            true,
+        let tab = AccordionTab::new(
             Some("Header"),
             vec![
-                Heading::new(false, "hello", 1).into(),
-                Code::new(false, "rust", "let a=1;").into(),
-                Paragraph::new_with_nodes(
-                    false,
-                    vec![
-                        Text::new("t").into(),
-                        Bold::new_with_nodes(vec![Text::new("b").into()]).into(),
-                    ],
-                )
+                Heading::new("hello", 1).into(),
+                Code::new("rust", "let a=1;").into(),
+                Paragraph::new(vec![
+                    Text::new("t").into(),
+                    Bold::new(vec![Text::new("b").into()]).into(),
+                ])
                 .into(),
-                Image::new(false, 'a', 'u').into(),
-                ImageGallery::new_with_nodes(
-                    false,
-                    vec![
-                        Image::new(true, "a", "u").into(),
-                        Image::new(true, "a2", "u2").into(),
-                    ],
-                )
+                Image::new('a', 'u').into(),
+                ImageGallery::new(vec![
+                    Image::new("a2", "u2").into(),
+                    Image::new("a3", "u3").into(),
+                ])
                 .into(),
-                Divider::new(false).into(),
-                List::new_with_nodes(
-                    false,
+                Divider::new().into(),
+                List::new(
                     Unordered,
                     0,
                     vec![ListItem::new_with_nested_list(
                         Unordered,
                         0,
-                        ListItemContent::new_with_nodes(false, vec![Text::new("one").into()]),
-                        Some(List::new_with_nodes(
-                            true,
+                        ListItemContent::new(vec![Text::new("one").into()]),
+                        Some(List::new(
                             Unordered,
                             1,
                             vec![ListItem::new(
                                 Unordered,
                                 1,
-                                ListItemContent::new_with_nodes(
-                                    true,
-                                    vec![Text::new("two").into()],
-                                ),
+                                ListItemContent::new(vec![Text::new("two").into()]),
                             )
                             .into()],
                         )),
@@ -385,11 +338,17 @@ t**b**
                     .into()],
                 )
                 .into(),
-                Embed::new("youtube", "123", false).into(),
-                Embed::new("cloudinary_gallery", "cloud_name&tag", true).into(),
+                Embed::new("youtube", "123").into(),
+                Embed::new("cloudinary_gallery", "cloud_name&tag").into(),
             ],
         );
         assert_eq!(tab.to_string(), input);
         assert_eq!(AccordionTab::deserialize(input), Some(tab));
+    }
+
+    #[test]
+    fn empty_tab() {
+        let tab = AccordionTab::new::<&str>(None, vec![]);
+        assert_eq!(tab.len(), 6);
     }
 }

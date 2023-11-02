@@ -220,14 +220,14 @@ mod tests {
     #[test]
     fn test_deserialize() {
         let input = "# header";
-        let expected = Yamd::new_with_nodes(None, vec![Heading::new(true, "header", 1).into()]);
+        let expected = Yamd::new(None, vec![Heading::new("header", 1).into()]);
         let actual = deserialize(input).unwrap();
         assert_eq!(expected, actual);
     }
 
     #[test]
     fn test_serialize() {
-        let input = Yamd::new_with_nodes(None, vec![Heading::new(true, "header", 1).into()]);
+        let input = Yamd::new(None, vec![Heading::new("header", 1).into()]);
         let expected = "# header";
         let actual = serialize(&input);
         assert_eq!(expected, actual);
@@ -236,11 +236,11 @@ mod tests {
     #[test]
     fn deserialize_text_containing_utf8() {
         let input = "## 🤔\n\n[link 😉](url)";
-        let expected = Yamd::new_with_nodes(
+        let expected = Yamd::new(
             None,
             vec![
-                Heading::new(false, "🤔", 2).into(),
-                Paragraph::new_with_nodes(true, vec![Anchor::new("link 😉", "url").into()]).into(),
+                Heading::new("🤔", 2).into(),
+                Paragraph::new(vec![Anchor::new("link 😉", "url").into()]).into(),
             ],
         );
         let actual = deserialize(input).unwrap();
