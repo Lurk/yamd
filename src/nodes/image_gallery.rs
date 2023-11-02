@@ -111,10 +111,6 @@ impl Branch<ImageGalleryNodes> for ImageGallery {
     fn get_outer_token_length(&self) -> usize {
         8
     }
-
-    fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
-    }
 }
 
 #[cfg(test)]
@@ -174,5 +170,11 @@ mod tests {
                 Image::new("a2", "u2").into()
             ],))
         );
+    }
+
+    #[test]
+    fn empty_gallery() {
+        let gal = ImageGallery::new(vec![]);
+        assert_eq!(gal.len(), 8);
     }
 }

@@ -165,10 +165,6 @@ impl Branch<YamdNodes> for Yamd {
     fn get_outer_token_length(&self) -> usize {
         0
     }
-
-    fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
-    }
 }
 
 impl Deserializer for Yamd {
@@ -196,7 +192,7 @@ impl Display for Yamd {
 
 impl Node for Yamd {
     fn len(&self) -> usize {
-        let delimeter_len = if self.is_empty() {
+        let delimeter_len = if self.nodes.is_empty() {
             0
         } else {
             (self.nodes.len() - 1) * 2
@@ -230,7 +226,7 @@ mod tests {
             text::Text,
         },
         toolkit::deserializer::Branch,
-        toolkit::deserializer::Deserializer,
+        toolkit::{deserializer::Deserializer, node::Node},
     };
     use chrono::DateTime;
     use pretty_assertions::assert_eq;
@@ -497,5 +493,11 @@ end"#;
         );
         let actual = Yamd::deserialize(input).unwrap();
         assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn empty_yamd() {
+        let yamd = Yamd::new(None, vec![]);
+        assert_eq!(yamd.len(), 0);
     }
 }

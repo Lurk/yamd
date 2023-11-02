@@ -100,10 +100,6 @@ impl Branch<AccordionNodes> for Accordion {
     fn get_outer_token_length(&self) -> usize {
         8
     }
-
-    fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
-    }
 }
 
 impl Deserializer for Accordion {
@@ -188,5 +184,11 @@ mod test {
             )
             .into()]))
         );
+    }
+
+    #[test]
+    fn empty_accordion() {
+        let accordion = Accordion::default();
+        assert_eq!(accordion.len(), 8);
     }
 }

@@ -146,10 +146,6 @@ impl Branch<ListItemContentNodes> for ListItemContent {
     fn get_outer_token_length(&self) -> usize {
         0
     }
-
-    fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
-    }
 }
 
 impl Deserializer for ListItemContent {
@@ -244,5 +240,11 @@ mod test {
             ])
             .to_string()
         );
+    }
+
+    #[test]
+    fn empty_list_item_content() {
+        let list_item_content = ListItemContent::default();
+        assert_eq!(list_item_content.len(), 0);
     }
 }

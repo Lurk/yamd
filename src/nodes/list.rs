@@ -154,10 +154,6 @@ impl Branch<ListNodes> for List {
     fn get_outer_token_length(&self) -> usize {
         0
     }
-
-    fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
-    }
 }
 
 #[cfg(test)]
@@ -421,5 +417,11 @@ mod tests {
             ],
         );
         assert_eq!(list.len(), 7);
+    }
+
+    #[test]
+    fn empty_list() {
+        let list = List::new(ListTypes::Ordered, 0, vec![]);
+        assert_eq!(list.len(), 0);
     }
 }

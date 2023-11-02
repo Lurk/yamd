@@ -119,10 +119,6 @@ impl Branch<ParagraphNodes> for Paragraph {
     fn get_outer_token_length(&self) -> usize {
         0
     }
-
-    fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
-    }
 }
 impl Default for Paragraph {
     fn default() -> Self {

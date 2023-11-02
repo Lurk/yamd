@@ -114,10 +114,6 @@ impl Branch<HighlightNodes> for Highlight {
         8 + self.header.as_ref().map_or(0, |header| header.len() + 4)
             + self.icon.as_ref().map_or(0, |icon| icon.len() + 3)
     }
-
-    fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
-    }
 }
 
 impl Deserializer for Highlight {
@@ -226,5 +222,11 @@ mod tests {
                 ]
             ))
         )
+    }
+
+    #[test]
+    fn empty_highlight() {
+        let highlight = Highlight::new::<String, String>(None, None, vec![]);
+        assert_eq!(highlight.len(), 8);
     }
 }

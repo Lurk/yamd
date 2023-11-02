@@ -10,7 +10,6 @@ where
     fn get_maybe_nodes() -> Vec<MaybeNode<BranchNodes>>;
     fn get_fallback_node() -> Option<DefinitelyNode<BranchNodes>>;
     fn get_outer_token_length(&self) -> usize;
-    fn is_empty(&self) -> bool;
     fn parse_branch(input: &str, delimeter: &str, mut branch: Self) -> Option<Self>
     where
         Self: Sized + Deserializer + Node,
