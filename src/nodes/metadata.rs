@@ -1,16 +1,21 @@
 use std::fmt::Display;
 
-use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
+use crate::toolkit::{matcher::Matcher, node::Node};
 use chrono::{DateTime, FixedOffset};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq, Serialize, Default, Clone)]
+#[derive(Debug, PartialEq, Serialize, Default, Clone, Deserialize)]
 pub struct Metadata {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
-    pub timestamp: Option<DateTime<FixedOffset>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub date: Option<DateTime<FixedOffset>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub image: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub preview: Option<String>,
-    pub tags: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Vec<String>>,
 }
 
 impl Metadata {
@@ -23,111 +28,51 @@ impl Metadata {
     ) -> Self {
         Self {
             title: title.map(|h| h.into()),
-            timestamp,
+            date: timestamp,
             image: image.map(|i| i.into()),
             preview: preview.map(|p| p.into()),
-            tags: tags.unwrap_or_default(),
+            tags,
         }
+    }
+
+    pub fn deserialize(input: &str) -> Option<Self> {
+        let mut matcher = Matcher::new(input);
+        if let Some(metadata) = matcher.get_match("---\n", "---", false) {
+            let meta: Metadata = serde_yaml::from_str(metadata.body).unwrap_or_else(|e| {
+                panic!("Failed to deserialize metadata: {}\n{}\n", metadata.body, e)
+            });
+            return Some(meta);
+        }
+
+        None
     }
 }
 
 impl Display for Metadata {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.len() == 0 {
-            return write!(f, "");
+        if self.title.is_none()
+            && self.date.is_none()
+            && self.image.is_none()
+            && self.preview.is_none()
+            && self.tags.is_none()
+        {
+            Ok(())
+        } else {
+            write!(f, "---\n{}---", serde_yaml::to_string(self).unwrap())
         }
-        write!(
-            f,
-            "{}{}{}{}{}^^^\n\n",
-            self.title
-                .as_ref()
-                .map_or("".to_string(), |h| format!("title: {h}\n")),
-            self.timestamp
-                .as_ref()
-                .map_or("".to_string(), |t| format!("timestamp: {t}\n")),
-            self.image
-                .as_ref()
-                .map_or("".to_string(), |i| format!("image: {i}\n")),
-            self.preview
-                .as_ref()
-                .map_or("".to_string(), |p| format!("preview: {p}\n")),
-            if self.tags.is_empty() {
-                "".to_string()
-            } else {
-                format!("tags: {}\n", self.tags.join(", "))
-            },
-        )
     }
 }
 
 impl Node for Metadata {
     fn len(&self) -> usize {
-        let len = self.title.as_ref().map_or(0, |h| h.len() + 8)
-            + self
-                .timestamp
-                .as_ref()
-                .map_or(0, |t| t.to_string().len() + 12)
-            + self.image.as_ref().map_or(0, |i| i.len() + 8)
-            + self.preview.as_ref().map_or(0, |p| p.len() + 10)
-            + if self.tags.is_empty() {
-                0
-            } else {
-                self.tags.iter().map(|tag| tag.len()).sum::<usize>()
-                    + 7
-                    + if self.tags.len() > 1 {
-                        (self.tags.len() - 1) * 2
-                    } else {
-                        0
-                    }
-            };
-        if len > 0 {
-            len + 5
-        } else {
-            0
-        }
-    }
-}
-
-impl Deserializer for Metadata {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut matcher = Matcher::new(input);
-        if let Some(metadata) = matcher.get_match("", "^^^\n\n", false) {
-            let mut meta = Self::new::<&str>(None, None, None, None, None);
-            metadata.body.split('\n').for_each(|line| {
-                if line.starts_with("title: ") {
-                    meta.title = Some(line.replace("title: ", ""));
-                } else if line.starts_with("timestamp: ") {
-                    // remove this when %:z works as expected
-                    if line.trim().chars().rev().nth(5) == Some('+') {
-                        meta.timestamp = DateTime::parse_from_str(
-                            line.replace("timestamp: ", "").as_str(),
-                            // %:z does not work as expected
-                            // https://github.com/chronotope/chrono/pull/1083
-                            "%Y-%m-%d %H:%M:%S %:z",
-                        )
-                        .ok();
-                    }
-                } else if line.starts_with("image: ") {
-                    meta.image = Some(line.replace("image: ", ""));
-                } else if line.starts_with("preview: ") {
-                    meta.preview = Some(line.replace("preview: ", ""));
-                } else if line.starts_with("tags: ") {
-                    meta.tags = line
-                        .replace("tags: ", "")
-                        .split(", ")
-                        .map(|tag| tag.to_string())
-                        .collect();
-                }
-            });
-            return Some(meta);
-        }
-        None
+        self.to_string().len()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn test_serialize() {
@@ -143,7 +88,7 @@ mod tests {
         );
         assert_eq!(
             metadata.to_string(),
-            "title: header\ntimestamp: 2022-01-01 00:00:00 +02:00\nimage: image\npreview: preview\ntags: tag1, tag2\n^^^\n\n"
+            "---\ntitle: header\ndate: 2022-01-01T00:00:00+02:00\nimage: image\npreview: preview\ntags:\n- tag1\n- tag2\n---"
         );
     }
 
@@ -198,7 +143,7 @@ mod tests {
     #[test]
     fn deserialize_empty() {
         assert_eq!(
-            Metadata::deserialize("^^^\n\n"),
+            Metadata::deserialize("---\n---"),
             Some(Metadata::new::<&str>(None, None, None, None, None))
         );
     }
@@ -211,20 +156,8 @@ mod tests {
     #[test]
     fn deserialize_only_with_title() {
         assert_eq!(
-            Metadata::deserialize("title: header\n^^^\n\n"),
+            Metadata::deserialize("---\ntitle: header\n---"),
             Some(Metadata::new(Some("header"), None, None, None, None))
-        );
-    }
-
-    #[test]
-    fn deserialize_wrong_date() {
-        assert_eq!(
-            Metadata::deserialize("timestamp: 2022-01-01 00:00:00 +0200\n^^^\n\n"),
-            Some(Metadata::new::<&str>(None, None, None, None, None))
-        );
-        assert_eq!(
-            Metadata::deserialize("timestamp: 2022-01-01 00:00:00\n^^^\n\n"),
-            Some(Metadata::new::<&str>(None, None, None, None, None))
         );
     }
 
