@@ -150,7 +150,7 @@ impl Display for AccordionTab {
 
 impl Node for AccordionTab {
     fn len(&self) -> usize {
-        let delimeter_len = if self.nodes.is_empty() {
+        let delimeter_len = if self.is_empty() {
             0
         } else {
             (self.nodes.len() - 1) * 2
@@ -186,6 +186,10 @@ impl Branch<AccordionTabNodes> for AccordionTab {
     fn get_outer_token_length(&self) -> usize {
         6 + self.header.as_ref().map_or(0, |header| header.len() + 3)
     }
+
+    fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
+    }
 }
 
 impl Deserializer for AccordionTab {
@@ -214,7 +218,10 @@ mod cfg {
             list::ListTypes::*, list_item::ListItem, list_item_content::ListItemContent,
             paragraph::Paragraph, text::Text,
         },
-        toolkit::{deserializer::Deserializer, node::Node},
+        toolkit::{
+            deserializer::{Branch, Deserializer},
+            node::Node,
+        },
     };
 
     #[test]
@@ -350,5 +357,6 @@ t**b**
     fn empty_tab() {
         let tab = AccordionTab::new::<&str>(None, vec![]);
         assert_eq!(tab.len(), 6);
+        assert_eq!(tab.is_empty(), true);
     }
 }

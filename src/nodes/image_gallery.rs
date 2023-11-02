@@ -74,7 +74,7 @@ impl Display for ImageGallery {
 
 impl Node for ImageGallery {
     fn len(&self) -> usize {
-        let delimiter_len = if self.nodes.is_empty() {
+        let delimiter_len = if self.is_empty() {
             0
         } else {
             self.nodes.len() - 1
@@ -111,6 +111,10 @@ impl Branch<ImageGalleryNodes> for ImageGallery {
     fn get_outer_token_length(&self) -> usize {
         8
     }
+
+    fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
+    }
 }
 
 #[cfg(test)]
@@ -118,7 +122,10 @@ mod tests {
     use super::ImageGallery;
     use crate::{
         nodes::image::Image,
-        toolkit::{deserializer::Deserializer, node::Node},
+        toolkit::{
+            deserializer::{Branch, Deserializer},
+            node::Node,
+        },
     };
     use pretty_assertions::assert_eq;
 
@@ -176,5 +183,6 @@ mod tests {
     fn empty_gallery() {
         let gal = ImageGallery::new(vec![]);
         assert_eq!(gal.len(), 8);
+        assert_eq!(gal.is_empty(), true);
     }
 }
