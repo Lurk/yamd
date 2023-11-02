@@ -31,10 +31,6 @@ where
                 for parser in &maybe_nodes {
                     if let Some(node) = parser(slice, branch.context()) {
                         while fallback_position != current_position {
-                            println!(
-                                "FALLBACK: '{}'",
-                                &input[fallback_position..current_position]
-                            );
                             fallback_position = branch
                                 .fallback(&input[fallback_position..current_position], delimeter);
                         }
