@@ -100,7 +100,7 @@ impl Display for List {
 
 impl Node for List {
     fn len(&self) -> usize {
-        let add = if self.nodes.is_empty() {
+        let add = if self.is_empty() {
             0
         } else {
             self.nodes.len() - 1
@@ -153,6 +153,10 @@ impl Branch<ListNodes> for List {
 
     fn get_outer_token_length(&self) -> usize {
         0
+    }
+
+    fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
     }
 }
 

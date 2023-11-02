@@ -146,6 +146,10 @@ impl Branch<ListItemContentNodes> for ListItemContent {
     fn get_outer_token_length(&self) -> usize {
         0
     }
+
+    fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
+    }
 }
 
 impl Deserializer for ListItemContent {
@@ -166,7 +170,10 @@ mod test {
             anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic,
             strikethrough::Strikethrough, text::Text,
         },
-        toolkit::{deserializer::Deserializer, node::Node},
+        toolkit::{
+            deserializer::{Branch, Deserializer},
+            node::Node,
+        },
     };
     use pretty_assertions::assert_eq;
 
@@ -246,5 +253,6 @@ mod test {
     fn empty_list_item_content() {
         let list_item_content = ListItemContent::default();
         assert_eq!(list_item_content.len(), 0);
+        assert_eq!(list_item_content.is_empty(), true);
     }
 }

@@ -73,7 +73,7 @@ impl Display for Accordion {
 
 impl Node for Accordion {
     fn len(&self) -> usize {
-        let delimiter_len = if self.nodes.is_empty() {
+        let delimiter_len = if self.is_empty() {
             0
         } else {
             self.nodes.len() - 1
@@ -99,6 +99,10 @@ impl Branch<AccordionNodes> for Accordion {
 
     fn get_outer_token_length(&self) -> usize {
         8
+    }
+
+    fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
     }
 }
 
@@ -190,5 +194,6 @@ mod test {
     fn empty_accordion() {
         let accordion = Accordion::default();
         assert_eq!(accordion.len(), 8);
+        assert_eq!(accordion.is_empty(), true);
     }
 }

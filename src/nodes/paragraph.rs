@@ -119,6 +119,10 @@ impl Branch<ParagraphNodes> for Paragraph {
     fn get_outer_token_length(&self) -> usize {
         0
     }
+
+    fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
+    }
 }
 impl Default for Paragraph {
     fn default() -> Self {
@@ -227,5 +231,6 @@ mod tests {
     #[test]
     fn len() {
         assert_eq!(Paragraph::default().len(), 0);
+        assert_eq!(Paragraph::default().is_empty(), true);
     }
 }

@@ -87,6 +87,10 @@ impl Branch<BoldNodes> for Bold {
     fn get_outer_token_length(&self) -> usize {
         4
     }
+
+    fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
+    }
 }
 
 impl Display for Bold {
@@ -188,5 +192,6 @@ mod tests {
     fn empty_bold() {
         let b = Bold::new(vec![]);
         assert_eq!(b.len(), 4);
+        assert_eq!(b.is_empty(), true);
     }
 }

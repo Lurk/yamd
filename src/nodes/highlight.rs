@@ -86,7 +86,7 @@ impl Display for Highlight {
 
 impl Node for Highlight {
     fn len(&self) -> usize {
-        let delimiter_length = if self.nodes.is_empty() {
+        let delimiter_length = if self.is_empty() {
             0
         } else {
             (self.nodes.len() - 1) * 2
@@ -114,6 +114,10 @@ impl Branch<HighlightNodes> for Highlight {
         8 + self.header.as_ref().map_or(0, |header| header.len() + 4)
             + self.icon.as_ref().map_or(0, |icon| icon.len() + 3)
     }
+
+    fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
+    }
 }
 
 impl Deserializer for Highlight {
@@ -138,7 +142,10 @@ impl Deserializer for Highlight {
 mod tests {
     use crate::{
         nodes::{highlight::Highlight, paragraph::Paragraph, text::Text},
-        toolkit::{deserializer::Deserializer, node::Node},
+        toolkit::{
+            deserializer::{Branch, Deserializer},
+            node::Node,
+        },
     };
     use pretty_assertions::assert_eq;
 
@@ -228,5 +235,6 @@ mod tests {
     fn empty_highlight() {
         let highlight = Highlight::new::<String, String>(None, None, vec![]);
         assert_eq!(highlight.len(), 8);
+        assert_eq!(highlight.is_empty(), true);
     }
 }
