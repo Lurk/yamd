@@ -10,6 +10,12 @@ pub struct Match<'input> {
     pub end_token: &'input str,
 }
 
+impl Match<'_> {
+    pub fn len(&self) -> usize {
+        self.start_token.len() + self.body.len() + self.end_token.len()
+    }
+}
+
 impl<'input> Matcher<'input> {
     pub fn new(input: &'input str) -> Self {
         Self { input, position: 0 }

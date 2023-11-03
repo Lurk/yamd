@@ -57,7 +57,7 @@ where
     where
         Self: Node,
     {
-        let slice = if self.is_empty() {
+        let slice = if self.is_empty() || slice.len() <= delimeter.len() {
             slice
         } else {
             &slice[delimeter.len()..]

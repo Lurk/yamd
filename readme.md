@@ -20,10 +20,14 @@ Deserialize markdown to YAMD struct, Serialize YAMD struct to markdown.
 
 ```rust
 use yamd::{deserialize, serialize};
-let input = r#"header: YAMD documnet showcase
-timestamp: 2023-08-13 15:42:00 +02:00
-tags: yamd, markdown
+let input = r#"---
+title: YAMD documnet showcase
+date: 2023-08-13T15:42:00+02:00
 preview: here is how you can serialize ande deserialize YAMD document
+tags: 
+- yamd
+- markdown
+---
 
 # This is a new Yamd document
 
