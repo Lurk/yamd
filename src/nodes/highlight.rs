@@ -2,55 +2,22 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::{
-    context::Context,
-    deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
-    matcher::Matcher,
-    node::Node,
-};
+use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
 
 use super::paragraph::Paragraph;
-
-#[derive(Debug, PartialEq, Serialize, Clone)]
-#[serde(tag = "type")]
-pub enum HighlightNodes {
-    Paragraph(Paragraph),
-}
-
-impl Display for HighlightNodes {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            HighlightNodes::Paragraph(node) => write!(f, "{}", node),
-        }
-    }
-}
-
-impl Node for HighlightNodes {
-    fn len(&self) -> usize {
-        match self {
-            HighlightNodes::Paragraph(node) => node.len(),
-        }
-    }
-}
-
-impl From<Paragraph> for HighlightNodes {
-    fn from(value: Paragraph) -> Self {
-        Self::Paragraph(value)
-    }
-}
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Highlight {
     pub header: Option<String>,
     pub icon: Option<String>,
-    pub nodes: Vec<HighlightNodes>,
+    pub nodes: Vec<Paragraph>,
 }
 
 impl Highlight {
     pub fn new<H: Into<String>, I: Into<String>>(
         header: Option<H>,
         icon: Option<I>,
-        nodes: Vec<HighlightNodes>,
+        nodes: Vec<Paragraph>,
     ) -> Self {
         Self {
             header: header.map(|header| header.into()),
@@ -86,37 +53,16 @@ impl Display for Highlight {
 
 impl Node for Highlight {
     fn len(&self) -> usize {
-        let delimiter_length = if self.is_empty() {
+        let delimiter_length = if self.nodes.len() == 0 {
             0
         } else {
             (self.nodes.len() - 1) * 2
         };
         self.nodes.iter().map(|node| node.len()).sum::<usize>()
             + delimiter_length
-            + self.get_outer_token_length()
-    }
-}
-
-impl Branch<HighlightNodes> for Highlight {
-    fn push<CanBeNode: Into<HighlightNodes>>(&mut self, node: CanBeNode) {
-        self.nodes.push(node.into());
-    }
-
-    fn get_maybe_nodes() -> Vec<MaybeNode<HighlightNodes>> {
-        vec![Paragraph::maybe_node()]
-    }
-
-    fn get_fallback_node() -> Option<DefinitelyNode<HighlightNodes>> {
-        None
-    }
-
-    fn get_outer_token_length(&self) -> usize {
-        8 + self.header.as_ref().map_or(0, |header| header.len() + 4)
+            + 8
+            + self.header.as_ref().map_or(0, |header| header.len() + 4)
             + self.icon.as_ref().map_or(0, |icon| icon.len() + 3)
-    }
-
-    fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
     }
 }
 
@@ -130,8 +76,17 @@ impl Deserializer for Highlight {
                 .map(|header| header.body);
 
             let icon = matcher.get_match("> ", "\n", false).map(|icon| icon.body);
-
-            return Self::parse_branch(matcher.get_rest(), "\n\n", Self::new(header, icon, vec![]));
+            return Some(Self::new(
+                header,
+                icon,
+                matcher
+                    .get_rest()
+                    .split("\n\n")
+                    .map(|paragraph| {
+                        Paragraph::deserialize(paragraph).expect("Paragraph always deserializes")
+                    })
+                    .collect::<Vec<Paragraph>>(),
+            ));
         }
 
         None
@@ -142,10 +97,7 @@ impl Deserializer for Highlight {
 mod tests {
     use crate::{
         nodes::{highlight::Highlight, paragraph::Paragraph, text::Text},
-        toolkit::{
-            deserializer::{Branch, Deserializer},
-            node::Node,
-        },
+        toolkit::{deserializer::Deserializer, node::Node},
     };
     use pretty_assertions::assert_eq;
 
@@ -235,6 +187,30 @@ mod tests {
     fn empty_highlight() {
         let highlight = Highlight::new::<String, String>(None, None, vec![]);
         assert_eq!(highlight.len(), 8);
-        assert_eq!(highlight.is_empty(), true);
+    }
+
+    #[test]
+    fn starts_with_delimeter() {
+        let input = ">>>
+
+
+test
+
+test2
+>>>";
+        let highlight = Highlight::deserialize(input).unwrap();
+        assert_eq!(highlight.len(), input.len());
+        assert_eq!(
+            highlight,
+            Highlight::new::<&str, &str>(
+                None,
+                None,
+                vec![
+                    Paragraph::new(vec![]).into(),
+                    Paragraph::new(vec![Text::new("test").into()]).into(),
+                    Paragraph::new(vec![Text::new("test2").into()]).into(),
+                ]
+            )
+        );
     }
 }
