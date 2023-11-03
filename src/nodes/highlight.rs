@@ -53,7 +53,7 @@ impl Display for Highlight {
 
 impl Node for Highlight {
     fn len(&self) -> usize {
-        let delimiter_length = if self.nodes.len() == 0 {
+        let delimiter_length = if self.nodes.is_empty() {
             0
         } else {
             (self.nodes.len() - 1) * 2

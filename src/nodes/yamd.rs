@@ -321,19 +321,20 @@ end"#;
         assert_eq!(
             Yamd::deserialize(TEST_CASE),
             Some(Yamd::new(
-                Some(Metadata::new(
-                    Some("test"),
-                    Some(
+                Some(Metadata {
+                    title: Some("test".to_string()),
+                    date: Some(
                         DateTime::parse_from_str(
                             "2022-01-01 00:00:00 +02:00",
                             "%Y-%m-%d %H:%M:%S %z"
                         )
                         .unwrap()
                     ),
-                    Some("image"),
-                    Some("preview"),
-                    Some(vec!["tag1".to_string(), "tag2".to_string()]),
-                )),
+                    image: Some("image".to_string()),
+                    preview: Some("preview".to_string()),
+                    tags: Some(vec!["tag1".to_string(), "tag2".to_string()]),
+                    consumed_length: Some(101),
+                }),
                 vec![
                     Heading::new("hello", 1).into(),
                     Code::new("rust", "let a=1;").into(),

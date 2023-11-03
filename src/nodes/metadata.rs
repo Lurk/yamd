@@ -16,6 +16,8 @@ pub struct Metadata {
     pub preview: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<Vec<String>>,
+    #[serde(skip)]
+    pub consumed_length: Option<usize>,
 }
 
 impl Metadata {
@@ -32,15 +34,17 @@ impl Metadata {
             image: image.map(|i| i.into()),
             preview: preview.map(|p| p.into()),
             tags,
+            consumed_length: None,
         }
     }
 
     pub fn deserialize(input: &str) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(metadata) = matcher.get_match("---\n", "---", false) {
-            let meta: Metadata = serde_yaml::from_str(metadata.body).unwrap_or_else(|e| {
+            let mut meta: Metadata = serde_yaml::from_str(metadata.body).unwrap_or_else(|e| {
                 panic!("Failed to deserialize metadata: {}\n{}\n", metadata.body, e)
             });
+            meta.consumed_length = Some(metadata.len());
             return Some(meta);
         }
 
@@ -65,7 +69,8 @@ impl Display for Metadata {
 
 impl Node for Metadata {
     fn len(&self) -> usize {
-        self.to_string().len()
+        self.consumed_length
+            .unwrap_or_else(|| self.to_string().len())
     }
 }
 
@@ -124,16 +129,17 @@ mod tests {
 
     #[test]
     fn test_deserialize() {
-        let metadata = Metadata::new(
-            Some("title"),
-            Some(
+        let metadata = Metadata {
+            title: Some("title".to_string()),
+            date: Some(
                 DateTime::parse_from_str("2022-01-01 00:00:00 +02:00", "%Y-%m-%d %H:%M:%S %z")
                     .unwrap(),
             ),
-            Some("image"),
-            Some("preview"),
-            Some(vec!["tag1".to_string(), "tag2".to_string()]),
-        );
+            image: Some("image".to_string()),
+            preview: Some("preview".to_string()),
+            tags: Some(vec!["tag1".to_string(), "tag2".to_string()]),
+            consumed_length: Some(102),
+        };
         assert_eq!(
             Metadata::deserialize(metadata.to_string().as_str()),
             Some(metadata)
@@ -144,7 +150,14 @@ mod tests {
     fn deserialize_empty() {
         assert_eq!(
             Metadata::deserialize("---\n---"),
-            Some(Metadata::new::<&str>(None, None, None, None, None))
+            Some(Metadata {
+                title: None,
+                date: None,
+                image: None,
+                preview: None,
+                tags: None,
+                consumed_length: Some(7)
+            })
         );
     }
 
@@ -157,7 +170,14 @@ mod tests {
     fn deserialize_only_with_title() {
         assert_eq!(
             Metadata::deserialize("---\ntitle: header\n---"),
-            Some(Metadata::new(Some("header"), None, None, None, None))
+            Some(Metadata {
+                title: Some("header".to_string()),
+                preview: None,
+                date: None,
+                image: None,
+                tags: None,
+                consumed_length: Some(21)
+            })
         );
     }
 
@@ -169,5 +189,12 @@ mod tests {
         );
         assert_eq!(Metadata::default().to_string(), "");
         assert_eq!(Metadata::default().len(), 0);
+    }
+
+    #[test]
+    fn deserialize_with_quotes() {
+        let input = "---\ntitle: \"header\"\n---";
+        let m = Metadata::deserialize(input);
+        assert_eq!(input.len(), m.unwrap().len());
     }
 }
