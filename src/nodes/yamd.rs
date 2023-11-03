@@ -523,4 +523,18 @@ end"#;
         let actual = Yamd::deserialize(input).unwrap();
         assert_eq!(expected, actual);
     }
+
+    #[test]
+    fn last_delimiter() {
+        let input = "text\n\n";
+        let expected = Yamd::new(
+            None,
+            vec![
+                Paragraph::new(vec![Text::new("text").into()]).into(),
+                Paragraph::new(vec![]).into(),
+            ],
+        );
+        let actual = Yamd::deserialize(input).unwrap();
+        assert_eq!(expected, actual);
+    }
 }
