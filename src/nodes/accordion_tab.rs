@@ -17,8 +17,8 @@ use super::{
 #[derive(Debug, PartialEq, Serialize, Clone)]
 #[serde(tag = "type")]
 pub enum AccordionTabNodes {
-    Pargaraph(Paragraph),
-    Heading(Heading),
+    P(Paragraph),
+    H(Heading),
     Image(Image),
     ImageGallery(ImageGallery),
     List(List),
@@ -31,8 +31,8 @@ pub enum AccordionTabNodes {
 impl Display for AccordionTabNodes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AccordionTabNodes::Pargaraph(node) => write!(f, "{}", node),
-            AccordionTabNodes::Heading(node) => write!(f, "{}", node),
+            AccordionTabNodes::P(node) => write!(f, "{}", node),
+            AccordionTabNodes::H(node) => write!(f, "{}", node),
             AccordionTabNodes::Image(node) => write!(f, "{}", node),
             AccordionTabNodes::ImageGallery(node) => write!(f, "{}", node),
             AccordionTabNodes::List(node) => write!(f, "{}", node),
@@ -47,8 +47,8 @@ impl Display for AccordionTabNodes {
 impl Node for AccordionTabNodes {
     fn len(&self) -> usize {
         match self {
-            AccordionTabNodes::Pargaraph(node) => node.len(),
-            AccordionTabNodes::Heading(node) => node.len(),
+            AccordionTabNodes::P(node) => node.len(),
+            AccordionTabNodes::H(node) => node.len(),
             AccordionTabNodes::Image(node) => node.len(),
             AccordionTabNodes::ImageGallery(node) => node.len(),
             AccordionTabNodes::List(node) => node.len(),
@@ -62,13 +62,13 @@ impl Node for AccordionTabNodes {
 
 impl From<Paragraph> for AccordionTabNodes {
     fn from(value: Paragraph) -> Self {
-        Self::Pargaraph(value)
+        Self::P(value)
     }
 }
 
 impl From<Heading> for AccordionTabNodes {
     fn from(value: Heading) -> Self {
-        Self::Heading(value)
+        Self::H(value)
     }
 }
 
@@ -116,15 +116,15 @@ impl From<Code> for AccordionTabNodes {
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct AccordionTab {
-    pub header: Option<String>,
+    pub title: Option<String>,
     pub nodes: Vec<AccordionTabNodes>,
 }
 
 impl AccordionTab {
-    pub fn new<S: Into<String>>(header: Option<S>, nodes: Vec<AccordionTabNodes>) -> Self {
+    pub fn new<S: Into<String>>(title: Option<S>, nodes: Vec<AccordionTabNodes>) -> Self {
         Self {
             nodes,
-            header: header.map(|s| s.into()),
+            title: title.map(|s| s.into()),
         }
     }
 }
@@ -133,11 +133,11 @@ impl Display for AccordionTab {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "//\n{header}{nodes}\n\\\\",
-            header = self
-                .header
+            "//\n{title}{nodes}\n\\\\",
+            title = self
+                .title
                 .as_ref()
-                .map_or("".to_string(), |header| format!("/ {}\n", header)),
+                .map_or("".to_string(), |title| format!("/ {}\n", title)),
             nodes = self
                 .nodes
                 .iter()
@@ -184,7 +184,7 @@ impl Branch<AccordionTabNodes> for AccordionTab {
     }
 
     fn get_outer_token_length(&self) -> usize {
-        6 + self.header.as_ref().map_or(0, |header| header.len() + 3)
+        6 + self.title.as_ref().map_or(0, |header| header.len() + 3)
     }
 
     fn is_empty(&self) -> bool {
@@ -197,11 +197,11 @@ impl Deserializer for AccordionTab {
         let mut matcher = Matcher::new(input);
         if let Some(tab) = matcher.get_match("//\n", "\n\\\\", false) {
             let mut inner_matcher = Matcher::new(tab.body);
-            let header = inner_matcher
+            let title = inner_matcher
                 .get_match("/ ", "\n", false)
                 .map(|header| header.body);
 
-            return Self::parse_branch(inner_matcher.get_rest(), "\n\n", Self::new(header, vec![]));
+            return Self::parse_branch(inner_matcher.get_rest(), "\n\n", Self::new(title, vec![]));
         }
         None
     }
@@ -227,9 +227,9 @@ mod cfg {
     #[test]
     fn test_accordion_tab_deserialize() {
         assert_eq!(
-            AccordionTab::deserialize("//\n/ Header\n# Heading\n\\\\\n\n"),
+            AccordionTab::deserialize("//\n/ Title\n# Heading\n\\\\\n\n"),
             Some(AccordionTab::new(
-                Some("Header"),
+                Some("Title"),
                 vec![Heading::new("Heading", 1).into()]
             ))
         );
@@ -260,17 +260,17 @@ mod cfg {
     #[test]
     fn test_accordion_tab_len() {
         assert_eq!(
-            AccordionTab::new(Some("Header"), vec![Heading::new("Heading", 1).into()]).len(),
-            24
+            AccordionTab::new(Some("Title"), vec![Heading::new("Heading", 1).into()]).len(),
+            23
         );
-        assert_eq!(AccordionTab::new(Some("Header"), vec![]).len(), 15);
+        assert_eq!(AccordionTab::new(Some("Title"), vec![]).len(), 14);
     }
 
     #[test]
     fn test_accordion_tab_serialize() {
         assert_eq!(
-            AccordionTab::new(Some("Header"), vec![Heading::new("Heading", 1).into()]).to_string(),
-            "//\n/ Header\n# Heading\n\\\\"
+            AccordionTab::new(Some("Title"), vec![Heading::new("Heading", 1).into()]).to_string(),
+            "//\n/ Title\n# Heading\n\\\\"
         );
     }
 
@@ -282,7 +282,7 @@ mod cfg {
     #[test]
     fn with_all_nodes() {
         let input = r#"//
-/ Header
+/ Title
 # hello
 
 ```rust
@@ -308,7 +308,7 @@ t**b**
 {{cloudinary_gallery|cloud_name&tag}}
 \\"#;
         let tab = AccordionTab::new(
-            Some("Header"),
+            Some("Title"),
             vec![
                 Heading::new("hello", 1).into(),
                 Code::new("rust", "let a=1;").into(),
