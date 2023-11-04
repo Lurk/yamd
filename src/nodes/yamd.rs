@@ -282,11 +282,11 @@ _I_
 
 ///
 //
-/ accordeon tab
+/ accordion tab
 
 \\
 //
-/ one more accordeon tab
+/ one more accordion tab
 
 \\
 \\\
@@ -383,8 +383,8 @@ end"#;
                     Embed::new("youtube", "123",).into(),
                     Embed::new("cloudinary_gallery", "cloud_name&tag",).into(),
                     Accordion::new(vec![
-                        AccordionTab::new(Some("accordeon tab"), vec![]).into(),
-                        AccordionTab::new(Some("one more accordeon tab"), vec![]).into()
+                        AccordionTab::new(Some("accordion tab"), vec![]).into(),
+                        AccordionTab::new(Some("one more accordion tab"), vec![]).into()
                     ])
                     .into(),
                     Paragraph::new(vec![Text::new("end").into()]).into()
@@ -459,8 +459,8 @@ end"#;
                     Embed::new("youtube", "123",).into(),
                     Embed::new("cloudinary_gallery", "cloud_name&tag",).into(),
                     Accordion::new(vec![
-                        AccordionTab::new(Some("accordeon tab"), vec![]).into(),
-                        AccordionTab::new(Some("one more accordeon tab"), vec![]).into()
+                        AccordionTab::new(Some("accordion tab"), vec![]).into(),
+                        AccordionTab::new(Some("one more accordion tab"), vec![]).into()
                     ])
                     .into(),
                     Paragraph::new(vec![Text::new("end").into()]).into()

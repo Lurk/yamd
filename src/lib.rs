@@ -91,14 +91,14 @@
 //!
 //! ### Highlight
 //!
-//! Element that starts with ">>>\n", followed by optional header that starts with ">> " and ends with a new line,
+//! Element that starts with ">>>\n", followed by optional title that starts with ">> " and ends with a new line,
 //! followed by optional icon specifier that starts with "> " and ends with a new line, followed by body that can
 //! contain any number of paragraph elements
 //!
 //! Example:
 //! ```text
 //! >>>
-//! >> Header
+//! >> Title
 //! > icon
 //! body
 //!
@@ -175,11 +175,11 @@
 //! ```text
 //! ///
 //! //
-//! / header
+//! / Title
 //! some random text
 //! \\
 //! //
-//! / header
+//! / Title
 //! some random text
 //! \\
 //! \\\

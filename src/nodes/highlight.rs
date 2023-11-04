@@ -8,19 +8,19 @@ use super::paragraph::Paragraph;
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Highlight {
-    pub header: Option<String>,
+    pub title: Option<String>,
     pub icon: Option<String>,
     pub nodes: Vec<Paragraph>,
 }
 
 impl Highlight {
-    pub fn new<H: Into<String>, I: Into<String>>(
-        header: Option<H>,
+    pub fn new<T: Into<String>, I: Into<String>>(
+        title: Option<T>,
         icon: Option<I>,
         nodes: Vec<Paragraph>,
     ) -> Self {
         Self {
-            header: header.map(|header| header.into()),
+            title: title.map(|title| title.into()),
             icon: icon.map(|icon| icon.into()),
             nodes,
         }
@@ -29,8 +29,8 @@ impl Highlight {
 
 impl Display for Highlight {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let header = match &self.header {
-            Some(header) => format!(">> {header}\n"),
+        let title = match &self.title {
+            Some(title) => format!(">> {title}\n"),
             None => String::new(),
         };
         let icon = match &self.icon {
@@ -39,13 +39,13 @@ impl Display for Highlight {
         };
         write!(
             f,
-            ">>>\n{header}{icon}{}\n>>>",
+            ">>>\n{title}{icon}{}\n>>>",
             self.nodes
                 .iter()
                 .map(|node| node.to_string())
                 .collect::<Vec<String>>()
                 .join("\n\n"),
-            header = header,
+            title = title,
             icon = icon,
         )
     }
@@ -61,7 +61,7 @@ impl Node for Highlight {
         self.nodes.iter().map(|node| node.len()).sum::<usize>()
             + delimiter_length
             + 8
-            + self.header.as_ref().map_or(0, |header| header.len() + 4)
+            + self.title.as_ref().map_or(0, |title| title.len() + 4)
             + self.icon.as_ref().map_or(0, |icon| icon.len() + 3)
     }
 }
@@ -71,13 +71,13 @@ impl Deserializer for Highlight {
         let mut outer_matcher = Matcher::new(input);
         if let Some(highlight) = outer_matcher.get_match(">>>\n", "\n>>>", false) {
             let mut matcher = Matcher::new(highlight.body);
-            let header = matcher
+            let title = matcher
                 .get_match(">> ", "\n", false)
-                .map(|header| header.body);
+                .map(|title| title.body);
 
             let icon = matcher.get_match("> ", "\n", false).map(|icon| icon.body);
             return Some(Self::new(
-                header,
+                title,
                 icon,
                 matcher
                     .get_rest()
