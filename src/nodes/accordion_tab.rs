@@ -17,8 +17,8 @@ use super::{
 #[derive(Debug, PartialEq, Serialize, Clone)]
 #[serde(tag = "type")]
 pub enum AccordionTabNodes {
-    Pargaraph(Paragraph),
-    Heading(Heading),
+    P(Paragraph),
+    H(Heading),
     Image(Image),
     ImageGallery(ImageGallery),
     List(List),
@@ -31,8 +31,8 @@ pub enum AccordionTabNodes {
 impl Display for AccordionTabNodes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AccordionTabNodes::Pargaraph(node) => write!(f, "{}", node),
-            AccordionTabNodes::Heading(node) => write!(f, "{}", node),
+            AccordionTabNodes::P(node) => write!(f, "{}", node),
+            AccordionTabNodes::H(node) => write!(f, "{}", node),
             AccordionTabNodes::Image(node) => write!(f, "{}", node),
             AccordionTabNodes::ImageGallery(node) => write!(f, "{}", node),
             AccordionTabNodes::List(node) => write!(f, "{}", node),
@@ -47,8 +47,8 @@ impl Display for AccordionTabNodes {
 impl Node for AccordionTabNodes {
     fn len(&self) -> usize {
         match self {
-            AccordionTabNodes::Pargaraph(node) => node.len(),
-            AccordionTabNodes::Heading(node) => node.len(),
+            AccordionTabNodes::P(node) => node.len(),
+            AccordionTabNodes::H(node) => node.len(),
             AccordionTabNodes::Image(node) => node.len(),
             AccordionTabNodes::ImageGallery(node) => node.len(),
             AccordionTabNodes::List(node) => node.len(),
@@ -62,13 +62,13 @@ impl Node for AccordionTabNodes {
 
 impl From<Paragraph> for AccordionTabNodes {
     fn from(value: Paragraph) -> Self {
-        Self::Pargaraph(value)
+        Self::P(value)
     }
 }
 
 impl From<Heading> for AccordionTabNodes {
     fn from(value: Heading) -> Self {
-        Self::Heading(value)
+        Self::H(value)
     }
 }
 
