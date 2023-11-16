@@ -333,6 +333,7 @@ end"#;
                     image: Some("image".to_string()),
                     preview: Some("preview".to_string()),
                     tags: Some(vec!["tag1".to_string(), "tag2".to_string()]),
+                    is_draft: None,
                     consumed_length: Some(101),
                 }),
                 vec![
