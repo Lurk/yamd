@@ -4,12 +4,14 @@
 //!
 //! ## Syntax
 //!
-//! Each yamd document starts with metadata section  which is YAML document surrounded by "---". Metadata has five
-//! fields: title, date, image, preview, and tags.
+//! Each yamd document starts with metadata section  which is YAML document surrounded by "---". Metadata has next
+//! fields: title, date, image, preview, is_draft, and tags.
 //!
 //! Timestamp format: "%Y-%m-%dT%H:%M:%S%z" ([specifiers description](https://docs.rs/chrono/latest/chrono/format/strftime/index.html))
 //!
 //! Tags are array of strings.
+//!
+//! is_draft is a boolean value.
 //!
 //! Example:
 //! ```text
@@ -18,6 +20,7 @@
 //! date: 2023-01-01 00:00:00 +0000
 //! image: /image.png
 //! preview: Here you can find out more about yamd
+//! is_draft: true
 //! tags:
 //! - markdown
 //! - rust

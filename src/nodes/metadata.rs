@@ -16,6 +16,8 @@ pub struct Metadata {
     pub preview: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tags: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_draft: Option<bool>,
     #[serde(skip)]
     pub consumed_length: Option<usize>,
 }
@@ -33,6 +35,7 @@ impl Metadata {
             date: timestamp,
             image: image.map(|i| i.into()),
             preview: preview.map(|p| p.into()),
+            is_draft: None,
             tags,
             consumed_length: None,
         }
@@ -138,7 +141,8 @@ mod tests {
             image: Some("image".to_string()),
             preview: Some("preview".to_string()),
             tags: Some(vec!["tag1".to_string(), "tag2".to_string()]),
-            consumed_length: Some(102),
+            is_draft: Some(true),
+            consumed_length: Some(117),
         };
         assert_eq!(
             Metadata::deserialize(metadata.to_string().as_str()),
@@ -156,6 +160,7 @@ mod tests {
                 image: None,
                 preview: None,
                 tags: None,
+                is_draft: None,
                 consumed_length: Some(7)
             })
         );
@@ -176,6 +181,7 @@ mod tests {
                 date: None,
                 image: None,
                 tags: None,
+                is_draft: None,
                 consumed_length: Some(21)
             })
         );
