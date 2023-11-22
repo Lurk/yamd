@@ -29,11 +29,10 @@ impl Highlight {
 
 impl Display for Highlight {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let title =
-            match &self.title {
-                Some(title) => format!(">> {title}\n"),
-                None => String::new(),
-            };
+        let title = match &self.title {
+            Some(title) => format!(">> {title}\n"),
+            None => String::new(),
+        };
         let icon = match &self.icon {
             Some(icon) => format!("> {icon}\n"),
             None => String::new(),

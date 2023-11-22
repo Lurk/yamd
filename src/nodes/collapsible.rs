@@ -227,7 +227,10 @@ mod cfg {
     fn test_collapsible_deserialize() {
         assert_eq!(
             Collapsible::deserialize("{% Title\n# Heading\n%}"),
-            Some(Collapsible::new("Title", vec![Heading::new("Heading", 1).into()]))
+            Some(Collapsible::new(
+                "Title",
+                vec![Heading::new("Heading", 1).into()]
+            ))
         );
     }
 
@@ -295,9 +298,10 @@ t**b**
                 ])
                 .into(),
                 Image::new('a', 'u').into(),
-                ImageGallery::new(
-                    vec![Image::new("a2", "u2").into(), Image::new("a3", "u3").into()]
-                )
+                ImageGallery::new(vec![
+                    Image::new("a2", "u2").into(),
+                    Image::new("a3", "u3").into(),
+                ])
                 .into(),
                 Divider::new().into(),
                 List::new(

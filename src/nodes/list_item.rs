@@ -90,13 +90,11 @@ impl Deserializer for ListItem {
             ListTypes::Ordered => "+",
         };
         let mut matcher = Matcher::new(input);
-        if let Some(list_item) =
-            matcher.get_match(
-                format!("{}{} ", " ".repeat(level), list_type).as_str(),
-                format!("\n{}{} ", " ".repeat(level), list_type).as_str(),
-                true,
-            )
-        {
+        if let Some(list_item) = matcher.get_match(
+            format!("{}{} ", " ".repeat(level), list_type).as_str(),
+            format!("\n{}{} ", " ".repeat(level), list_type).as_str(),
+            true,
+        ) {
             if let Some(text) = ListItemContent::deserialize(list_item.body) {
                 let mut nested_list = None;
                 if text.len() + 1 < list_item.body.len() {

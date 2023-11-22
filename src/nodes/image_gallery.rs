@@ -132,13 +132,19 @@ mod tests {
     #[test]
     fn serialize() {
         assert_eq!(
-            ImageGallery::new(vec![Image::new("a", "u").into(), Image::new("a2", "u2").into()],)
-                .to_string(),
+            ImageGallery::new(vec![
+                Image::new("a", "u").into(),
+                Image::new("a2", "u2").into()
+            ],)
+            .to_string(),
             "!!!\n![a](u)\n![a2](u2)\n!!!"
         );
         assert_eq!(
-            ImageGallery::new(vec![Image::new("a", "u").into(), Image::new("a2", "u2").into()],)
-                .to_string(),
+            ImageGallery::new(vec![
+                Image::new("a", "u").into(),
+                Image::new("a2", "u2").into()
+            ],)
+            .to_string(),
             "!!!\n![a](u)\n![a2](u2)\n!!!"
         );
     }
@@ -146,8 +152,11 @@ mod tests {
     #[test]
     fn len() {
         assert_eq!(
-            ImageGallery::new(vec![Image::new("a", "u").into(), Image::new("a2", "u2").into()],)
-                .len(),
+            ImageGallery::new(vec![
+                Image::new("a", "u").into(),
+                Image::new("a2", "u2").into()
+            ],)
+            .len(),
             25
         );
     }
@@ -156,15 +165,17 @@ mod tests {
     fn deserialize() {
         assert_eq!(
             ImageGallery::deserialize("!!!\n![a](u)\n![a2](u2)\n!!!"),
-            Some(
-                ImageGallery::new(vec![Image::new("a", "u").into(), Image::new("a2", "u2").into()],)
-            )
+            Some(ImageGallery::new(vec![
+                Image::new("a", "u").into(),
+                Image::new("a2", "u2").into()
+            ],))
         );
         assert_eq!(
             ImageGallery::deserialize("!!!\n![a](u)\n![a2](u2)\n!!!\n\n"),
-            Some(
-                ImageGallery::new(vec![Image::new("a", "u").into(), Image::new("a2", "u2").into()],)
-            )
+            Some(ImageGallery::new(vec![
+                Image::new("a", "u").into(),
+                Image::new("a2", "u2").into()
+            ],))
         );
     }
 
