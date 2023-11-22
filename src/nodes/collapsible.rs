@@ -108,6 +108,12 @@ impl From<Code> for CollapsibleNodes {
     }
 }
 
+impl From<Collapsible> for CollapsibleNodes {
+    fn from(value: Collapsible) -> Self {
+        Self::Collapsible(value)
+    }
+}
+
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Collapsible {
     pub title: String,
@@ -166,6 +172,7 @@ impl Branch<CollapsibleNodes> for Collapsible {
             Embed::maybe_node(),
             Divider::maybe_node(),
             Code::maybe_node(),
+            Collapsible::maybe_node(),
         ]
     }
 
@@ -272,6 +279,10 @@ t**b**
 {{youtube|123}}
 
 {{cloudinary_gallery|cloud_name&tag}}
+
+{% nested collapsible
+# nested
+%}
 %}"#;
         let tab = Collapsible::new(
             "Title",
@@ -312,6 +323,8 @@ t**b**
                 .into(),
                 Embed::new("youtube", "123").into(),
                 Embed::new("cloudinary_gallery", "cloud_name&tag").into(),
+                Collapsible::new("nested collapsible", vec![Heading::new("nested", 1).into()])
+                    .into(),
             ],
         );
         assert_eq!(tab.to_string(), input);
