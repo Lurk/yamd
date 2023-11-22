@@ -44,9 +44,9 @@ impl Metadata {
     pub fn deserialize(input: &str) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(metadata) = matcher.get_match("---\n", "---", false) {
-            let mut meta: Metadata = serde_yaml::from_str(metadata.body).unwrap_or_else(|e| {
-                panic!("Failed to deserialize metadata: {}\n{}\n", metadata.body, e)
-            });
+            let mut meta: Metadata = serde_yaml::from_str(metadata.body).unwrap_or_else(
+                |e| panic!("Failed to deserialize metadata: {}\n{}\n", metadata.body, e)
+            );
             meta.consumed_length = Some(metadata.len());
             return Some(meta);
         }

@@ -147,12 +147,13 @@ mod tests {
 
     #[test]
     fn from_vec() {
-        let b: String = Bold::new(vec![
-            Text::new("B as bold ").into(),
-            Italic::new("Italic").into(),
-            Strikethrough::new("Strikethrough").into(),
-        ])
-        .to_string();
+        let b: String =
+            Bold::new(vec![
+                Text::new("B as bold ").into(),
+                Italic::new("Italic").into(),
+                Strikethrough::new("Strikethrough").into(),
+            ])
+            .to_string();
         assert_eq!(b, "**B as bold _Italic_~~Strikethrough~~**".to_string());
     }
 

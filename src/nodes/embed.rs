@@ -74,10 +74,7 @@ mod tests {
                 "{{youtube|https://www.youtube.com/embed/wsfdjlkjsdf}}",
                 None
             ),
-            Some(Embed::new(
-                "youtube",
-                "https://www.youtube.com/embed/wsfdjlkjsdf",
-            ))
+            Some(Embed::new("youtube", "https://www.youtube.com/embed/wsfdjlkjsdf",))
         );
     }
 }

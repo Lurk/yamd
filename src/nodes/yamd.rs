@@ -10,7 +10,7 @@ use crate::{
 };
 
 use super::{
-    accordion::Accordion, code::Code, divider::Divider, embed::Embed, highlight::Highlight,
+    code::Code, collapsible::Collapsible, divider::Divider, embed::Embed, highlight::Highlight,
     image::Image, image_gallery::ImageGallery, list::List, metadata::Metadata,
 };
 
@@ -26,7 +26,7 @@ pub enum YamdNodes {
     Highlight(Highlight),
     Divider(Divider),
     Embed(Embed),
-    Accordion(Accordion),
+    Collapsible(Collapsible),
 }
 
 impl From<Paragraph> for YamdNodes {
@@ -83,9 +83,9 @@ impl From<Embed> for YamdNodes {
     }
 }
 
-impl From<Accordion> for YamdNodes {
-    fn from(value: Accordion) -> Self {
-        YamdNodes::Accordion(value)
+impl From<Collapsible> for YamdNodes {
+    fn from(value: Collapsible) -> Self {
+        YamdNodes::Collapsible(value)
     }
 }
 
@@ -101,7 +101,7 @@ impl Display for YamdNodes {
             YamdNodes::Highlight(node) => write!(f, "{}", node),
             YamdNodes::Divider(node) => write!(f, "{}", node),
             YamdNodes::Embed(node) => write!(f, "{}", node),
-            YamdNodes::Accordion(node) => write!(f, "{}", node),
+            YamdNodes::Collapsible(node) => write!(f, "{}", node),
         }
     }
 }
@@ -118,7 +118,7 @@ impl Node for YamdNodes {
             YamdNodes::Highlight(node) => node.len(),
             YamdNodes::Divider(node) => node.len(),
             YamdNodes::Embed(node) => node.len(),
-            YamdNodes::Accordion(node) => node.len(),
+            YamdNodes::Collapsible(node) => node.len(),
         }
     }
 }
@@ -154,7 +154,7 @@ impl Branch<YamdNodes> for Yamd {
             Highlight::maybe_node(),
             Divider::maybe_node(),
             Embed::maybe_node(),
-            Accordion::maybe_node(),
+            Collapsible::maybe_node(),
         ]
     }
 
@@ -216,10 +216,9 @@ mod tests {
         nodes::heading::Heading,
         nodes::paragraph::Paragraph,
         nodes::{
-            accordion::Accordion,
-            accordion_tab::AccordionTab,
             bold::Bold,
             code::Code,
+            collapsible::Collapsible,
             divider::Divider,
             embed::Embed,
             highlight::Highlight,
@@ -280,16 +279,13 @@ _I_
 
 {{cloudinary_gallery|cloud_name&tag}}
 
-///
-//
-/ accordion tab
+{% collapsible
 
-\\
-//
-/ one more accordion tab
+%}
 
-\\
-\\\
+{% one more collapsible
+
+%}
 
 end"#;
 
@@ -383,11 +379,8 @@ end"#;
                     .into(),
                     Embed::new("youtube", "123",).into(),
                     Embed::new("cloudinary_gallery", "cloud_name&tag",).into(),
-                    Accordion::new(vec![
-                        AccordionTab::new(Some("accordion tab"), vec![]).into(),
-                        AccordionTab::new(Some("one more accordion tab"), vec![]).into()
-                    ])
-                    .into(),
+                    Collapsible::new("collapsible", vec![]).into(),
+                    Collapsible::new("one more collapsible", vec![]).into(),
                     Paragraph::new(vec![Text::new("end").into()]).into()
                 ]
             ))
@@ -459,11 +452,8 @@ end"#;
                     .into(),
                     Embed::new("youtube", "123",).into(),
                     Embed::new("cloudinary_gallery", "cloud_name&tag",).into(),
-                    Accordion::new(vec![
-                        AccordionTab::new(Some("accordion tab"), vec![]).into(),
-                        AccordionTab::new(Some("one more accordion tab"), vec![]).into()
-                    ])
-                    .into(),
+                    Collapsible::new("collapsible", vec![]).into(),
+                    Collapsible::new("one more collapsible", vec![]).into(),
                     Paragraph::new(vec![Text::new("end").into()]).into()
                 ]
             )
