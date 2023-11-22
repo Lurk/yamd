@@ -38,8 +38,7 @@ impl Deserializer for Embed {
     ) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(embed) = matcher.get_match("{{", "}}", false) {
-            let mut embed = embed.body.split('|');
-            if let (Some(kind), Some(args)) = (embed.next(), embed.next()) {
+            if let Some((kind, args)) = embed.body.split_once('|') {
                 return Some(Self::new(kind.to_string(), args.to_string()));
             }
         }
@@ -79,5 +78,10 @@ mod tests {
                 "https://www.youtube.com/embed/wsfdjlkjsdf",
             ))
         );
+    }
+
+    #[test]
+    fn failed_deserialize() {
+        assert_eq!(Embed::deserialize_with_context("{{youtube}}", None), None);
     }
 }
