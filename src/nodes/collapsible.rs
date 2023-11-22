@@ -255,7 +255,6 @@ mod cfg {
     fn fail_to_deseiralize_collapsible() {
         assert_eq!(Collapsible::deserialize("I am not an accordion tab"), None);
         assert_eq!(Collapsible::deserialize("{% \n%}"), None);
-        
     }
 
     #[test]
