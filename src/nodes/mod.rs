@@ -1,8 +1,7 @@
-pub mod accordion;
-pub mod accordion_tab;
 pub mod anchor;
 pub mod bold;
 pub mod code;
+pub mod collapsible;
 pub mod divider;
 pub mod embed;
 pub mod heading;

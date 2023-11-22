@@ -10,134 +10,131 @@ use crate::toolkit::{
 };
 
 use super::{
-    accordion::Accordion, code::Code, divider::Divider, embed::Embed, heading::Heading,
-    image::Image, image_gallery::ImageGallery, list::List, paragraph::Paragraph,
+    code::Code, divider::Divider, embed::Embed, heading::Heading, image::Image,
+    image_gallery::ImageGallery, list::List, paragraph::Paragraph,
 };
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 #[serde(tag = "type")]
-pub enum AccordionTabNodes {
+pub enum CollapsibleNodes {
     P(Paragraph),
     H(Heading),
     Image(Image),
     ImageGallery(ImageGallery),
     List(List),
     Embed(Embed),
-    Accordion(Accordion),
     Divider(Divider),
     Code(Code),
+    Collapsible(Collapsible),
 }
 
-impl Display for AccordionTabNodes {
+impl Display for CollapsibleNodes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AccordionTabNodes::P(node) => write!(f, "{}", node),
-            AccordionTabNodes::H(node) => write!(f, "{}", node),
-            AccordionTabNodes::Image(node) => write!(f, "{}", node),
-            AccordionTabNodes::ImageGallery(node) => write!(f, "{}", node),
-            AccordionTabNodes::List(node) => write!(f, "{}", node),
-            AccordionTabNodes::Embed(node) => write!(f, "{}", node),
-            AccordionTabNodes::Accordion(node) => write!(f, "{}", node),
-            AccordionTabNodes::Divider(node) => write!(f, "{}", node),
-            AccordionTabNodes::Code(node) => write!(f, "{}", node),
+            CollapsibleNodes::P(node) => write!(f, "{}", node),
+            CollapsibleNodes::H(node) => write!(f, "{}", node),
+            CollapsibleNodes::Image(node) => write!(f, "{}", node),
+            CollapsibleNodes::ImageGallery(node) => write!(f, "{}", node),
+            CollapsibleNodes::List(node) => write!(f, "{}", node),
+            CollapsibleNodes::Embed(node) => write!(f, "{}", node),
+            CollapsibleNodes::Divider(node) => write!(f, "{}", node),
+            CollapsibleNodes::Code(node) => write!(f, "{}", node),
+            CollapsibleNodes::Collapsible(node) => write!(f, "{}", node),
         }
     }
 }
 
-impl Node for AccordionTabNodes {
+impl Node for CollapsibleNodes {
     fn len(&self) -> usize {
         match self {
-            AccordionTabNodes::P(node) => node.len(),
-            AccordionTabNodes::H(node) => node.len(),
-            AccordionTabNodes::Image(node) => node.len(),
-            AccordionTabNodes::ImageGallery(node) => node.len(),
-            AccordionTabNodes::List(node) => node.len(),
-            AccordionTabNodes::Embed(node) => node.len(),
-            AccordionTabNodes::Accordion(node) => node.len(),
-            AccordionTabNodes::Divider(node) => node.len(),
-            AccordionTabNodes::Code(node) => node.len(),
+            CollapsibleNodes::P(node) => node.len(),
+            CollapsibleNodes::H(node) => node.len(),
+            CollapsibleNodes::Image(node) => node.len(),
+            CollapsibleNodes::ImageGallery(node) => node.len(),
+            CollapsibleNodes::List(node) => node.len(),
+            CollapsibleNodes::Embed(node) => node.len(),
+            CollapsibleNodes::Divider(node) => node.len(),
+            CollapsibleNodes::Code(node) => node.len(),
+            CollapsibleNodes::Collapsible(node) => node.len(),
         }
     }
 }
 
-impl From<Paragraph> for AccordionTabNodes {
+impl From<Paragraph> for CollapsibleNodes {
     fn from(value: Paragraph) -> Self {
         Self::P(value)
     }
 }
 
-impl From<Heading> for AccordionTabNodes {
+impl From<Heading> for CollapsibleNodes {
     fn from(value: Heading) -> Self {
         Self::H(value)
     }
 }
 
-impl From<Image> for AccordionTabNodes {
+impl From<Image> for CollapsibleNodes {
     fn from(value: Image) -> Self {
         Self::Image(value)
     }
 }
 
-impl From<ImageGallery> for AccordionTabNodes {
+impl From<ImageGallery> for CollapsibleNodes {
     fn from(value: ImageGallery) -> Self {
         Self::ImageGallery(value)
     }
 }
 
-impl From<List> for AccordionTabNodes {
+impl From<List> for CollapsibleNodes {
     fn from(value: List) -> Self {
         Self::List(value)
     }
 }
 
-impl From<Embed> for AccordionTabNodes {
+impl From<Embed> for CollapsibleNodes {
     fn from(value: Embed) -> Self {
         Self::Embed(value)
     }
 }
 
-impl From<Accordion> for AccordionTabNodes {
-    fn from(value: Accordion) -> Self {
-        Self::Accordion(value)
-    }
-}
-
-impl From<Divider> for AccordionTabNodes {
+impl From<Divider> for CollapsibleNodes {
     fn from(value: Divider) -> Self {
         Self::Divider(value)
     }
 }
 
-impl From<Code> for AccordionTabNodes {
+impl From<Code> for CollapsibleNodes {
     fn from(value: Code) -> Self {
         Self::Code(value)
     }
 }
 
-#[derive(Debug, PartialEq, Serialize, Clone)]
-pub struct AccordionTab {
-    pub title: Option<String>,
-    pub nodes: Vec<AccordionTabNodes>,
+impl From<Collapsible> for CollapsibleNodes {
+    fn from(value: Collapsible) -> Self {
+        Self::Collapsible(value)
+    }
 }
 
-impl AccordionTab {
-    pub fn new<S: Into<String>>(title: Option<S>, nodes: Vec<AccordionTabNodes>) -> Self {
+#[derive(Debug, PartialEq, Serialize, Clone)]
+pub struct Collapsible {
+    pub title: String,
+    pub nodes: Vec<CollapsibleNodes>,
+}
+
+impl Collapsible {
+    pub fn new<S: Into<String>>(title: S, nodes: Vec<CollapsibleNodes>) -> Self {
         Self {
             nodes,
-            title: title.map(|s| s.into()),
+            title: title.into(),
         }
     }
 }
 
-impl Display for AccordionTab {
+impl Display for Collapsible {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "//\n{title}{nodes}\n\\\\",
-            title = self
-                .title
-                .as_ref()
-                .map_or("".to_string(), |title| format!("/ {}\n", title)),
+            "{{% {title}\n{nodes}\n%}}",
+            title = self.title,
             nodes = self
                 .nodes
                 .iter()
@@ -148,7 +145,7 @@ impl Display for AccordionTab {
     }
 }
 
-impl Node for AccordionTab {
+impl Node for Collapsible {
     fn len(&self) -> usize {
         let delimeter_len = if self.is_empty() {
             0
@@ -161,30 +158,30 @@ impl Node for AccordionTab {
     }
 }
 
-impl Branch<AccordionTabNodes> for AccordionTab {
-    fn push<CanBeNode: Into<AccordionTabNodes>>(&mut self, node: CanBeNode) {
+impl Branch<CollapsibleNodes> for Collapsible {
+    fn push<CanBeNode: Into<CollapsibleNodes>>(&mut self, node: CanBeNode) {
         self.nodes.push(node.into());
     }
 
-    fn get_maybe_nodes() -> Vec<MaybeNode<AccordionTabNodes>> {
+    fn get_maybe_nodes() -> Vec<MaybeNode<CollapsibleNodes>> {
         vec![
             Heading::maybe_node(),
             Image::maybe_node(),
             ImageGallery::maybe_node(),
             List::maybe_node(),
             Embed::maybe_node(),
-            Accordion::maybe_node(),
             Divider::maybe_node(),
             Code::maybe_node(),
+            Collapsible::maybe_node(),
         ]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<AccordionTabNodes>> {
+    fn get_fallback_node() -> Option<DefinitelyNode<CollapsibleNodes>> {
         Some(Paragraph::fallback_node())
     }
 
     fn get_outer_token_length(&self) -> usize {
-        6 + self.title.as_ref().map_or(0, |header| header.len() + 3)
+        7 + self.title.len()
     }
 
     fn is_empty(&self) -> bool {
@@ -192,16 +189,18 @@ impl Branch<AccordionTabNodes> for AccordionTab {
     }
 }
 
-impl Deserializer for AccordionTab {
+impl Deserializer for Collapsible {
     fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
         let mut matcher = Matcher::new(input);
-        if let Some(tab) = matcher.get_match("//\n", "\n\\\\", false) {
+        if let Some(tab) = matcher.get_match("{% ", "\n%}", false) {
             let mut inner_matcher = Matcher::new(tab.body);
-            let title = inner_matcher
-                .get_match("/ ", "\n", false)
-                .map(|header| header.body);
-
-            return Self::parse_branch(inner_matcher.get_rest(), "\n\n", Self::new(title, vec![]));
+            if let Some(title) = inner_matcher.get_match("", "\n", false) {
+                return Self::parse_branch(
+                    inner_matcher.get_rest(),
+                    "\n\n",
+                    Self::new(title.body, vec![]),
+                );
+            }
         }
         None
     }
@@ -213,7 +212,7 @@ mod cfg {
 
     use crate::{
         nodes::{
-            accordion_tab::AccordionTab, bold::Bold, code::Code, divider::Divider, embed::Embed,
+            bold::Bold, code::Code, collapsible::Collapsible, divider::Divider, embed::Embed,
             heading::Heading, image::Image, image_gallery::ImageGallery, list::List,
             list::ListTypes::*, list_item::ListItem, list_item_content::ListItemContent,
             paragraph::Paragraph, text::Text,
@@ -225,64 +224,42 @@ mod cfg {
     };
 
     #[test]
-    fn test_accordion_tab_deserialize() {
+    fn test_collapsible_deserialize() {
         assert_eq!(
-            AccordionTab::deserialize("//\n/ Title\n# Heading\n\\\\\n\n"),
-            Some(AccordionTab::new(
-                Some("Title"),
+            Collapsible::deserialize("{% Title\n# Heading\n%}"),
+            Some(Collapsible::new(
+                "Title",
                 vec![Heading::new("Heading", 1).into()]
             ))
         );
     }
 
     #[test]
-    fn test_accordion_tab_deserialize_with_no_header() {
+    fn test_collapsible_len() {
         assert_eq!(
-            AccordionTab::deserialize("//\nI am regular text\n\\\\\n\n"),
-            Some(AccordionTab::new::<&str>(
-                None,
-                vec![Paragraph::new(vec![Text::new("I am regular text").into()]).into()]
-            ))
+            Collapsible::new("Title", vec![Heading::new("Heading", 1).into()]).len(),
+            21
+        );
+        assert_eq!(Collapsible::new("Title", vec![]).len(), 12);
+    }
+
+    #[test]
+    fn test_collapsible_serialize() {
+        assert_eq!(
+            Collapsible::new("Title", vec![Heading::new("Heading", 1).into()]).to_string(),
+            "{% Title\n# Heading\n%}"
         );
     }
 
     #[test]
-    fn test_accordion_tab_deserialize_with_no_header_and_no_newline() {
-        assert_eq!(
-            AccordionTab::deserialize("//\n![alt](url)\n\\\\"),
-            Some(AccordionTab::new::<&str>(
-                None,
-                vec![Image::new("alt", "url").into()]
-            ))
-        );
-    }
-
-    #[test]
-    fn test_accordion_tab_len() {
-        assert_eq!(
-            AccordionTab::new(Some("Title"), vec![Heading::new("Heading", 1).into()]).len(),
-            23
-        );
-        assert_eq!(AccordionTab::new(Some("Title"), vec![]).len(), 14);
-    }
-
-    #[test]
-    fn test_accordion_tab_serialize() {
-        assert_eq!(
-            AccordionTab::new(Some("Title"), vec![Heading::new("Heading", 1).into()]).to_string(),
-            "//\n/ Title\n# Heading\n\\\\"
-        );
-    }
-
-    #[test]
-    fn fail_to_deseiralize_accordion_tab() {
-        assert_eq!(AccordionTab::deserialize("I am not an accordion tab"), None);
+    fn fail_to_deseiralize_collapsible() {
+        assert_eq!(Collapsible::deserialize("I am not an accordion tab"), None);
+        assert_eq!(Collapsible::deserialize("{% \n%}"), None);
     }
 
     #[test]
     fn with_all_nodes() {
-        let input = r#"//
-/ Title
+        let input = r#"{% Title
 # hello
 
 ```rust
@@ -306,9 +283,13 @@ t**b**
 {{youtube|123}}
 
 {{cloudinary_gallery|cloud_name&tag}}
-\\"#;
-        let tab = AccordionTab::new(
-            Some("Title"),
+
+{% nested collapsible
+# nested
+%}
+%}"#;
+        let tab = Collapsible::new(
+            "Title",
             vec![
                 Heading::new("hello", 1).into(),
                 Code::new("rust", "let a=1;").into(),
@@ -347,16 +328,18 @@ t**b**
                 .into(),
                 Embed::new("youtube", "123").into(),
                 Embed::new("cloudinary_gallery", "cloud_name&tag").into(),
+                Collapsible::new("nested collapsible", vec![Heading::new("nested", 1).into()])
+                    .into(),
             ],
         );
         assert_eq!(tab.to_string(), input);
-        assert_eq!(AccordionTab::deserialize(input), Some(tab));
+        assert_eq!(Collapsible::deserialize(input), Some(tab));
     }
 
     #[test]
     fn empty_tab() {
-        let tab = AccordionTab::new::<&str>(None, vec![]);
-        assert_eq!(tab.len(), 6);
+        let tab = Collapsible::new::<&str>("", vec![]);
+        assert_eq!(tab.len(), 7);
         assert_eq!(tab.is_empty(), true);
     }
 }

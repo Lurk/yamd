@@ -170,23 +170,30 @@
 //!
 //! Altogether: ``` text **bold _italic_ text** ~~strikethrough~~ text `inline code` [Yamd repo](url) ``` will be parsed into Paragraph
 //!
-//! ### Accordion
+//! ### Collapsible
 //!
-//! Accordion element can contain all from the above
+//! Collapsible element can contain all from the above
 //!
 //! Example:
+//!
 //! ```text
-//! ///
-//! //
-//! / Title
+//! {% Title
 //! some random text
-//! \\
-//! //
-//! / Title
-//! some random text
-//! \\
-//! \\\
+//! %}
 //! ```
+//!
+//! Nested collapsible elements example:
+//!
+//! ```text
+//! {% Title
+//! some random text
+//!
+//! {% Nested title
+//! some random text
+//! %}
+//! %}
+//! ```
+//!
 
 use nodes::yamd::Yamd;
 use toolkit::deserializer::Deserializer;
