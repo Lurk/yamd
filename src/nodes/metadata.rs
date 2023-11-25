@@ -155,6 +155,7 @@ mod tests {
     #[test]
     fn deserialize_fail() {
         assert_eq!(Metadata::deserialize("random string"), None);
+        assert_eq!(Metadata::deserialize("---\nrandom string---"), None);
     }
 
     #[test]
