@@ -12,6 +12,6 @@ keywords = ["markdown", "parser"]
 pretty_assertions = "1.4.0"
 
 [dependencies]
-serde = { version = "1.0.190", features = ["derive"] }
+serde = { version = "1.0.193", features = ["derive"] }
 chrono = { version = "0.4.31", features = ["serde"] }
 serde_yaml = "0.9.27"

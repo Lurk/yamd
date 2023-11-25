@@ -125,14 +125,14 @@ mod tests {
     fn test_deserialize() {
         let metadata = Metadata {
             title: Some("title".to_string()),
-            date: Some(DateTime::parse_from_rfc3339("2022-01-01T00:00:00+02:00").unwrap()),
+            date: Some(DateTime::parse_from_rfc3339("2022-12-30T20:33:55+01:00").unwrap()),
             image: Some("image".to_string()),
             preview: Some("preview".to_string()),
             tags: Some(vec!["tag1".to_string(), "tag2".to_string()]),
             is_draft: Some(true),
             consumed_length: Some(117),
         };
-        let str = "---\ntitle: title\ndate: 2022-01-01T00:00:00+02:00\nimage: image\npreview: preview\ntags:\n- tag1\n- tag2\nis_draft: true\n---";
+        let str = "---\ntitle: title\ndate: 2022-12-30T20:33:55+01:00\nimage: image\npreview: preview\ntags:\n- tag1\n- tag2\nis_draft: true\n---";
         assert_eq!(Metadata::deserialize(str), Some(metadata));
     }
 
