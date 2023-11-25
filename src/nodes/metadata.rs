@@ -25,14 +25,14 @@ pub struct Metadata {
 impl Metadata {
     pub fn new<S: Into<String>>(
         title: Option<S>,
-        timestamp: Option<DateTime<FixedOffset>>,
+        date: Option<DateTime<FixedOffset>>,
         image: Option<S>,
         preview: Option<S>,
         tags: Option<Vec<String>>,
     ) -> Self {
         Self {
             title: title.map(|h| h.into()),
-            date: timestamp,
+            date,
             image: image.map(|i| i.into()),
             preview: preview.map(|p| p.into()),
             is_draft: None,
@@ -44,9 +44,7 @@ impl Metadata {
     pub fn deserialize(input: &str) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(metadata) = matcher.get_match("---\n", "---", false) {
-            let mut meta: Metadata = serde_yaml::from_str(metadata.body).unwrap_or_else(|e| {
-                panic!("Failed to deserialize metadata: {}\n{}\n", metadata.body, e)
-            });
+            let mut meta: Metadata = serde_yaml::from_str(metadata.body).ok()?;
             meta.consumed_length = Some(metadata.len());
             return Some(meta);
         }
@@ -86,10 +84,7 @@ mod tests {
     fn test_serialize() {
         let metadata = Metadata::new(
             Some("header"),
-            Some(
-                DateTime::parse_from_str("2022-01-01 00:00:00 +02:00", "%Y-%m-%d %H:%M:%S %z")
-                    .unwrap(),
-            ),
+            Some(DateTime::parse_from_rfc3339("2022-01-01T00:00:00+02:00").unwrap()),
             Some("image"),
             Some("preview"),
             Some(vec!["tag1".to_string(), "tag2".to_string()]),
@@ -104,10 +99,7 @@ mod tests {
     fn test_len() {
         let metadata = Metadata::new(
             Some("title"),
-            Some(
-                DateTime::parse_from_str("2022-01-01 00:00:00 +02:00", "%Y-%m-%d %H:%M:%S %z")
-                    .unwrap(),
-            ),
+            Some(DateTime::parse_from_rfc3339("2022-01-01T00:00:00+02:00").unwrap()),
             Some("image"),
             Some("preview"),
             Some(vec!["tag1".to_string(), "tag2".to_string()]),
@@ -119,10 +111,7 @@ mod tests {
     fn len_with_one_tag() {
         let metadata = Metadata::new(
             Some("title"),
-            Some(
-                DateTime::parse_from_str("2022-01-01 00:00:00 +02:00", "%Y-%m-%d %H:%M:%S %z")
-                    .unwrap(),
-            ),
+            Some(DateTime::parse_from_rfc3339("2022-01-01T00:00:00+02:00").unwrap()),
             Some("image"),
             Some("preview"),
             Some(vec!["tag1".to_string()]),
@@ -134,20 +123,15 @@ mod tests {
     fn test_deserialize() {
         let metadata = Metadata {
             title: Some("title".to_string()),
-            date: Some(
-                DateTime::parse_from_str("2022-01-01 00:00:00 +02:00", "%Y-%m-%d %H:%M:%S %z")
-                    .unwrap(),
-            ),
+            date: Some(DateTime::parse_from_rfc3339("2022-12-30T20:33:55+01:00").unwrap()),
             image: Some("image".to_string()),
             preview: Some("preview".to_string()),
             tags: Some(vec!["tag1".to_string(), "tag2".to_string()]),
             is_draft: Some(true),
             consumed_length: Some(117),
         };
-        assert_eq!(
-            Metadata::deserialize(metadata.to_string().as_str()),
-            Some(metadata)
-        );
+        let str = "---\ntitle: title\ndate: 2022-12-30T20:33:55+01:00\nimage: image\npreview: preview\ntags:\n- tag1\n- tag2\nis_draft: true\n---";
+        assert_eq!(Metadata::deserialize(str), Some(metadata));
     }
 
     #[test]
@@ -169,6 +153,7 @@ mod tests {
     #[test]
     fn deserialize_fail() {
         assert_eq!(Metadata::deserialize("random string"), None);
+        assert_eq!(Metadata::deserialize("---\nrandom string---"), None);
     }
 
     #[test]
