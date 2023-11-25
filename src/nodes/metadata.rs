@@ -25,14 +25,14 @@ pub struct Metadata {
 impl Metadata {
     pub fn new<S: Into<String>>(
         title: Option<S>,
-        timestamp: Option<DateTime<FixedOffset>>,
+        date: Option<DateTime<FixedOffset>>,
         image: Option<S>,
         preview: Option<S>,
         tags: Option<Vec<String>>,
     ) -> Self {
         Self {
             title: title.map(|h| h.into()),
-            date: timestamp,
+            date,
             image: image.map(|i| i.into()),
             preview: preview.map(|p| p.into()),
             is_draft: None,
@@ -44,9 +44,7 @@ impl Metadata {
     pub fn deserialize(input: &str) -> Option<Self> {
         let mut matcher = Matcher::new(input);
         if let Some(metadata) = matcher.get_match("---\n", "---", false) {
-            let mut meta: Metadata = serde_yaml::from_str(metadata.body).unwrap_or_else(|e| {
-                panic!("Failed to deserialize metadata: {}\n{}\n", metadata.body, e)
-            });
+            let mut meta: Metadata = serde_yaml::from_str(metadata.body).ok()?;
             meta.consumed_length = Some(metadata.len());
             return Some(meta);
         }
