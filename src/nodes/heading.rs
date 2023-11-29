@@ -12,9 +12,10 @@ use crate::toolkit::{
 use super::{anchor::Anchor, text::Text};
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
+#[serde(tag = "type")]
 pub enum HeadingNodes {
     Text(Text),
-    Anchor(Anchor),
+    A(Anchor),
 }
 
 impl From<Text> for HeadingNodes {
@@ -25,7 +26,7 @@ impl From<Text> for HeadingNodes {
 
 impl From<Anchor> for HeadingNodes {
     fn from(anchor: Anchor) -> Self {
-        Self::Anchor(anchor)
+        Self::A(anchor)
     }
 }
 
@@ -33,7 +34,7 @@ impl Node for HeadingNodes {
     fn len(&self) -> usize {
         match self {
             Self::Text(text) => text.len(),
-            Self::Anchor(anchor) => anchor.len(),
+            Self::A(anchor) => anchor.len(),
         }
     }
 }
@@ -42,7 +43,7 @@ impl Display for HeadingNodes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Text(text) => write!(f, "{}", text),
-            Self::Anchor(anchor) => write!(f, "{}", anchor),
+            Self::A(anchor) => write!(f, "{}", anchor),
         }
     }
 }
