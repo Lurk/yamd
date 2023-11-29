@@ -190,12 +190,16 @@ mod tests {
 
     #[test]
     fn with_anchor() {
+        let str = "## hey [a](b)";
+        let h = Heading::deserialize(str);
         assert_eq!(
-            Heading::deserialize("## hey [a](b)"),
+            h,
             Some(Heading::new(
                 2,
                 vec![Text::new("hey ").into(), Anchor::new("a", "b").into()]
             ))
         );
+        assert_eq!(h.as_ref().unwrap().len(), 13);
+        assert_eq!(h.as_ref().unwrap().to_string(), str);
     }
 }
