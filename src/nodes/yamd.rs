@@ -292,7 +292,7 @@ end"#;
     #[test]
     fn push() {
         let mut t = Yamd::new(None, vec![]);
-        t.push(Heading::new("header", 1));
+        t.push(Heading::new(1, vec![Text::new("header").into()]));
         t.push(Paragraph::new(vec![Text::new("text").into()]));
 
         assert_eq!(t.to_string(), "# header\n\ntext".to_string());
@@ -303,7 +303,7 @@ end"#;
         let t: String = Yamd::new(
             None,
             vec![
-                Heading::new("header", 1).into(),
+                Heading::new(1, vec![Text::new("header").into()]).into(),
                 Paragraph::new(vec![Text::new("text").into()]).into(),
             ],
         )
@@ -333,7 +333,7 @@ end"#;
                     consumed_length: Some(101),
                 }),
                 vec![
-                    Heading::new("hello", 1).into(),
+                    Heading::new(1, vec![Text::new("hello").into()]).into(),
                     Code::new("rust", "let a=1;").into(),
                     Paragraph::new(vec![
                         Text::new("t").into(),
@@ -405,7 +405,7 @@ end"#;
                     Some(vec!["tag1".to_string(), "tag2".to_string()]),
                 )),
                 vec![
-                    Heading::new("hello", 1).into(),
+                    Heading::new(1, vec![Text::new("hello").into()]).into(),
                     Code::new("rust", "let a=1;").into(),
                     Paragraph::new(vec![
                         Text::new("t").into(),
@@ -491,7 +491,7 @@ end"#;
                 Paragraph::new(vec![Text::new("1").into()]).into(),
                 Paragraph::new(vec![Text::new("2").into()]).into(),
                 Paragraph::new(vec![Text::new("3").into()]).into(),
-                Heading::new("header", 1).into(),
+                Heading::new(1, vec![Text::new("header").into()]).into(),
             ],
         );
         let actual = Yamd::deserialize(input).unwrap();

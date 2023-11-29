@@ -2,23 +2,66 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
+use crate::toolkit::{
+    context::Context,
+    deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
+    matcher::Matcher,
+    node::Node,
+};
+
+use super::{anchor::Anchor, text::Text};
+
+#[derive(Debug, PartialEq, Serialize, Clone)]
+pub enum HeadingNodes {
+    Text(Text),
+    Anchor(Anchor),
+}
+
+impl From<Text> for HeadingNodes {
+    fn from(text: Text) -> Self {
+        Self::Text(text)
+    }
+}
+
+impl From<Anchor> for HeadingNodes {
+    fn from(anchor: Anchor) -> Self {
+        Self::Anchor(anchor)
+    }
+}
+
+impl Node for HeadingNodes {
+    fn len(&self) -> usize {
+        match self {
+            Self::Text(text) => text.len(),
+            Self::Anchor(anchor) => anchor.len(),
+        }
+    }
+}
+
+impl Display for HeadingNodes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Text(text) => write!(f, "{}", text),
+            Self::Anchor(anchor) => write!(f, "{}", anchor),
+        }
+    }
+}
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Heading {
     pub level: u8,
-    pub text: String,
+    pub nodes: Vec<HeadingNodes>,
 }
 
 impl Heading {
-    pub fn new<S: Into<String>>(text: S, level: u8) -> Self {
+    pub fn new(level: u8, nodes: Vec<HeadingNodes>) -> Self {
         let normalized_level = match level {
             0 => 1,
             7.. => 6,
             l => l,
         };
         Heading {
-            text: text.into(),
+            nodes,
             level: normalized_level,
         }
     }
@@ -31,10 +74,11 @@ impl Deserializer for Heading {
         for (i, start_token) in start_tokens.iter().enumerate() {
             let mut matcher = Matcher::new(input);
             if let Some(heading) = matcher.get_match(start_token, "\n\n", true) {
-                return Some(Self::new(
+                return Self::parse_branch(
                     heading.body,
-                    (start_tokens.len() - i).try_into().unwrap_or(1),
-                ));
+                    "",
+                    Self::new((start_tokens.len() - i).try_into().unwrap_or(1), vec![]),
+                );
             }
         }
 
@@ -45,44 +89,77 @@ impl Deserializer for Heading {
 impl Display for Heading {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let level = String::from('#').repeat(self.level as usize);
-        write!(f, "{} {}", level, self.text)
+        write!(
+            f,
+            "{} {}",
+            level,
+            self.nodes.iter().map(|n| n.to_string()).collect::<String>()
+        )
     }
 }
 
 impl Node for Heading {
     fn len(&self) -> usize {
-        self.text.len() + self.level as usize + 1
+        self.nodes.iter().map(|n| n.len()).sum::<usize>() + self.get_outer_token_length()
+    }
+}
+
+impl Branch<HeadingNodes> for Heading {
+    fn push<I: Into<HeadingNodes>>(&mut self, node: I) {
+        self.nodes.push(node.into());
+    }
+
+    fn get_maybe_nodes() -> Vec<MaybeNode<HeadingNodes>> {
+        vec![Anchor::maybe_node()]
+    }
+
+    fn get_fallback_node() -> Option<DefinitelyNode<HeadingNodes>> {
+        Some(Text::fallback_node())
+    }
+
+    fn get_outer_token_length(&self) -> usize {
+        self.level as usize + 1
+    }
+
+    fn is_empty(&self) -> bool {
+        self.nodes.is_empty()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::Heading;
-    use crate::toolkit::{deserializer::Deserializer, node::Node};
+    use crate::{
+        nodes::{anchor::Anchor, text::Text},
+        toolkit::{deserializer::Deserializer, node::Node},
+    };
     use pretty_assertions::assert_eq;
 
     #[test]
     fn level_one() {
-        assert_eq!(Heading::new("Header", 1).to_string(), "# Header");
+        assert_eq!(
+            Heading::new(1, vec![Text::new("Header").into()]).to_string(),
+            "# Header"
+        );
     }
 
     #[test]
     fn level_gt_six() {
-        let h = Heading::new("Header", 7).to_string();
+        let h = Heading::new(7, vec![Text::new("Header").into()]).to_string();
         assert_eq!(h, "###### Header");
-        let h = Heading::new("Header", 34).to_string();
+        let h = Heading::new(34, vec![Text::new("Header").into()]).to_string();
         assert_eq!(h, "###### Header");
     }
 
     #[test]
     fn level_eq_zero() {
-        let h = Heading::new("Header", 0).to_string();
+        let h = Heading::new(0, vec![Text::new("Header").into()]).to_string();
         assert_eq!(h, "# Header");
     }
 
     #[test]
     fn level_eq_four() {
-        let h = Heading::new("Header", 4).to_string();
+        let h = Heading::new(4, vec![Text::new("Header").into()]).to_string();
         assert_eq!(h, "#### Header");
     }
 
@@ -90,15 +167,15 @@ mod tests {
     fn from_string() {
         assert_eq!(
             Heading::deserialize("## Header"),
-            Some(Heading::new("Header", 2))
+            Some(Heading::new(2, vec![Text::new("Header").into()]))
         );
         assert_eq!(
             Heading::deserialize("### Head"),
-            Some(Heading::new("Head", 3))
+            Some(Heading::new(3, vec![Text::new("Head").into()]))
         );
         assert_eq!(
             Heading::deserialize("### Head\n\nsome other thing"),
-            Some(Heading::new("Head", 3))
+            Some(Heading::new(3, vec![Text::new("Head").into()]))
         );
         assert_eq!(Heading::deserialize("not a header"), None);
         assert_eq!(Heading::deserialize("######"), None);
@@ -107,7 +184,18 @@ mod tests {
 
     #[test]
     fn len() {
-        assert_eq!(Heading::new("h", 1).len(), 3);
-        assert_eq!(Heading::new("h", 2).len(), 4);
+        assert_eq!(Heading::new(1, vec![Text::new("h").into()]).len(), 3);
+        assert_eq!(Heading::new(2, vec![Text::new("h").into()]).len(), 4);
+    }
+
+    #[test]
+    fn with_anchor() {
+        assert_eq!(
+            Heading::deserialize("## hey [a](b)"),
+            Some(Heading::new(
+                2,
+                vec![Text::new("hey ").into(), Anchor::new("a", "b").into()]
+            ))
+        );
     }
 }

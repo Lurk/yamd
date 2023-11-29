@@ -30,13 +30,6 @@
 //!
 //! ## Elements:
 //!
-//! ### Heading
-//!
-//! Element that starts with one to seven "#" characters followed by space, followed by text, and ends with a new line
-//! or EOF
-//!
-//! Example: ```# header``` or ```###### header```
-//!
 //! ### List
 //!
 //! Can contain nested lists. Each nesting level equals to number of spaces before list item.
@@ -194,6 +187,13 @@
 //! %}
 //! ```
 //!
+//! ### Heading
+//!
+//! Element that starts with one to seven "#" characters followed by space, followed by text and/or link, and ends
+//! with a new line or EOF
+//!
+//! Example: ```# header``` or ```###### header``` or ```# [header](url)``` or ```# header [link](url)```
+//!
 
 use nodes::yamd::Yamd;
 use toolkit::deserializer::Deserializer;
@@ -227,20 +227,26 @@ pub fn serialize(input: &Yamd) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::nodes::{anchor::Anchor, heading::Heading, paragraph::Paragraph};
+    use crate::nodes::{anchor::Anchor, heading::Heading, paragraph::Paragraph, text::Text};
     use pretty_assertions::assert_eq;
 
     #[test]
     fn test_deserialize() {
         let input = "# header";
-        let expected = Yamd::new(None, vec![Heading::new("header", 1).into()]);
+        let expected = Yamd::new(
+            None,
+            vec![Heading::new(1, vec![Text::new("header").into()]).into()],
+        );
         let actual = deserialize(input).unwrap();
         assert_eq!(expected, actual);
     }
 
     #[test]
     fn test_serialize() {
-        let input = Yamd::new(None, vec![Heading::new("header", 1).into()]);
+        let input = Yamd::new(
+            None,
+            vec![Heading::new(1, vec![Text::new("header").into()]).into()],
+        );
         let expected = "# header";
         let actual = serialize(&input);
         assert_eq!(expected, actual);
@@ -252,7 +258,7 @@ mod tests {
         let expected = Yamd::new(
             None,
             vec![
-                Heading::new("🤔", 2).into(),
+                Heading::new(2, vec![Text::new("🤔").into()]).into(),
                 Paragraph::new(vec![Anchor::new("link 😉", "url").into()]).into(),
             ],
         );

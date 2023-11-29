@@ -229,7 +229,7 @@ mod cfg {
             Collapsible::deserialize("{% Title\n# Heading\n%}"),
             Some(Collapsible::new(
                 "Title",
-                vec![Heading::new("Heading", 1).into()]
+                vec![Heading::new(1, vec![Text::new("Heading").into()]).into()]
             ))
         );
     }
@@ -237,7 +237,11 @@ mod cfg {
     #[test]
     fn test_collapsible_len() {
         assert_eq!(
-            Collapsible::new("Title", vec![Heading::new("Heading", 1).into()]).len(),
+            Collapsible::new(
+                "Title",
+                vec![Heading::new(1, vec![Text::new("Heading").into()]).into()]
+            )
+            .len(),
             21
         );
         assert_eq!(Collapsible::new("Title", vec![]).len(), 12);
@@ -246,7 +250,11 @@ mod cfg {
     #[test]
     fn test_collapsible_serialize() {
         assert_eq!(
-            Collapsible::new("Title", vec![Heading::new("Heading", 1).into()]).to_string(),
+            Collapsible::new(
+                "Title",
+                vec![Heading::new(1, vec![Text::new("Heading").into()]).into()]
+            )
+            .to_string(),
             "{% Title\n# Heading\n%}"
         );
     }
@@ -291,7 +299,7 @@ t**b**
         let tab = Collapsible::new(
             "Title",
             vec![
-                Heading::new("hello", 1).into(),
+                Heading::new(1, vec![Text::new("hello").into()]).into(),
                 Code::new("rust", "let a=1;").into(),
                 Paragraph::new(vec![
                     Text::new("t").into(),
@@ -328,8 +336,11 @@ t**b**
                 .into(),
                 Embed::new("youtube", "123").into(),
                 Embed::new("cloudinary_gallery", "cloud_name&tag").into(),
-                Collapsible::new("nested collapsible", vec![Heading::new("nested", 1).into()])
-                    .into(),
+                Collapsible::new(
+                    "nested collapsible",
+                    vec![Heading::new(1, vec![Text::new("nested").into()]).into()],
+                )
+                .into(),
             ],
         );
         assert_eq!(tab.to_string(), input);
