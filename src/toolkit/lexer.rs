@@ -19,6 +19,7 @@ pub enum Token {
     Hashtag,
     Space,
     Underscore,
+    Tilde,
 }
 
 struct Tokenizer<'a> {
@@ -61,6 +62,7 @@ impl<'a> Tokenizer<'a> {
                 '#' => self.tokens.push(Token::Hashtag),
                 ' ' => self.tokens.push(Token::Space),
                 '_' => self.tokens.push(Token::Underscore),
+                '~' => self.tokens.push(Token::Tilde),
                 _ => self.push_char(c),
             }
         }
