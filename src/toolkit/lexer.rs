@@ -2,8 +2,8 @@ use std::usize;
 
 #[derive(Debug, PartialEq)]
 pub enum Token {
-    NewLine,
     Text(String),
+    NewLine,
     OpenBracket,
     CloseBracket,
     OpenParen,
@@ -17,6 +17,7 @@ pub enum Token {
     Pipe,
     Minus,
     Hashtag,
+    Space,
 }
 
 struct Tokenizer<'a> {
@@ -57,6 +58,7 @@ impl<'a> Tokenizer<'a> {
                 '|' => self.tokens.push(Token::Pipe),
                 '-' => self.tokens.push(Token::Minus),
                 '#' => self.tokens.push(Token::Hashtag),
+                ' ' => self.tokens.push(Token::Space),
                 _ => self.push_char(c),
             }
         }
@@ -72,9 +74,9 @@ mod tests {
 
     #[test]
     fn test_tokenize() {
-        let tokenizer = Tokenizer::new("H\n\nW\n\n\n[a](u)**b*```a{{{s}a}}{%%}%!![|-]###");
+        let tokenizer = Tokenizer::new("H\n\nW\n\n\n[a](u)**b*```a{{{s}a}}{%%}%!![|-]### ");
         let tokens = tokenizer.tokenize();
-        assert_eq!(tokens.len(), 43);
+        assert_eq!(tokens.len(), 44);
         assert_eq!(tokens[0], Token::Text("H".to_string()));
         assert_eq!(tokens[1], Token::NewLine);
         assert_eq!(tokens[2], Token::NewLine);
@@ -118,5 +120,6 @@ mod tests {
         assert_eq!(tokens[40], Token::Hashtag);
         assert_eq!(tokens[41], Token::Hashtag);
         assert_eq!(tokens[42], Token::Hashtag);
+        assert_eq!(tokens[43], Token::Space);
     }
 }
