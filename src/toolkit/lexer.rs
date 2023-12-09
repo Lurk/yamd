@@ -18,17 +18,18 @@ pub enum Token {
     Minus,
     Hashtag,
     Space,
+    Underscore,
 }
 
 struct Tokenizer<'a> {
-    chars: std::iter::Peekable<std::str::Chars<'a>>,
+    chars: std::str::Chars<'a>,
     tokens: Vec<Token>,
 }
 
 impl<'a> Tokenizer<'a> {
     fn new(input: &'a str) -> Self {
         Self {
-            chars: input.chars().peekable(),
+            chars: input.chars(),
             tokens: Vec::new(),
         }
     }
@@ -59,6 +60,7 @@ impl<'a> Tokenizer<'a> {
                 '-' => self.tokens.push(Token::Minus),
                 '#' => self.tokens.push(Token::Hashtag),
                 ' ' => self.tokens.push(Token::Space),
+                '_' => self.tokens.push(Token::Underscore),
                 _ => self.push_char(c),
             }
         }
@@ -74,9 +76,9 @@ mod tests {
 
     #[test]
     fn test_tokenize() {
-        let tokenizer = Tokenizer::new("H\n\nW\n\n\n[a](u)**b*```a{{{s}a}}{%%}%!![|-]### ");
+        let tokenizer = Tokenizer::new("H\n\nW\n\n\n[a](u)**b*```a{{{s}a}}{%%}%!![|-]### _");
         let tokens = tokenizer.tokenize();
-        assert_eq!(tokens.len(), 44);
+        assert_eq!(tokens.len(), 45);
         assert_eq!(tokens[0], Token::Text("H".to_string()));
         assert_eq!(tokens[1], Token::NewLine);
         assert_eq!(tokens[2], Token::NewLine);
@@ -121,5 +123,6 @@ mod tests {
         assert_eq!(tokens[41], Token::Hashtag);
         assert_eq!(tokens[42], Token::Hashtag);
         assert_eq!(tokens[43], Token::Space);
+        assert_eq!(tokens[44], Token::Underscore);
     }
 }
