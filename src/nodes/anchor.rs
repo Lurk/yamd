@@ -31,7 +31,7 @@ impl Parse for Anchor {
         if input[current_position..].starts_with('[') {
             if let Some(middle) = input[current_position + 1..].find("](") {
                 let mut level = 1;
-                for (i, c) in input[current_position + middle + 2..].char_indices() {
+                for (i, c) in input[current_position + middle + 3..].char_indices() {
                     if c == '(' {
                         level += 1;
                     } else if c == ')' {
@@ -40,11 +40,11 @@ impl Parse for Anchor {
                     if level == 0 {
                         return Some((
                             Anchor::new(
-                                &input[current_position + 1..current_position + middle],
-                                &input[current_position + middle + 2
-                                    ..current_position + middle + 2 + i],
+                                &input[current_position + 1..current_position + middle + 1],
+                                &input[current_position + middle + 3
+                                    ..current_position + middle + 3 + i],
                             ),
-                            middle + 2 + i + 1 - current_position,
+                            middle + 3 + i + 1 - current_position,
                         ));
                     }
                 }
@@ -97,7 +97,7 @@ mod tests {
                     "the Rope data structure",
                     "https://en.wikipedia.org/wiki/Rope_(data_structure)"
                 ),
-                77
+                78
             ))
         );
     }
