@@ -3,66 +3,79 @@ use std::fmt::Display;
 use serde::Serialize;
 
 use crate::{
-    nodes::italic::Italic,
-    nodes::strikethrough::Strikethrough,
-    nodes::text::Text,
+    nodes::{italic::Italic, strikethrough::Strikethrough, text::Text},
     toolkit::{
         context::Context,
-        deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
-        matcher::Matcher,
-        node::Node,
+        parser::{parse_to_consumer, parse_to_parser, Branch, Consumer, Parse, Parser},
     },
 };
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 #[serde(tag = "type")]
 pub enum BoldNodes {
+    Italic(Italic),
+    Strikethrough(Strikethrough),
     Text(Text),
-    I(Italic),
-    S(Strikethrough),
-}
-
-impl From<Text> for BoldNodes {
-    fn from(value: Text) -> Self {
-        BoldNodes::Text(value)
-    }
 }
 
 impl From<Italic> for BoldNodes {
-    fn from(value: Italic) -> Self {
-        BoldNodes::I(value)
+    fn from(i: Italic) -> Self {
+        BoldNodes::Italic(i)
     }
 }
 
 impl From<Strikethrough> for BoldNodes {
-    fn from(value: Strikethrough) -> Self {
-        BoldNodes::S(value)
+    fn from(s: Strikethrough) -> Self {
+        BoldNodes::Strikethrough(s)
     }
 }
 
-impl Display for BoldNodes {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            BoldNodes::Text(node) => write!(f, "{}", node),
-            BoldNodes::I(node) => write!(f, "{}", node),
-            BoldNodes::S(node) => write!(f, "{}", node),
-        }
-    }
-}
-
-impl Node for BoldNodes {
-    fn len(&self) -> usize {
-        match self {
-            BoldNodes::Text(node) => node.len(),
-            BoldNodes::I(node) => node.len(),
-            BoldNodes::S(node) => node.len(),
-        }
+impl From<Text> for BoldNodes {
+    fn from(t: Text) -> Self {
+        BoldNodes::Text(t)
     }
 }
 
 #[derive(Debug, PartialEq, Serialize, Clone, Default)]
 pub struct Bold {
-    pub nodes: Vec<BoldNodes>,
+    nodes: Vec<BoldNodes>,
+}
+
+impl Branch<BoldNodes> for Bold {
+    fn get_parsers(&self) -> Vec<Parser<BoldNodes>> {
+        vec![
+            parse_to_parser::<BoldNodes, Italic>(),
+            parse_to_parser::<BoldNodes, Strikethrough>(),
+        ]
+    }
+
+    fn push_node(&mut self, node: BoldNodes) {
+        self.nodes.push(node);
+    }
+
+    fn get_consumer(&self) -> Option<Consumer<BoldNodes>> {
+        Some(parse_to_consumer::<BoldNodes, Text>())
+    }
+}
+
+impl Parse for Bold {
+    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+        if input[current_position..].starts_with("**") {
+            if let Some(end) = input[current_position + 2..].find("**") {
+                let b = Bold::new(vec![]);
+                return Some((
+                    b.parse_branch(
+                        &input[current_position + 2..current_position + end],
+                        "",
+                        None,
+                    )
+                    .expect("bold should always succed"),
+                    end + 2,
+                ));
+            }
+        }
+        None
+    }
 }
 
 impl Bold {
@@ -71,25 +84,13 @@ impl Bold {
     }
 }
 
-impl Branch<BoldNodes> for Bold {
-    fn push<BC: Into<BoldNodes>>(&mut self, element: BC) {
-        self.nodes.push(element.into());
-    }
-
-    fn get_maybe_nodes() -> Vec<MaybeNode<BoldNodes>> {
-        vec![Italic::maybe_node(), Strikethrough::maybe_node()]
-    }
-
-    fn get_fallback_node() -> Option<DefinitelyNode<BoldNodes>> {
-        Some(Box::new(|str| Text::new(str).into()))
-    }
-
-    fn get_outer_token_length(&self) -> usize {
-        4
-    }
-
-    fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
+impl Display for BoldNodes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BoldNodes::Text(node) => write!(f, "{}", node),
+            BoldNodes::Italic(node) => write!(f, "{}", node),
+            BoldNodes::Strikethrough(node) => write!(f, "{}", node),
+        }
     }
 }
 
@@ -107,40 +108,18 @@ impl Display for Bold {
     }
 }
 
-impl Node for Bold {
-    fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + 4
-    }
-}
-
-impl Deserializer for Bold {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut matcher = Matcher::new(input);
-        if let Some(bold) = matcher.get_match("**", "**", false) {
-            return Self::parse_branch(bold.body, "", Self::default());
-        }
-        None
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{
-        nodes::bold::Bold,
-        nodes::italic::Italic,
-        nodes::strikethrough::Strikethrough,
-        nodes::text::Text,
-        toolkit::{
-            deserializer::{Branch, Deserializer},
-            node::Node,
-        },
+        nodes::{bold::Bold, italic::Italic, strikethrough::Strikethrough, text::Text},
+        toolkit::parser::{Branch, Parse},
     };
     use pretty_assertions::assert_eq;
 
     #[test]
     fn only_text() {
         let mut b = Bold::default();
-        b.push(Text::new("B as bold"));
+        b.push_node(Text::new("B as bold").into());
         let str = b.to_string();
         assert_eq!(str, "**B as bold**".to_string());
     }
@@ -159,39 +138,21 @@ mod tests {
     #[test]
     fn from_string() {
         assert_eq!(
-            Bold::deserialize("**b**"),
-            Some(Bold::new(vec![Text::new("b").into()]))
+            Bold::parse("**b**", 0, None),
+            Some((Bold::new(vec![Text::new("b").into()]), 5))
         );
 
         assert_eq!(
-            Bold::deserialize("**b ~~st~~ _i t_**"),
-            Some(Bold::new(vec![
-                Text::new("b ").into(),
-                Strikethrough::new("st").into(),
-                Text::new(" ").into(),
-                Italic::new("i t").into()
-            ]))
+            Bold::parse("**b ~~st~~ _i t_**", 0, None),
+            Some((
+                Bold::new(vec![
+                    Text::new("b ").into(),
+                    Strikethrough::new("st").into(),
+                    Text::new(" ").into(),
+                    Italic::new("i t").into()
+                ]),
+                18
+            ))
         );
-    }
-
-    #[test]
-    fn len() {
-        assert_eq!(Bold::new(vec![Text::new("T").into()]).len(), 5);
-        assert_eq!(
-            Bold::new(vec![Text::new("T").into(), Strikethrough::new("S").into()]).len(),
-            10
-        );
-    }
-
-    #[test]
-    fn default() {
-        assert_eq!(Bold::default(), Bold::default());
-    }
-
-    #[test]
-    fn empty_bold() {
-        let b = Bold::new(vec![]);
-        assert_eq!(b.len(), 4);
-        assert_eq!(b.is_empty(), true);
     }
 }

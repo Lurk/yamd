@@ -2,15 +2,15 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::nodes::{
-    anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic,
-    strikethrough::Strikethrough, text::Text,
-};
-use crate::toolkit::node::Node;
-use crate::toolkit::{
-    context::Context,
-    deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
-    matcher::Matcher,
+use crate::{
+    nodes::{
+        anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic,
+        strikethrough::Strikethrough, text::Text,
+    },
+    toolkit::{
+        context::Context,
+        parser::{parse_to_consumer, parse_to_parser, Branch, Consumer, Parse, Parser},
+    },
 };
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
@@ -73,19 +73,6 @@ impl Display for ParagraphNodes {
     }
 }
 
-impl Node for ParagraphNodes {
-    fn len(&self) -> usize {
-        match self {
-            ParagraphNodes::A(node) => node.len(),
-            ParagraphNodes::B(node) => node.len(),
-            ParagraphNodes::I(node) => node.len(),
-            ParagraphNodes::S(node) => node.len(),
-            ParagraphNodes::Text(node) => node.len(),
-            ParagraphNodes::InlineCode(node) => node.len(),
-        }
-    }
-}
-
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Paragraph {
     pub nodes: Vec<ParagraphNodes>,
@@ -97,46 +84,9 @@ impl Paragraph {
     }
 }
 
-impl Branch<ParagraphNodes> for Paragraph {
-    fn push<TP: Into<ParagraphNodes>>(&mut self, element: TP) {
-        self.nodes.push(element.into());
-    }
-
-    fn get_maybe_nodes() -> Vec<MaybeNode<ParagraphNodes>> {
-        vec![
-            Anchor::maybe_node(),
-            Bold::maybe_node(),
-            Italic::maybe_node(),
-            Strikethrough::maybe_node(),
-            InlineCode::maybe_node(),
-        ]
-    }
-
-    fn get_fallback_node() -> Option<DefinitelyNode<ParagraphNodes>> {
-        Some(Text::fallback_node())
-    }
-
-    fn get_outer_token_length(&self) -> usize {
-        0
-    }
-
-    fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
-    }
-}
 impl Default for Paragraph {
     fn default() -> Self {
         Self::new(vec![])
-    }
-}
-
-impl Deserializer for Paragraph {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut matcher = Matcher::new(input);
-        if let Some(paragraph) = matcher.get_match("", "\n\n", true) {
-            return Self::parse_branch(paragraph.body, "", Self::default());
-        }
-        None
     }
 }
 
@@ -154,18 +104,35 @@ impl Display for Paragraph {
     }
 }
 
-impl Node for Paragraph {
-    fn len(&self) -> usize {
-        self.nodes.iter().map(|node| node.len()).sum::<usize>()
+impl Branch<ParagraphNodes> for Paragraph {
+    fn get_parsers(&self) -> Vec<Parser<ParagraphNodes>> {
+        vec![
+            parse_to_parser::<ParagraphNodes, Anchor>(),
+            parse_to_parser::<ParagraphNodes, Bold>(),
+            parse_to_parser::<ParagraphNodes, Italic>(),
+            parse_to_parser::<ParagraphNodes, Strikethrough>(),
+            parse_to_parser::<ParagraphNodes, InlineCode>(),
+        ]
+    }
+
+    fn get_consumer(&self) -> Option<Consumer<ParagraphNodes>> {
+        Some(parse_to_consumer::<ParagraphNodes, Text>())
+    }
+
+    fn push_node(&mut self, node: ParagraphNodes) {
+        self.nodes.push(node);
     }
 }
 
-impl FallbackNode for Paragraph {
-    fn fallback_node<BranchNodes>() -> DefinitelyNode<BranchNodes>
-    where
-        Self: Into<BranchNodes>,
-    {
-        Box::new(|input| Paragraph::deserialize(input).unwrap_or_default().into())
+impl Parse for Paragraph {
+    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+        let paragraph = Paragraph::default();
+        Some((
+            paragraph
+                .parse_branch(&input[current_position..], "", None)
+                .expect("paragraph should always succed"),
+            input.len() - current_position,
+        ))
     }
 }
 
@@ -173,22 +140,20 @@ impl FallbackNode for Paragraph {
 mod tests {
     use super::Paragraph;
     use crate::{
-        nodes::bold::Bold,
-        nodes::inline_code::InlineCode,
-        nodes::{anchor::Anchor, italic::Italic, strikethrough::Strikethrough, text::Text},
-        toolkit::{
-            deserializer::{Branch, Deserializer},
-            node::Node,
+        nodes::{
+            anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic,
+            strikethrough::Strikethrough, text::Text,
         },
+        toolkit::parser::{Branch, Parse},
     };
     use pretty_assertions::assert_eq;
 
     #[test]
     fn push() {
         let mut p = Paragraph::default();
-        p.push(Text::new("simple text "));
-        p.push(Bold::new(vec![Text::new("bold text").into()]));
-        p.push(InlineCode::new("let foo='bar';"));
+        p.push_node(Text::new("simple text ").into());
+        p.push_node(Bold::new(vec![Text::new("bold text").into()]).into());
+        p.push_node(InlineCode::new("let foo='bar';").into());
 
         assert_eq!(
             p.to_string(),
@@ -213,24 +178,18 @@ mod tests {
     }
 
     #[test]
-    fn deserialize() {
+    fn parse() {
         assert_eq!(
-            Paragraph::deserialize("simple text **bold text**`let foo='bar';`[t](u)"),
-            Some(Paragraph::new(vec![
-                Text::new("simple text ").into(),
-                Bold::new(vec![Text::new("bold text").into()]).into(),
-                InlineCode::new("let foo='bar';").into(),
-                Anchor::new("t", "u").into()
-            ]))
+            Paragraph::parse("simple text **bold text**`let foo='bar';`[t](u)", 0, None),
+            Some((
+                Paragraph::new(vec![
+                    Text::new("simple text ").into(),
+                    Bold::new(vec![Text::new("bold text").into()]).into(),
+                    InlineCode::new("let foo='bar';").into(),
+                    Anchor::new("t", "u").into()
+                ]),
+                46
+            ))
         );
-        assert_eq!(
-            Paragraph::deserialize("1 2\n\n3"),
-            Some(Paragraph::new(vec![Text::new("1 2").into()]))
-        );
-    }
-    #[test]
-    fn len() {
-        assert_eq!(Paragraph::default().len(), 0);
-        assert_eq!(Paragraph::default().is_empty(), true);
     }
 }

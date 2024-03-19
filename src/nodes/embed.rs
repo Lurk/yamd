@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::{deserializer::Deserializer, matcher::Matcher, node::Node};
+use crate::toolkit::{context::Context, parser::Parse};
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Embed {
@@ -25,21 +25,23 @@ impl Display for Embed {
     }
 }
 
-impl Node for Embed {
-    fn len(&self) -> usize {
-        5 + self.kind.len() + self.args.len()
-    }
-}
-
-impl Deserializer for Embed {
-    fn deserialize_with_context(
-        input: &str,
-        _: Option<crate::toolkit::context::Context>,
-    ) -> Option<Self> {
-        let mut matcher = Matcher::new(input);
-        if let Some(embed) = matcher.get_match("{{", "}}", false) {
-            if let Some((kind, args)) = embed.body.split_once('|') {
-                return Some(Self::new(kind.to_string(), args.to_string()));
+impl Parse for Embed {
+    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)>
+    where
+        Self: Sized,
+    {
+        if input[current_position..].starts_with("{{") {
+            if let Some(middle) = input[current_position + 2..].find('|') {
+                if let Some(end) = input[current_position + middle + 1..].find("}}") {
+                    return Some((
+                        Embed::new(
+                            &input[current_position + 2..current_position + middle],
+                            &input[current_position + middle + 1
+                                ..current_position + middle + 1 + end],
+                        ),
+                        2 + middle + 1 + end + 2 - current_position,
+                    ));
+                }
             }
         }
         None
@@ -48,10 +50,7 @@ impl Deserializer for Embed {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        nodes::embed::Embed,
-        toolkit::{deserializer::Deserializer, node::Node},
-    };
+    use crate::{nodes::embed::Embed, toolkit::parser::Parse};
 
     #[test]
     fn serializer() {
@@ -62,26 +61,22 @@ mod tests {
     }
 
     #[test]
-    fn len() {
-        assert_eq!(Embed::new("y", "h",).len(), 7);
-    }
-
-    #[test]
-    fn deserialize() {
+    fn parse() {
         assert_eq!(
-            Embed::deserialize_with_context(
+            Embed::parse(
                 "{{youtube|https://www.youtube.com/embed/wsfdjlkjsdf}}",
+                0,
                 None
             ),
-            Some(Embed::new(
-                "youtube",
-                "https://www.youtube.com/embed/wsfdjlkjsdf",
+            Some((
+                Embed::new("youtube", "https://www.youtube.com/embed/wsfdjlkjsdf",),
+                49
             ))
         );
     }
 
     #[test]
-    fn failed_deserialize() {
-        assert_eq!(Embed::deserialize_with_context("{{youtube}}", None), None);
+    fn failed_parse() {
+        assert_eq!(Embed::parse("{{youtube}}", 0, None), None);
     }
 }

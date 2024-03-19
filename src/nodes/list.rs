@@ -1,15 +1,10 @@
-use std::fmt::Display;
+use std::{fmt::Display, usize};
 
 use serde::Serialize;
 
-use crate::toolkit::{
-    context::Context,
-    deserializer::{Branch, DefinitelyNode, Deserializer, MaybeNode},
-    matcher::Matcher,
-    node::Node,
-};
+use crate::toolkit::{context::Context, parser::Parse};
 
-use super::list_item::ListItem;
+use super::{list_item::ListItem, paragraph::Paragraph};
 
 #[derive(Debug, PartialEq, Clone, Serialize)]
 pub enum ListTypes {
@@ -18,42 +13,14 @@ pub enum ListTypes {
 }
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
-#[serde(tag = "type")]
-pub enum ListNodes {
-    ListItem(ListItem),
-}
-
-impl Display for ListNodes {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ListNodes::ListItem(node) => write!(f, "{}", node),
-        }
-    }
-}
-
-impl Node for ListNodes {
-    fn len(&self) -> usize {
-        match self {
-            ListNodes::ListItem(node) => node.len(),
-        }
-    }
-}
-
-impl From<ListItem> for ListNodes {
-    fn from(value: ListItem) -> Self {
-        ListNodes::ListItem(value)
-    }
-}
-
-#[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct List {
     pub list_type: ListTypes,
     pub level: usize,
-    pub nodes: Vec<ListNodes>,
+    pub nodes: Vec<ListItem>,
 }
 
 impl List {
-    pub fn new(list_type: ListTypes, level: usize, nodes: Vec<ListNodes>) -> Self {
+    pub fn new(list_type: ListTypes, level: usize, nodes: Vec<ListItem>) -> Self {
         Self {
             list_type,
             level,
@@ -61,26 +28,65 @@ impl List {
         }
     }
 
-    fn get_level_from_context(ctx: &Option<Context>) -> usize {
-        if let Some(actual_ctx) = ctx {
-            if let Some(level) = actual_ctx.get_usize_value("level") {
-                return level + 1;
-            }
-        }
-        0
-    }
+    fn parse_list_items(&mut self, input: &str, current_position: usize) -> usize {
+        let mut end = current_position + 2 + self.level;
+        while end < input.len() {
+            let new_position = input[end..]
+                .find(format!("\n{}- ", " ".repeat(self.level)).as_str())
+                .unwrap_or(input.len() - current_position);
 
-    pub fn create_context(level: usize, list_type: &ListTypes) -> Context {
-        let mut ctx = Context::new();
-        ctx.add(
-            "list_type",
-            match list_type {
-                ListTypes::Unordered => '-',
-                ListTypes::Ordered => '+',
-            },
-        );
-        ctx.add("level", level);
-        ctx
+            let (text_slice, nested_list) =
+                if let Some((left, right)) = input[end..new_position].split_once('\n') {
+                    let mut ctx = Context::new();
+                    ctx.add("level", self.level + 1);
+                    if let Some((list, consumed)) = List::parse(right, 0, Some(&ctx)) {
+                        if consumed == right.len() {
+                            (left, Some(list))
+                        } else {
+                            (&input[end..new_position], None)
+                        }
+                    } else {
+                        (&input[end..new_position], None)
+                    }
+                } else {
+                    (&input[end..new_position], None)
+                };
+
+            self.nodes.push(ListItem::new(
+                self.list_type.clone(),
+                self.level,
+                Paragraph::parse(text_slice, 0, None)
+                    .map(|(paragraph, _)| paragraph)
+                    .expect("paragraph should always succeed"),
+                nested_list,
+            ));
+
+            end = new_position;
+        }
+        end
+    }
+}
+
+impl Parse for List {
+    fn parse(input: &str, current_position: usize, ctx: Option<&Context>) -> Option<(Self, usize)> {
+        let level = match ctx {
+            Some(ctx) => ctx.get_usize_value("level").unwrap_or(0),
+            None => 0,
+        };
+
+        if input[current_position..].starts_with(format!("{}- ", " ".repeat(level)).as_str()) {
+            let mut list = List::new(ListTypes::Unordered, level, vec![]);
+            let end = list.parse_list_items(input, current_position);
+            return Some((list, end - current_position));
+        }
+
+        if input[current_position..].starts_with(format!("{}+ ", " ".repeat(level)).as_str()) {
+            let mut list = List::new(ListTypes::Ordered, level, vec![]);
+            let end = list.parse_list_items(input, current_position);
+            return Some((list, end - current_position));
+        }
+
+        None
     }
 }
 
@@ -98,74 +104,12 @@ impl Display for List {
     }
 }
 
-impl Node for List {
-    fn len(&self) -> usize {
-        let add = if self.is_empty() {
-            0
-        } else {
-            self.nodes.len() - 1
-        };
-        self.nodes.iter().map(|node| node.len()).sum::<usize>() + add
-    }
-    fn context(&self) -> Option<Context> {
-        Some(Self::create_context(self.level, &self.list_type))
-    }
-}
-
-impl Deserializer for List {
-    fn deserialize_with_context(input: &str, ctx: Option<Context>) -> Option<Self> {
-        let level = Self::get_level_from_context(&ctx);
-        let mut matcher = Matcher::new(input);
-        if let Some(unordered_list) =
-            matcher.get_match(format!("{}- ", " ".repeat(level)).as_str(), "\n\n", true)
-        {
-            return Self::parse_branch(
-                &input[..unordered_list.start_token.len() + unordered_list.body.len()],
-                "\n",
-                Self::new(ListTypes::Unordered, level, vec![]),
-            );
-        } else if let Some(ordered_list) =
-            matcher.get_match(format!("{}+ ", " ".repeat(level)).as_str(), "\n\n", true)
-        {
-            let res = Self::parse_branch(
-                &input[..ordered_list.start_token.len() + ordered_list.body.len()],
-                "\n",
-                Self::new(ListTypes::Ordered, level, vec![]),
-            );
-            return res;
-        }
-        None
-    }
-}
-
-impl Branch<ListNodes> for List {
-    fn push<CanBeNode: Into<ListNodes>>(&mut self, node: CanBeNode) {
-        self.nodes.push(node.into())
-    }
-
-    fn get_maybe_nodes() -> Vec<MaybeNode<ListNodes>> {
-        vec![ListItem::maybe_node()]
-    }
-
-    fn get_fallback_node() -> Option<DefinitelyNode<ListNodes>> {
-        None
-    }
-
-    fn get_outer_token_length(&self) -> usize {
-        0
-    }
-
-    fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::{List, ListTypes};
     use crate::{
-        nodes::{list_item::ListItem, list_item_content::ListItemContent, text::Text},
-        toolkit::{deserializer::Deserializer, node::Node},
+        nodes::{list_item::ListItem, paragraph::Paragraph, text::Text},
+        toolkit::{context::Context, parser::Parse},
     };
     use pretty_assertions::assert_eq;
 
@@ -179,15 +123,15 @@ mod tests {
                     ListItem::new(
                         ListTypes::Unordered,
                         0,
-                        ListItemContent::new(vec![Text::new("unordered list item").into()],)
-                    )
-                    .into(),
+                        Paragraph::new(vec![Text::new("unordered list item").into()],),
+                        None
+                    ),
                     ListItem::new(
                         ListTypes::Unordered,
                         0,
-                        ListItemContent::new(vec![Text::new("unordered list item").into()],)
+                        Paragraph::new(vec![Text::new("unordered list item").into()],),
+                        None
                     )
-                    .into(),
                 ],
             }
             .to_string(),
@@ -201,15 +145,15 @@ mod tests {
                     ListItem::new(
                         ListTypes::Unordered,
                         0,
-                        ListItemContent::new(vec![Text::new("unordered list item").into()],)
-                    )
-                    .into(),
+                        Paragraph::new(vec![Text::new("unordered list item").into()],),
+                        None
+                    ),
                     ListItem::new(
                         ListTypes::Unordered,
                         0,
-                        ListItemContent::new(vec![Text::new("unordered list item").into()],)
+                        Paragraph::new(vec![Text::new("unordered list item").into()],),
+                        None
                     )
-                    .into(),
                 ],
             }
             .to_string(),
@@ -226,15 +170,15 @@ mod tests {
                 ListItem::new(
                     ListTypes::Ordered,
                     0,
-                    ListItemContent::new(vec![Text::new("ordered list item").into()]),
-                )
-                .into(),
+                    Paragraph::new(vec![Text::new("ordered list item").into()]),
+                    None,
+                ),
                 ListItem::new(
                     ListTypes::Ordered,
                     0,
-                    ListItemContent::new(vec![Text::new("ordered list item").into()]),
-                )
-                .into(),
+                    Paragraph::new(vec![Text::new("ordered list item").into()]),
+                    None,
+                ),
             ],
         );
 
@@ -242,190 +186,121 @@ mod tests {
     }
 
     #[test]
-    fn deserialize_wrong_level() {
-        assert_eq!(
-            List::deserialize_with_context(
-                "- level 0\n- level 0",
-                Some(List::create_context(1, &ListTypes::Unordered))
-            ),
-            None
-        );
+    fn parse_wrong_level() {
+        let mut ctx = Context::new();
+        ctx.add("level", 1);
+        assert_eq!(List::parse("- level 0\n- level 0", 0, Some(&ctx)), None);
     }
 
     #[test]
-    fn deserialize_unordered() {
+    fn parse_unordered() {
         assert_eq!(
-            List::deserialize("- level 0\n- level 0"),
-            Some(List::new(
-                ListTypes::Unordered,
-                0,
-                vec![
-                    ListItem::new(
-                        ListTypes::Unordered,
-                        0,
-                        ListItemContent::new(vec![Text::new("level 0").into()])
-                    )
-                    .into(),
-                    ListItem::new(
-                        ListTypes::Unordered,
-                        0,
-                        ListItemContent::new(vec![Text::new("level 0").into()])
-                    )
-                    .into(),
-                ],
-            ))
-        );
-        assert_eq!(
-            List::deserialize("- level 0\n- level 0\n\n"),
-            Some(List::new(
-                ListTypes::Unordered,
-                0,
-                vec![
-                    ListItem::new(
-                        ListTypes::Unordered,
-                        0,
-                        ListItemContent::new(vec![Text::new("level 0").into()])
-                    )
-                    .into(),
-                    ListItem::new(
-                        ListTypes::Unordered,
-                        0,
-                        ListItemContent::new(vec![Text::new("level 0").into()])
-                    )
-                    .into(),
-                ],
+            List::parse("- level 0\n- level 0", 0, None),
+            Some((
+                List::new(
+                    ListTypes::Unordered,
+                    0,
+                    vec![
+                        ListItem::new(
+                            ListTypes::Unordered,
+                            0,
+                            Paragraph::new(vec![Text::new("level 0").into()]),
+                            None
+                        ),
+                        ListItem::new(
+                            ListTypes::Unordered,
+                            0,
+                            Paragraph::new(vec![Text::new("level 0").into()]),
+                            None
+                        )
+                    ],
+                ),
+                20
             ))
         );
     }
 
     #[test]
-    fn deserialize_ordered() {
+    fn parse_ordered() {
         assert_eq!(
-            List::deserialize("+ level 0\n+ level 0"),
-            Some(List::new(
-                ListTypes::Ordered,
-                0,
-                vec![
-                    ListItem::new(
-                        ListTypes::Ordered,
-                        0,
-                        ListItemContent::new(vec![Text::new("level 0").into()])
-                    )
-                    .into(),
-                    ListItem::new(
-                        ListTypes::Ordered,
-                        0,
-                        ListItemContent::new(vec![Text::new("level 0").into()])
-                    )
-                    .into(),
-                ],
-            ))
-        );
-        assert_eq!(
-            List::deserialize("+ level 0\n+ level 0\n\n"),
-            Some(List::new(
-                ListTypes::Ordered,
-                0,
-                vec![
-                    ListItem::new(
-                        ListTypes::Ordered,
-                        0,
-                        ListItemContent::new(vec![Text::new("level 0").into()])
-                    )
-                    .into(),
-                    ListItem::new(
-                        ListTypes::Ordered,
-                        0,
-                        ListItemContent::new(vec![Text::new("level 0").into()])
-                    )
-                    .into(),
-                ],
+            List::parse("+ level 0\n+ level 0", 0, None),
+            Some((
+                List::new(
+                    ListTypes::Ordered,
+                    0,
+                    vec![
+                        ListItem::new(
+                            ListTypes::Ordered,
+                            0,
+                            Paragraph::new(vec![Text::new("level 0").into()]),
+                            None
+                        ),
+                        ListItem::new(
+                            ListTypes::Ordered,
+                            0,
+                            Paragraph::new(vec![Text::new("level 0").into()]),
+                            None
+                        ),
+                    ],
+                ),
+                20
             ))
         );
     }
 
     #[test]
-    fn deserialize_mixed() {
+    fn parse_mixed() {
         let list = List::new(
             ListTypes::Ordered,
             0,
-            vec![ListItem::new_with_nested_list(
+            vec![ListItem::new(
                 ListTypes::Ordered,
                 0,
-                ListItemContent::new(vec![Text::new("level 0").into()]),
+                Paragraph::new(vec![Text::new("level 0").into()]),
                 Some(List::new(
                     ListTypes::Unordered,
                     1,
                     vec![ListItem::new(
                         ListTypes::Unordered,
                         1,
-                        ListItemContent::new(vec![Text::new("level 0").into()]),
-                    )
-                    .into()],
+                        Paragraph::new(vec![Text::new("level 0").into()]),
+                        None,
+                    )],
                 )),
             )
             .into()],
         );
 
-        assert_eq!(List::deserialize("+ level 0\n - level 0"), Some(list));
+        assert_eq!(
+            List::parse("+ level 0\n - level 0", 0, None),
+            Some((list, 26))
+        );
     }
 
     #[test]
-    fn deserialized_nested() {
+    fn parsed_nested() {
         let list = List::new(
             ListTypes::Unordered,
             0,
-            vec![ListItem::new_with_nested_list(
+            vec![ListItem::new(
                 ListTypes::Unordered,
                 0,
-                ListItemContent::new(vec![Text::new("one").into()]).into(),
+                Paragraph::new(vec![Text::new("one").into()]).into(),
                 Some(List::new(
                     ListTypes::Unordered,
                     1,
                     vec![ListItem::new(
                         ListTypes::Unordered,
                         1,
-                        ListItemContent::new(vec![Text::new("two").into()]),
-                    )
-                    .into()],
+                        Paragraph::new(vec![Text::new("two").into()]),
+                        None,
+                    )],
                 )),
-            )
-            .into()],
+            )],
         );
 
         let input = r#"- one
- - two
-
-"#;
-        assert_eq!(List::deserialize(input), Some(list));
-    }
-
-    #[test]
-    fn len() {
-        let list = List::new(
-            ListTypes::Ordered,
-            0,
-            vec![
-                ListItem::new(
-                    ListTypes::Ordered,
-                    0,
-                    ListItemContent::new(vec![Text::new("l").into()]),
-                )
-                .into(),
-                ListItem::new(
-                    ListTypes::Ordered,
-                    0,
-                    ListItemContent::new(vec![Text::new("l").into()]),
-                )
-                .into(),
-            ],
-        );
-        assert_eq!(list.len(), 7);
-    }
-
-    #[test]
-    fn empty_list() {
-        let list = List::new(ListTypes::Ordered, 0, vec![]);
-        assert_eq!(list.len(), 0);
+ - two"#;
+        assert_eq!(List::parse(input, 0, None), Some((list, 14)));
     }
 }

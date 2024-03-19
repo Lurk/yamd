@@ -4,9 +4,7 @@ use serde::Serialize;
 
 use crate::toolkit::{
     context::Context,
-    deserializer::{Branch, DefinitelyNode, Deserializer, FallbackNode, MaybeNode},
-    matcher::Matcher,
-    node::Node,
+    parser::{parse_to_consumer, parse_to_parser, Branch, Consumer, Parse, Parser},
 };
 
 use super::{
@@ -40,22 +38,6 @@ impl Display for CollapsibleNodes {
             CollapsibleNodes::Divider(node) => write!(f, "{}", node),
             CollapsibleNodes::Code(node) => write!(f, "{}", node),
             CollapsibleNodes::Collapsible(node) => write!(f, "{}", node),
-        }
-    }
-}
-
-impl Node for CollapsibleNodes {
-    fn len(&self) -> usize {
-        match self {
-            CollapsibleNodes::P(node) => node.len(),
-            CollapsibleNodes::H(node) => node.len(),
-            CollapsibleNodes::Image(node) => node.len(),
-            CollapsibleNodes::ImageGallery(node) => node.len(),
-            CollapsibleNodes::List(node) => node.len(),
-            CollapsibleNodes::Embed(node) => node.len(),
-            CollapsibleNodes::Divider(node) => node.len(),
-            CollapsibleNodes::Code(node) => node.len(),
-            CollapsibleNodes::Collapsible(node) => node.len(),
         }
     }
 }
@@ -145,61 +127,53 @@ impl Display for Collapsible {
     }
 }
 
-impl Node for Collapsible {
-    fn len(&self) -> usize {
-        let delimeter_len = if self.is_empty() {
-            0
-        } else {
-            (self.nodes.len() - 1) * 2
-        };
-        self.nodes.iter().map(|node| node.len()).sum::<usize>()
-            + delimeter_len
-            + self.get_outer_token_length()
-    }
-}
-
 impl Branch<CollapsibleNodes> for Collapsible {
-    fn push<CanBeNode: Into<CollapsibleNodes>>(&mut self, node: CanBeNode) {
-        self.nodes.push(node.into());
-    }
-
-    fn get_maybe_nodes() -> Vec<MaybeNode<CollapsibleNodes>> {
+    fn get_parsers(&self) -> Vec<Parser<CollapsibleNodes>> {
         vec![
-            Heading::maybe_node(),
-            Image::maybe_node(),
-            ImageGallery::maybe_node(),
-            List::maybe_node(),
-            Embed::maybe_node(),
-            Divider::maybe_node(),
-            Code::maybe_node(),
-            Collapsible::maybe_node(),
+            parse_to_parser::<CollapsibleNodes, Heading>(),
+            parse_to_parser::<CollapsibleNodes, Image>(),
+            parse_to_parser::<CollapsibleNodes, ImageGallery>(),
+            parse_to_parser::<CollapsibleNodes, List>(),
+            parse_to_parser::<CollapsibleNodes, Embed>(),
+            parse_to_parser::<CollapsibleNodes, Divider>(),
+            parse_to_parser::<CollapsibleNodes, Code>(),
+            parse_to_parser::<CollapsibleNodes, Collapsible>(),
         ]
     }
 
-    fn get_fallback_node() -> Option<DefinitelyNode<CollapsibleNodes>> {
-        Some(Paragraph::fallback_node())
+    fn get_consumer(&self) -> Option<Consumer<CollapsibleNodes>> {
+        Some(parse_to_consumer::<CollapsibleNodes, Paragraph>())
     }
 
-    fn get_outer_token_length(&self) -> usize {
-        7 + self.title.len()
-    }
-
-    fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
+    fn push_node(&mut self, node: CollapsibleNodes) {
+        self.nodes.push(node);
     }
 }
 
-impl Deserializer for Collapsible {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut matcher = Matcher::new(input);
-        if let Some(tab) = matcher.get_match("{% ", "\n%}", false) {
-            let mut inner_matcher = Matcher::new(tab.body);
-            if let Some(title) = inner_matcher.get_match("", "\n", false) {
-                return Self::parse_branch(
-                    inner_matcher.get_rest(),
-                    "\n\n",
-                    Self::new(title.body, vec![]),
-                );
+impl Parse for Collapsible {
+    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+        if input[current_position..].starts_with("{% ") {
+            let start = current_position + 3;
+            if let Some(end_of_title) = input[start..].find('\n') {
+                let title = &input[start..start + end_of_title];
+                let mut level = 1;
+                for (index, _) in input[start + end_of_title..].char_indices() {
+                    if input[index..].starts_with("{% ") {
+                        level += 1;
+                    } else if input[index..].starts_with("\n%}") {
+                        level -= 1;
+                    }
+                    if level == 0 {
+                        let colapsible = Collapsible::new(title, vec![]);
+
+                        return Some((
+                            colapsible
+                                .parse_branch(&input[start + end_of_title + 1..index], "\n\n", None)
+                                .expect("collapsible should always succeed"),
+                            index + 3 - current_position,
+                        ));
+                    }
+                }
             }
         }
         None
@@ -212,39 +186,34 @@ mod cfg {
 
     use crate::{
         nodes::{
-            bold::Bold, code::Code, collapsible::Collapsible, divider::Divider, embed::Embed,
-            heading::Heading, image::Image, image_gallery::ImageGallery, list::List,
-            list::ListTypes::*, list_item::ListItem, list_item_content::ListItemContent,
-            paragraph::Paragraph, text::Text,
+            bold::Bold,
+            code::Code,
+            collapsible::Collapsible,
+            divider::Divider,
+            embed::Embed,
+            heading::Heading,
+            image::Image,
+            image_gallery::ImageGallery,
+            list::{List, ListTypes::*},
+            list_item::ListItem,
+            paragraph::Paragraph,
+            text::Text,
         },
-        toolkit::{
-            deserializer::{Branch, Deserializer},
-            node::Node,
-        },
+        toolkit::parser::Parse,
     };
 
     #[test]
-    fn test_collapsible_deserialize() {
+    fn test_collapsible_parse() {
         assert_eq!(
-            Collapsible::deserialize("{% Title\n# Heading\n%}"),
-            Some(Collapsible::new(
-                "Title",
-                vec![Heading::new(1, vec![Text::new("Heading").into()]).into()]
+            Collapsible::parse("{% Title\n# Heading\n%}", 0, None),
+            Some((
+                Collapsible::new(
+                    "Title",
+                    vec![Heading::new(1, vec![Text::new("Heading").into()]).into()]
+                ),
+                21
             ))
         );
-    }
-
-    #[test]
-    fn test_collapsible_len() {
-        assert_eq!(
-            Collapsible::new(
-                "Title",
-                vec![Heading::new(1, vec![Text::new("Heading").into()]).into()]
-            )
-            .len(),
-            21
-        );
-        assert_eq!(Collapsible::new("Title", vec![]).len(), 12);
     }
 
     #[test]
@@ -260,9 +229,12 @@ mod cfg {
     }
 
     #[test]
-    fn fail_to_deseiralize_collapsible() {
-        assert_eq!(Collapsible::deserialize("I am not an accordion tab"), None);
-        assert_eq!(Collapsible::deserialize("{% \n%}"), None);
+    fn fail_to_parse_collapsible() {
+        assert_eq!(
+            Collapsible::parse("I am not an accordion tab", 0, None),
+            None
+        );
+        assert_eq!(Collapsible::parse("{% \n%}", 0, None), None);
     }
 
     #[test]
@@ -316,17 +288,18 @@ t**b**
                 List::new(
                     Unordered,
                     0,
-                    vec![ListItem::new_with_nested_list(
+                    vec![ListItem::new(
                         Unordered,
                         0,
-                        ListItemContent::new(vec![Text::new("one").into()]),
+                        Paragraph::new(vec![Text::new("one").into()]),
                         Some(List::new(
                             Unordered,
                             1,
                             vec![ListItem::new(
                                 Unordered,
                                 1,
-                                ListItemContent::new(vec![Text::new("two").into()]),
+                                Paragraph::new(vec![Text::new("two").into()]),
+                                None,
                             )
                             .into()],
                         )),
@@ -344,13 +317,6 @@ t**b**
             ],
         );
         assert_eq!(tab.to_string(), input);
-        assert_eq!(Collapsible::deserialize(input), Some(tab));
-    }
-
-    #[test]
-    fn empty_tab() {
-        let tab = Collapsible::new::<&str>("", vec![]);
-        assert_eq!(tab.len(), 7);
-        assert_eq!(tab.is_empty(), true);
+        assert_eq!(Collapsible::parse(input, 0, None), Some((tab, 394)));
     }
 }

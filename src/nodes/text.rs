@@ -1,56 +1,38 @@
+use crate::toolkit::{context::Context, parser::Parse};
+use serde::Serialize;
 use std::fmt::Display;
 
-use serde::Serialize;
-
-use crate::toolkit::{
-    context::Context,
-    deserializer::{DefinitelyNode, Deserializer, FallbackNode},
-    node::Node,
-};
-
-/// Representation of a regular text
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Text {
-    pub text: String,
+    text: String,
 }
 
 impl Text {
-    pub fn new<S: Into<String>>(text: S) -> Self {
+    pub fn new<IS: Into<String>>(text: IS) -> Self {
         Text { text: text.into() }
     }
 }
 
-impl Deserializer for Text {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        Some(Text::new(input.to_string()))
+impl Parse for Text {
+    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+        Some((
+            Text::new(&input[current_position..]),
+            input.len() - current_position,
+        ))
     }
 }
 
 impl Display for Text {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", &self.text)
-    }
-}
-
-impl Node for Text {
-    fn len(&self) -> usize {
-        self.text.len()
-    }
-}
-
-impl FallbackNode for Text {
-    fn fallback_node<BranchNodes>() -> DefinitelyNode<BranchNodes>
-    where
-        Self: Into<BranchNodes>,
-    {
-        Box::new(|input| Text::new(input).into())
+        write!(f, "{}", self.text)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::toolkit::parser::Parse;
+
     use super::Text;
-    use crate::toolkit::deserializer::Deserializer;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -67,6 +49,6 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(Text::deserialize("t"), Some(Text::new("t")));
+        assert_eq!(Text::parse("t", 0, None), Some((Text::new("t"), 1)));
     }
 }

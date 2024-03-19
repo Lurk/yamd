@@ -2,20 +2,31 @@ use std::fmt::{Display, Formatter};
 
 use serde::Serialize;
 
-use crate::{
-    toolkit::{context::Context, deserializer::Deserializer},
-    toolkit::{matcher::Matcher, node::Node},
-};
+use crate::toolkit::{context::Context, parser::Parse};
 
 /// Representation of an Italic text
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Italic {
-    pub text: String,
+    text: String,
 }
 
 impl Italic {
-    pub fn new<S: Into<String>>(text: S) -> Self {
+    pub fn new<IS: Into<String>>(text: IS) -> Self {
         Italic { text: text.into() }
+    }
+}
+
+impl Parse for Italic {
+    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+        if input[current_position..].starts_with('_') {
+            if let Some(end) = input[current_position + 1..].find('_') {
+                return Some((
+                    Italic::new(&input[current_position + 1..current_position + end]),
+                    end + 1 - current_position,
+                ));
+            }
+        }
+        None
     }
 }
 
@@ -25,27 +36,10 @@ impl Display for Italic {
     }
 }
 
-impl Node for Italic {
-    fn len(&self) -> usize {
-        self.text.len() + 2
-    }
-}
-
-impl Deserializer for Italic {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut matcher = Matcher::new(input);
-        if let Some(italic) = matcher.get_match("_", "_", false) {
-            return Some(Italic::new(italic.body));
-        }
-
-        None
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::Italic;
-    use crate::toolkit::{deserializer::Deserializer, node::Node};
+    use crate::toolkit::parser::Parse;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -62,25 +56,23 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(Italic::deserialize("_italic_"), Some(Italic::new("italic")));
         assert_eq!(
-            Italic::deserialize("_italic_not"),
-            Some(Italic::new("italic"))
+            Italic::parse("_italic_", 0, None),
+            Some((Italic::new("italic"), 8))
         );
         assert_eq!(
-            Italic::deserialize("_it alic_not"),
-            Some(Italic::new("it alic"))
+            Italic::parse("_italic_not", 0, None),
+            Some((Italic::new("italic"), 8))
         );
-        assert_eq!(Italic::deserialize("not italic_not"), None);
-        assert_eq!(Italic::deserialize("*italic not"), None);
         assert_eq!(
-            Italic::deserialize("_ita\nlic_"),
-            Some(Italic::new("ita\nlic"))
+            Italic::parse("_it alic_not", 0, None),
+            Some((Italic::new("it alic"), 9))
         );
-    }
-
-    #[test]
-    fn len() {
-        assert_eq!(Italic::new("i").len(), 3);
+        assert_eq!(Italic::parse("not italic_not", 0, None), None);
+        assert_eq!(Italic::parse("*italic not", 0, None), None);
+        assert_eq!(
+            Italic::parse("_ita\nlic_", 0, None),
+            Some((Italic::new("ita\nlic"), 9))
+        );
     }
 }

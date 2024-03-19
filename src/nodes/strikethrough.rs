@@ -1,11 +1,6 @@
-use std::fmt::{Display, Formatter};
-
+use crate::toolkit::{context::Context, parser::Parse};
 use serde::Serialize;
-
-use crate::{
-    toolkit::{context::Context, deserializer::Deserializer},
-    toolkit::{matcher::Matcher, node::Node},
-};
+use std::fmt::{Display, Formatter};
 
 /// Representation of strike through
 #[derive(Debug, PartialEq, Serialize, Clone)]
@@ -19,32 +14,30 @@ impl Strikethrough {
     }
 }
 
+impl Parse for Strikethrough {
+    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+        if input[current_position..].starts_with("~~") {
+            if let Some(end) = input[current_position + 2..].find("~~") {
+                return Some((
+                    Strikethrough::new(&input[current_position + 2..current_position + end]),
+                    end + 2 - current_position,
+                ));
+            }
+        }
+        None
+    }
+}
+
 impl Display for Strikethrough {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "~~{}~~", self.text)
     }
 }
 
-impl Node for Strikethrough {
-    fn len(&self) -> usize {
-        self.text.len() + 4
-    }
-}
-
-impl Deserializer for Strikethrough {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut matcher = Matcher::new(input);
-        if let Some(strikethrough) = matcher.get_match("~~", "~~", false) {
-            return Some(Strikethrough::new(strikethrough.body));
-        }
-        None
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::Strikethrough;
-    use crate::toolkit::{deserializer::Deserializer, node::Node};
+    use crate::toolkit::parser::Parse;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -62,23 +55,17 @@ mod tests {
     #[test]
     fn parse() {
         assert_eq!(
-            Strikethrough::deserialize("~~2+2=5~~"),
-            Some(Strikethrough::new("2+2=5"))
+            Strikethrough::parse("~~2+2=5~~", 0, None),
+            Some((Strikethrough::new("2+2=5"), 9))
         );
         assert_eq!(
-            Strikethrough::deserialize("~~is~~not"),
-            Some(Strikethrough::new("is"))
+            Strikethrough::parse("~~is~~not", 0, None),
+            Some((Strikethrough::new("is"), 6))
         );
-        assert_eq!(Strikethrough::deserialize("~~not"), None);
+        assert_eq!(Strikethrough::parse("~~not", 0, None), None);
         assert_eq!(
-            Strikethrough::deserialize("~~i\ns~~"),
-            Some(Strikethrough::new("i\ns"))
+            Strikethrough::parse("~~i\ns~~", 0, None),
+            Some((Strikethrough::new("i\ns"), 7))
         );
-    }
-
-    #[test]
-    fn len() {
-        assert_eq!(Strikethrough::new("s").len(), 5);
-        assert_eq!(Strikethrough::new("st").len(), 6);
     }
 }
