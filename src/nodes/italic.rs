@@ -21,8 +21,8 @@ impl Parse for Italic {
         if input[current_position..].starts_with('_') {
             if let Some(end) = input[current_position + 1..].find('_') {
                 return Some((
-                    Italic::new(&input[current_position + 1..current_position + end]),
-                    end + 1 - current_position,
+                    Italic::new(&input[current_position + 1..current_position + 1 + end]),
+                    end + 2 - current_position,
                 ));
             }
         }
