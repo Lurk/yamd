@@ -20,7 +20,7 @@ impl Parse for Strikethrough {
             if let Some(end) = input[current_position + 2..].find("~~") {
                 return Some((
                     Strikethrough::new(&input[current_position + 2..current_position + 2 + end]),
-                    end + 4 - current_position,
+                    end + 4,
                 ));
             }
         }

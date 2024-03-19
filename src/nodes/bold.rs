@@ -65,12 +65,12 @@ impl Parse for Bold {
                 let b = Bold::new(vec![]);
                 return Some((
                     b.parse_branch(
-                        &input[current_position + 2..current_position + end],
+                        &input[current_position + 2..current_position + 2 + end],
                         "",
                         None,
                     )
                     .expect("bold should always succed"),
-                    end + 2,
+                    end + 4,
                 ));
             }
         }
