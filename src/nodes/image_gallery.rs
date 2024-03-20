@@ -84,10 +84,12 @@ impl Parse for ImageGallery {
         if input[current_position..].starts_with("!!!\n") {
             if let Some(end) = input[current_position + 4..].find("\n!!!") {
                 let gallery = ImageGallery::new(vec![]);
-                if let Some(node) =
-                    gallery.parse_branch(&input[current_position + 4..end], "\n", None)
-                {
-                    return Some((node, end + 4 - current_position));
+                if let Some(node) = gallery.parse_branch(
+                    &input[current_position + 4..current_position + 4 + end],
+                    "\n",
+                    None,
+                ) {
+                    return Some((node, 4 + end + 4));
                 }
             }
         }
@@ -130,7 +132,7 @@ mod tests {
                     Image::new("a", "u").into(),
                     Image::new("a2", "u2").into()
                 ]),
-                20
+                25
             ))
         );
     }
