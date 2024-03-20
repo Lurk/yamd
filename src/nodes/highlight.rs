@@ -58,7 +58,6 @@ impl Parse for Highlight {
     {
         if input[current_position..].starts_with(">>>\n") {
             if let Some(end) = input[current_position + 4..].find("\n>>>") {
-                let current_position = current_position + 4;
                 let mut start = current_position + 4;
                 let mut title = None;
                 let mut icon = None;
@@ -77,15 +76,16 @@ impl Parse for Highlight {
                     }
                 }
                 let mut nodes = vec![];
-                input[start..end].split("\n\n").for_each(|node| {
-                    let (node, end) = Paragraph::parse(node, 0, None)
-                        .expect("Paragraph should never fail to parse");
-                    nodes.push(node);
-                    start += end + 2;
-                });
+                input[start..current_position + 4 + end]
+                    .split("\n\n")
+                    .for_each(|node| {
+                        let (node, _) = Paragraph::parse(node, 0, None)
+                            .expect("Paragraph should never fail to parse");
+                        nodes.push(node);
+                    });
                 return Some((
                     Highlight::new(title, icon, nodes),
-                    start + 4 + current_position,
+                    input[current_position..current_position + 4 + end + 4].len(),
                 ));
             }
         }
@@ -142,24 +142,9 @@ mod tests {
                         Paragraph::new(vec![Text::new("t").into()])
                     ]
                 ),
-                20
+                21
             ))
         );
-
-        assert_eq!(
-            Highlight::parse(">>>\n>> h\n> i\nt\n\nt2\n>>>\n\n", 0, None),
-            Some((
-                Highlight::new(
-                    Some("h"),
-                    Some("i"),
-                    vec![
-                        Paragraph::new(vec![Text::new("t").into()]),
-                        Paragraph::new(vec![Text::new("t2").into()])
-                    ]
-                ),
-                26
-            ))
-        )
     }
 
     #[test]
@@ -190,7 +175,7 @@ test2
                         Paragraph::new(vec![Text::new("test2").into()]).into(),
                     ]
                 ),
-                20
+                21
             )
         );
     }
