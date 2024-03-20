@@ -44,7 +44,7 @@ impl Parse for Anchor {
                                 &input[current_position + middle + 3
                                     ..current_position + middle + 3 + i],
                             ),
-                            middle + 3 + i + 1 - current_position,
+                            middle + 3 + i + 1,
                         ));
                     }
                 }

@@ -77,22 +77,23 @@ impl Parse for Heading {
 
         for (i, start_token) in start_tokens.iter().enumerate() {
             if input[current_position..].starts_with(start_token) {
-                if let Some(end) = input[current_position + start_token.len()..].find("\n\n") {
-                    let heading =
-                        Heading::new((start_tokens.len() - i).try_into().unwrap_or(1), vec![]);
+                let end = input[current_position + start_token.len()..]
+                    .find("\n\n")
+                    .unwrap_or(input[current_position + start_token.len()..].len());
+                let heading =
+                    Heading::new((start_tokens.len() - i).try_into().unwrap_or(1), vec![]);
 
-                    return Some((
-                        heading
-                            .parse_branch(
-                                &input[current_position + start_token.len()
-                                    ..current_position + start_token.len() + end],
-                                "",
-                                None,
-                            )
-                            .expect("heading should always succeed"),
-                        start_token.len() + end + 2,
-                    ));
-                }
+                return Some((
+                    heading
+                        .parse_branch(
+                            &input[current_position + start_token.len()
+                                ..current_position + start_token.len() + end],
+                            "",
+                            None,
+                        )
+                        .expect("heading should always succeed"),
+                    start_token.len() + end,
+                ));
             }
         }
 
@@ -175,7 +176,7 @@ mod tests {
                     2,
                     vec![Text::new("hey ").into(), Anchor::new("a", "b").into()]
                 ),
-                11
+                13
             ))
         );
         assert_eq!(h.map(|(node, _)| node.to_string()).unwrap(), str);
