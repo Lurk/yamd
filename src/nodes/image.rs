@@ -28,9 +28,9 @@ impl Display for Image {
 impl Parse for Image {
     fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
         if input[current_position..].starts_with("![") {
-            if let Some(middle) = input[current_position + 1..].find("](") {
+            if let Some(middle) = input[current_position + 2..].find("](") {
                 let mut level = 1;
-                for (i, c) in input[current_position + middle + 2..].char_indices() {
+                for (i, c) in input[current_position + 2 + middle + 2..].char_indices() {
                     if c == '(' {
                         level += 1;
                     } else if c == ')' {
@@ -39,11 +39,11 @@ impl Parse for Image {
                     if level == 0 {
                         return Some((
                             Image::new(
-                                &input[current_position + 1..current_position + middle],
-                                &input[current_position + middle + 2
-                                    ..current_position + middle + 2 + i],
+                                &input[current_position + 2..current_position + 2 + middle],
+                                &input[current_position + 2 + middle + 2
+                                    ..current_position + 2 + middle + 2 + i],
                             ),
-                            middle + 2 + i + 1 - current_position,
+                            2 + middle + 2 + i + 1,
                         ));
                     }
                 }
