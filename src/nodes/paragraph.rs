@@ -180,15 +180,21 @@ mod tests {
     #[test]
     fn parse() {
         assert_eq!(
-            Paragraph::parse("simple text **bold text**`let foo='bar';`[t](u)", 0, None),
+            Paragraph::parse(
+                "simple text **bold text**`let foo='bar';`[t](u)_I_~~S~~",
+                0,
+                None
+            ),
             Some((
                 Paragraph::new(vec![
                     Text::new("simple text ").into(),
                     Bold::new(vec![Text::new("bold text").into()]).into(),
                     InlineCode::new("let foo='bar';").into(),
-                    Anchor::new("t", "u").into()
+                    Anchor::new("t", "u").into(),
+                    Italic::new("I").into(),
+                    Strikethrough::new("S").into()
                 ]),
-                46
+                55
             ))
         );
     }

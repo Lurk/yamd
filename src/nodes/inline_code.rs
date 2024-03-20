@@ -27,7 +27,7 @@ impl Parse for InlineCode {
             if let Some(end) = input[current_position + 1..].find('`') {
                 return Some((
                     InlineCode::new(&input[current_position + 1..current_position + end + 1]),
-                    end + 2 - current_position,
+                    end + 2,
                 ));
             }
         }
