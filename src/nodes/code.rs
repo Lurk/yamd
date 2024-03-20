@@ -39,7 +39,7 @@ impl Parse for Code {
                             &input[current_position + 3 + lang + 1
                                 ..current_position + 3 + lang + 1 + end],
                         ),
-                        3 + lang + 1 + end + 4 - current_position,
+                        3 + lang + 1 + end + 4,
                     ));
                 }
             }
@@ -65,7 +65,7 @@ mod tests {
     fn parser() {
         assert_eq!(
             Code::parse("```rust\nlet a=1;\n```", 0, None),
-            Some((Code::new("rust", "let a=1;"), 14))
+            Some((Code::new("rust", "let a=1;"), 20))
         );
         assert_eq!(Code::parse("```rust\nlet a=1;\n", 0, None), None);
     }
