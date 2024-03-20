@@ -32,14 +32,14 @@ impl Parse for Embed {
     {
         if input[current_position..].starts_with("{{") {
             if let Some(middle) = input[current_position + 2..].find('|') {
-                if let Some(end) = input[current_position + middle + 1..].find("}}") {
+                if let Some(end) = input[current_position + 2 + middle..].find("}}") {
                     return Some((
                         Embed::new(
-                            &input[current_position + 2..current_position + middle],
-                            &input[current_position + middle + 1
-                                ..current_position + middle + 1 + end],
+                            &input[current_position + 2..current_position + 2 + middle],
+                            &input[current_position + 2 + middle + 1
+                                ..current_position + 2 + middle + end],
                         ),
-                        2 + middle + 1 + end + 2 - current_position,
+                        2 + middle + end + 2,
                     ));
                 }
             }
@@ -70,7 +70,7 @@ mod tests {
             ),
             Some((
                 Embed::new("youtube", "https://www.youtube.com/embed/wsfdjlkjsdf",),
-                49
+                53
             ))
         );
     }
