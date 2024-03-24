@@ -28,8 +28,8 @@ impl List {
         }
     }
 
-    fn parse_list_items(&mut self, input: &str, current_position: usize) -> usize {
-        let mut end = current_position + 2 + self.level;
+    fn parse_list_items(&mut self, input: &str) -> usize {
+        let mut end = 2 + self.level;
         while end < input.len() {
             let list_type = match self.list_type {
                 ListTypes::Unordered => '-',
@@ -83,14 +83,17 @@ impl Parse for List {
         };
 
         if input[current_position..].starts_with(format!("{}- ", " ".repeat(level)).as_str()) {
+            let end = input[current_position..]
+                .find("\n\n")
+                .map_or(input.len(), |pos| pos + current_position);
             let mut list = List::new(ListTypes::Unordered, level, vec![]);
-            let end = list.parse_list_items(input, current_position);
+            let end = list.parse_list_items(&input[current_position..end]);
             return Some((list, end));
         }
 
         if input[current_position..].starts_with(format!("{}+ ", " ".repeat(level)).as_str()) {
             let mut list = List::new(ListTypes::Ordered, level, vec![]);
-            let end = list.parse_list_items(input, current_position);
+            let end = list.parse_list_items(input);
             return Some((list, end));
         }
 

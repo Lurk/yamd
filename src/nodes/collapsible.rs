@@ -158,9 +158,9 @@ impl Parse for Collapsible {
                 let title = &input[start..start + end_of_title];
                 let mut level = 1;
                 for (index, _) in input[start + end_of_title..].char_indices() {
-                    if input[index..].starts_with("{% ") {
+                    if input[index + start + end_of_title + 1..].starts_with("{% ") {
                         level += 1;
-                    } else if input[index..].starts_with("\n%}") {
+                    } else if input[index + start + end_of_title + 1..].starts_with("\n%}") {
                         level -= 1;
                     }
                     if level == 0 {
@@ -168,9 +168,14 @@ impl Parse for Collapsible {
 
                         return Some((
                             colapsible
-                                .parse_branch(&input[start + end_of_title + 1..index], "\n\n", None)
-                                .expect("collapsible should always succeed"),
-                            index + 3 - current_position,
+                                .parse_branch(
+                                    &input[start + end_of_title + 1
+                                        ..index + start + end_of_title + 1],
+                                    "\n\n",
+                                    None,
+                                )
+                                .expect("collapsible branch should always succeed"),
+                            index + start + end_of_title + 4,
                         ));
                     }
                 }
@@ -317,6 +322,6 @@ t**b**
             ],
         );
         assert_eq!(tab.to_string(), input);
-        assert_eq!(Collapsible::parse(input, 0, None), Some((tab, 394)));
+        assert_eq!(Collapsible::parse(input, 0, None), Some((tab, input.len())));
     }
 }

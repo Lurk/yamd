@@ -126,10 +126,13 @@ impl Branch<ParagraphNodes> for Paragraph {
 
 impl Parse for Paragraph {
     fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+        let end = input[current_position..]
+            .find("\n\n")
+            .unwrap_or(input.len());
         let paragraph = Paragraph::default();
         Some((
             paragraph
-                .parse_branch(&input[current_position..], "", None)
+                .parse_branch(&input[current_position..end], "", None)
                 .expect("paragraph should always succed"),
             input.len() - current_position,
         ))
