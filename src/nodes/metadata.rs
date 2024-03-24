@@ -45,8 +45,8 @@ impl Parse for Metadata {
         if input[current_position..].starts_with("---\n") {
             let start = current_position + 4;
             if let Some(end) = input[start..].find("\n---") {
-                let meta: Metadata = serde_yaml::from_str(&input[start..end]).ok()?;
-                return Some((meta, end + 4));
+                let meta: Metadata = serde_yaml::from_str(&input[start..start + end]).ok()?;
+                return Some((meta, end + 8));
             }
         }
         None
@@ -99,7 +99,7 @@ mod tests {
             is_draft: Some(true),
         };
         let str = "---\ntitle: title\ndate: 2022-12-30T20:33:55+01:00\nimage: image\npreview: preview\ntags:\n- tag1\n- tag2\nis_draft: true\n---";
-        assert_eq!(Metadata::parse(str, 0, None), Some((metadata, 117)));
+        assert_eq!(Metadata::parse(str, 0, None), Some((metadata, str.len())));
     }
 
     #[test]
