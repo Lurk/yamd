@@ -31,9 +31,13 @@ impl List {
     fn parse_list_items(&mut self, input: &str, current_position: usize) -> usize {
         let mut end = current_position + 2 + self.level;
         while end < input.len() {
+            let list_type = match self.list_type {
+                ListTypes::Unordered => '-',
+                ListTypes::Ordered => '+',
+            };
             let new_position = input[end..]
-                .find(format!("\n{}- ", " ".repeat(self.level)).as_str())
-                .unwrap_or(input.len() - current_position);
+                .find(format!("\n{}{} ", " ".repeat(self.level), list_type).as_str())
+                .map_or(input.len(), |pos| pos + end);
 
             let (text_slice, nested_list) =
                 if let Some((left, right)) = input[end..new_position].split_once('\n') {
@@ -61,7 +65,11 @@ impl List {
                 nested_list,
             ));
 
-            end = new_position;
+            end = if new_position == input.len() {
+                new_position
+            } else {
+                new_position + 3 + self.level
+            };
         }
         end
     }
@@ -77,13 +85,13 @@ impl Parse for List {
         if input[current_position..].starts_with(format!("{}- ", " ".repeat(level)).as_str()) {
             let mut list = List::new(ListTypes::Unordered, level, vec![]);
             let end = list.parse_list_items(input, current_position);
-            return Some((list, end - current_position));
+            return Some((list, end));
         }
 
         if input[current_position..].starts_with(format!("{}+ ", " ".repeat(level)).as_str()) {
             let mut list = List::new(ListTypes::Ordered, level, vec![]);
             let end = list.parse_list_items(input, current_position);
-            return Some((list, end - current_position));
+            return Some((list, end));
         }
 
         None
@@ -215,7 +223,7 @@ mod tests {
                         )
                     ],
                 ),
-                20
+                19
             ))
         );
     }
@@ -243,7 +251,7 @@ mod tests {
                         ),
                     ],
                 ),
-                20
+                19
             ))
         );
     }
@@ -273,7 +281,7 @@ mod tests {
 
         assert_eq!(
             List::parse("+ level 0\n - level 0", 0, None),
-            Some((list, 26))
+            Some((list, 20))
         );
     }
 
@@ -301,6 +309,6 @@ mod tests {
 
         let input = r#"- one
  - two"#;
-        assert_eq!(List::parse(input, 0, None), Some((list, 14)));
+        assert_eq!(List::parse(input, 0, None), Some((list, 12)));
     }
 }
