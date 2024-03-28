@@ -61,16 +61,16 @@ impl Parse for Highlight {
                 let mut start = current_position + 4;
                 let mut title = None;
                 let mut icon = None;
-                if input[start..end].starts_with(">> ") {
+                if input[start..current_position + 4 + end].starts_with(">> ") {
                     start += 3;
-                    if let Some(local_end) = input[start..end].find('\n') {
+                    if let Some(local_end) = input[start..current_position + 4 + end].find('\n') {
                         title = Some(input[start..start + local_end].to_string());
                         start += local_end + 1;
                     }
                 }
-                if input[start..end].starts_with("> ") {
+                if input[start..current_position + 4 + end].starts_with("> ") {
                     start += 2;
-                    if let Some(local_end) = input[start..end].find('\n') {
+                    if let Some(local_end) = input[start..current_position + 4 + end].find('\n') {
                         icon = Some(input[start..start + local_end].to_string());
                         start += local_end + 1;
                     }

@@ -170,12 +170,12 @@ impl Parse for Collapsible {
                             colapsible
                                 .parse_branch(
                                     &input[start + end_of_title + 1
-                                        ..index + start + end_of_title + 1],
+                                        ..start + end_of_title + 1 + index],
                                     "\n\n",
                                     None,
                                 )
                                 .expect("collapsible branch should always succeed"),
-                            index + start + end_of_title + 4,
+                            3 + end_of_title + 1 + index + 3,
                         ));
                     }
                 }
@@ -186,7 +186,7 @@ impl Parse for Collapsible {
 }
 
 #[cfg(test)]
-mod cfg {
+mod tests {
     use pretty_assertions::assert_eq;
 
     use crate::{
@@ -323,5 +323,14 @@ t**b**
         );
         assert_eq!(tab.to_string(), input);
         assert_eq!(Collapsible::parse(input, 0, None), Some((tab, input.len())));
+    }
+
+    #[test]
+    fn parse_empty() {
+        let input = "{% Title\n\n%}";
+        assert_eq!(
+            Collapsible::parse(input, 0, None),
+            Some((Collapsible::new("Title", vec![]), input.len()))
+        );
     }
 }

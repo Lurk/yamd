@@ -1,3 +1,5 @@
+use std::usize;
+
 use super::context::Context;
 
 pub type Parser<N> = Box<dyn Fn(&str, usize, Option<&Context>) -> Option<(N, usize)>>;
@@ -33,6 +35,26 @@ pub trait Branch<N> {
     fn get_parsers(&self) -> Vec<Parser<N>>;
     fn get_consumer(&self) -> Option<Consumer<N>>;
     fn push_node(&mut self, node: N);
+    fn consume(&mut self, input: &str, delimeter: &str, ctx: Option<&Context>)
+    where
+        Self: Sized,
+    {
+        if let Some(consumer) = self.get_consumer() {
+            let mut total_consumed = 0;
+            while total_consumed < input.len() {
+                if !delimeter.is_empty() && input[total_consumed..].starts_with(delimeter) {
+                    total_consumed += delimeter.len();
+                }
+
+                if total_consumed == input.len() {
+                    break;
+                }
+                let (node, consumed) = consumer(&input[total_consumed..], 0, ctx);
+                self.push_node(node);
+                total_consumed += consumed;
+            }
+        }
+    }
     fn parse_branch(mut self, input: &str, delimeter: &str, ctx: Option<Context>) -> Option<Self>
     where
         Self: Sized,
@@ -48,16 +70,12 @@ pub trait Branch<N> {
             }
             let start = current_position;
             for parser in self.get_parsers() {
-                if let Some((node, consumed)) = parser(input, current_position, ctx.as_ref()) {
-                    if let (Some(consume_from), Some(consumer)) =
-                        (should_consume, self.get_consumer())
-                    {
-                        let (node, _) =
-                            consumer(&input[consume_from..current_position], 0, ctx.as_ref());
+                if let Some((node, parsed)) = parser(input, current_position, ctx.as_ref()) {
+                    if let Some(consume_from) = should_consume {
+                        self.consume(&input[consume_from..start], delimeter, ctx.as_ref());
                         should_consume = None;
-                        self.push_node(node);
                     }
-                    current_position += consumed;
+                    current_position += parsed;
                     self.push_node(node);
                     break;
                 }
@@ -72,9 +90,12 @@ pub trait Branch<N> {
                 current_position += 1;
             }
         }
-        if let (Some(consume_from), Some(consumer)) = (should_consume, self.get_consumer()) {
-            let (node, _) = consumer(&input[consume_from..current_position], 0, ctx.as_ref());
-            self.push_node(node);
+        if let Some(consume_from) = should_consume {
+            self.consume(
+                &input[consume_from..current_position],
+                delimeter,
+                ctx.as_ref(),
+            );
         }
 
         Some(self)

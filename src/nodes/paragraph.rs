@@ -134,7 +134,7 @@ impl Parse for Paragraph {
             paragraph
                 .parse_branch(&input[current_position..end], "", None)
                 .expect("paragraph should always succed"),
-            input.len() - current_position,
+            end,
         ))
     }
 }
