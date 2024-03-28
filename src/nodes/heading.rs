@@ -73,15 +73,14 @@ impl Branch<HeadingNodes> for Heading {
 
 impl Parse for Heading {
     fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
-        let start_tokens = ["###### ", "##### ", "#### ", "### ", "## ", "# "];
+        let start_tokens = ["# ", "## ", "### ", "#### ", "##### ", "###### "];
 
-        for (i, start_token) in start_tokens.iter().enumerate() {
+        for start_token in start_tokens.iter() {
             if input[current_position..].starts_with(start_token) {
                 let end = input[current_position + start_token.len()..]
                     .find("\n\n")
                     .unwrap_or(input[current_position + start_token.len()..].len());
-                let heading =
-                    Heading::new((start_tokens.len() - i).try_into().unwrap_or(1), vec![]);
+                let heading = Heading::new((start_token.len() - 1).try_into().unwrap_or(1), vec![]);
 
                 return Some((
                     heading
