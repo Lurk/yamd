@@ -87,7 +87,7 @@ pub trait Branch<N> {
                 if should_consume.is_none() {
                     should_consume = Some(current_position);
                 }
-                current_position += 1;
+                current_position += &input[current_position..].chars().next().unwrap().len_utf8();
             }
         }
         if let Some(consume_from) = should_consume {
