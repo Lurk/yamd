@@ -74,4 +74,16 @@ mod tests {
         assert_eq!(Image::parse("![alt](url", 0, None), None);
         assert_eq!(Image::parse("[alt](url)", 0, None), None);
     }
+
+    #[test]
+    fn nested() {
+        let input = "![hello [there]](url with (parenthesis))";
+        assert_eq!(
+            Image::parse("![hello [there]](url with (parenthesis))", 0, None),
+            Some((
+                Image::new("hello [there]", "url with (parenthesis)"),
+                input.len()
+            ))
+        )
+    }
 }
