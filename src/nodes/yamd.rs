@@ -161,8 +161,8 @@ impl Branch<YamdNodes> for Yamd {
 
 impl Parse for Yamd {
     fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
-        let (metadata, consumed_length) =
-            Metadata::parse(input, current_position, None).map_or((None, 0), |(m, l)| (Some(m), l));
+        let (metadata, consumed_length) = Metadata::parse(input, current_position, None)
+            .map_or((None, 0), |(m, l)| (Some(m), l + 2));
 
         let yamd = Self::new(metadata, vec![]);
         let yamd = yamd
@@ -311,8 +311,8 @@ end"#;
                             Some("H"),
                             Some("I"),
                             vec![
-                                Paragraph::new(vec![Strikethrough::new("s").into()]).into(),
-                                Paragraph::new(vec![Italic::new("I").into()]).into()
+                                Paragraph::new(vec![Strikethrough::new("s").into()]),
+                                Paragraph::new(vec![Italic::new("I").into()])
                             ]
                         )
                         .into(),
@@ -332,11 +332,9 @@ end"#;
                                         1,
                                         Paragraph::new(vec![Text::new("two").into()]),
                                         None
-                                    )
-                                    .into()]
+                                    )]
                                 ))
-                            )
-                            .into()]
+                            )]
                         )
                         .into(),
                         Embed::new("youtube", "123",).into(),
@@ -386,8 +384,8 @@ end"#;
                         Some("H"),
                         Some("I"),
                         vec![
-                            Paragraph::new(vec![Strikethrough::new("s").into()]).into(),
-                            Paragraph::new(vec![Italic::new("I").into()]).into()
+                            Paragraph::new(vec![Strikethrough::new("s").into()]),
+                            Paragraph::new(vec![Italic::new("I").into()])
                         ]
                     )
                     .into(),
@@ -407,12 +405,10 @@ end"#;
                                     1,
                                     Paragraph::new(vec![Text::new("two").into()]),
                                     None
-                                )
-                                .into()]
+                                )]
                             )
                             .into()
-                        )
-                        .into()]
+                        )]
                     )
                     .into(),
                     Embed::new("youtube", "123",).into(),

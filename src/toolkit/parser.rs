@@ -62,22 +62,27 @@ pub trait Branch<N> {
         let mut current_position = 0;
         let mut should_consume: Option<usize> = None;
         while current_position < input.len() {
-            if current_position != 0
-                && !delimeter.is_empty()
-                && input[current_position..].starts_with(delimeter)
-            {
-                current_position += delimeter.len();
-            }
             let start = current_position;
-            for parser in self.get_parsers() {
-                if let Some((node, parsed)) = parser(input, current_position, ctx.as_ref()) {
-                    if let Some(consume_from) = should_consume {
-                        self.consume(&input[consume_from..start], delimeter, ctx.as_ref());
-                        should_consume = None;
+            if current_position == 0
+                || delimeter.is_empty()
+                || input[current_position..].starts_with(delimeter)
+            {
+                if current_position != 0
+                    && !delimeter.is_empty()
+                    && input[current_position..].starts_with(delimeter)
+                {
+                    current_position += delimeter.len();
+                }
+                for parser in self.get_parsers() {
+                    if let Some((node, parsed)) = parser(input, current_position, ctx.as_ref()) {
+                        if let Some(consume_from) = should_consume {
+                            self.consume(&input[consume_from..start], delimeter, ctx.as_ref());
+                            should_consume = None;
+                        }
+                        current_position += parsed;
+                        self.push_node(node);
+                        break;
                     }
-                    current_position += parsed;
-                    self.push_node(node);
-                    break;
                 }
             }
             if start == current_position {
