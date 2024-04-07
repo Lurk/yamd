@@ -96,7 +96,7 @@ pub trait Branch<N> {
             }
         }
 
-        self.consume(&mut should_consume, &input[..position], delimeter, ctx);
+        self.consume(&mut should_consume, &input, delimeter, ctx);
 
         Some(self)
     }
