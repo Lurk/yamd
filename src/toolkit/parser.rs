@@ -37,76 +37,66 @@ pub trait Branch<N> {
     fn push_node(&mut self, node: N);
     fn consume(
         &mut self,
-        input: &str,
         from: &mut Option<usize>,
+        input: &str,
         delimeter: &str,
         ctx: Option<&Context>,
     ) where
         Self: Sized,
     {
         if let (Some(from), Some(consumer)) = (&from, self.get_consumer()) {
-            let mut total_consumed = *from;
-            while total_consumed < input.len() {
-                if total_consumed == input.len() {
-                    break;
-                }
-                if !delimeter.is_empty() && input[total_consumed..].starts_with(delimeter) {
-                    total_consumed += delimeter.len();
+            let mut position = *from;
+            while position < input.len() {
+                if !delimeter.is_empty() && input[position..].starts_with(delimeter) {
+                    position += delimeter.len();
                 }
 
-                let (node, consumed) = consumer(&input[total_consumed..], 0, ctx);
+                let (node, consumed) = consumer(&input[position..], 0, ctx);
                 self.push_node(node);
-                total_consumed += consumed;
+                position += consumed;
             }
         }
         *from = None;
     }
+
     fn parse_branch(mut self, input: &str, delimeter: &str, ctx: Option<Context>) -> Option<Self>
     where
         Self: Sized,
     {
-        let mut current_position = 0;
+        let parsers = self.get_parsers();
+        let ctx = ctx.as_ref();
+        let mut position = 0;
         let mut should_consume: Option<usize> = None;
-        while current_position < input.len() {
-            let start = current_position;
-            if current_position == 0
-                || delimeter.is_empty()
-                || input[current_position..].starts_with(delimeter)
-            {
-                if current_position != 0
-                    && !delimeter.is_empty()
-                    && input[current_position..].starts_with(delimeter)
-                {
-                    current_position += delimeter.len();
+
+        while position < input.len() {
+            let start = position;
+            let starts_with_delimeter =
+                delimeter.is_empty() || input[position..].starts_with(delimeter);
+
+            if position == 0 || starts_with_delimeter {
+                if position != 0 && starts_with_delimeter {
+                    position += delimeter.len();
                 }
-                for parser in self.get_parsers() {
-                    if let Some((node, parsed)) = parser(input, current_position, ctx.as_ref()) {
-                        self.consume(
-                            &input[..start],
-                            &mut should_consume,
-                            delimeter,
-                            ctx.as_ref(),
-                        );
-                        current_position += parsed;
-                        self.push_node(node);
-                        break;
-                    }
+
+                if let Some((node, parsed)) = parsers.iter().find_map(|p| p(input, position, ctx)) {
+                    self.consume(&mut should_consume, &input[..start], delimeter, ctx);
+                    position += parsed;
+                    self.push_node(node);
                 }
             }
-            if start == current_position {
+
+            if start == position {
                 let _ = self.get_consumer()?;
-                if should_consume.is_none() {
-                    should_consume = Some(current_position);
-                }
-                current_position += &input[current_position..].chars().next().unwrap().len_utf8();
+                should_consume = should_consume.or(Some(position));
+                position += &input[position..]
+                    .chars()
+                    .next()
+                    .expect("always to have next character")
+                    .len_utf8();
             }
         }
-        self.consume(
-            &input[..current_position],
-            &mut should_consume,
-            delimeter,
-            ctx.as_ref(),
-        );
+
+        self.consume(&mut should_consume, &input[..position], delimeter, ctx);
 
         Some(self)
     }
