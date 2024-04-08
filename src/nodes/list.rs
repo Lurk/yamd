@@ -28,6 +28,19 @@ impl List {
         }
     }
 
+    fn get_text_slice_and_nested_list<'a>(&self, input: &'a str) -> (&'a str, Option<List>) {
+        if let Some((left, right)) = input.split_once('\n') {
+            let mut ctx = Context::new();
+            ctx.add("level", self.level + 1);
+            if let Some((list, consumed)) = List::parse(right, 0, Some(&ctx)) {
+                if consumed == right.len() {
+                    return (left, Some(list));
+                }
+            }
+        }
+        return (input, None);
+    }
+
     fn parse_list_items(&mut self, input: &str) -> usize {
         let mut end = 2 + self.level;
         while end < input.len() {
@@ -40,21 +53,7 @@ impl List {
                 .map_or(input.len(), |pos| pos + end);
 
             let (text_slice, nested_list) =
-                if let Some((left, right)) = input[end..new_position].split_once('\n') {
-                    let mut ctx = Context::new();
-                    ctx.add("level", self.level + 1);
-                    if let Some((list, consumed)) = List::parse(right, 0, Some(&ctx)) {
-                        if consumed == right.len() {
-                            (left, Some(list))
-                        } else {
-                            (&input[end..new_position], None)
-                        }
-                    } else {
-                        (&input[end..new_position], None)
-                    }
-                } else {
-                    (&input[end..new_position], None)
-                };
+                self.get_text_slice_and_nested_list(&input[end..new_position]);
 
             self.nodes.push(ListItem::new(
                 self.list_type.clone(),
