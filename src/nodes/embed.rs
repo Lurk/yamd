@@ -78,5 +78,6 @@ mod tests {
     #[test]
     fn failed_parse() {
         assert_eq!(Embed::parse("{{youtube}}", 0, None), None);
+        assert_eq!(Embed::parse("{{youtube|", 0, None), None);
     }
 }
