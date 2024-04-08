@@ -38,7 +38,7 @@ impl List {
                 }
             }
         }
-        return (input, None);
+        (input, None)
     }
 
     fn parse_list_items(&mut self, input: &str) -> usize {
