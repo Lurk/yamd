@@ -73,6 +73,7 @@ mod tests {
         );
         assert_eq!(Image::parse("![alt](url", 0, None), None);
         assert_eq!(Image::parse("[alt](url)", 0, None), None);
+        assert_eq!(Image::parse("![alt]", 0, None), None);
     }
 
     #[test]
