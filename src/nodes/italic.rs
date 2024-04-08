@@ -74,5 +74,6 @@ mod tests {
             Italic::parse("_ita\nlic_", 0, None),
             Some((Italic::new("ita\nlic"), 9))
         );
+        assert_eq!(Italic::parse("_italic", 0, None), None);
     }
 }
