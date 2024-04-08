@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
+use crate::toolkit::{context::Context, parser::Parse};
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct InlineCode {
@@ -21,17 +21,15 @@ impl Display for InlineCode {
     }
 }
 
-impl Node for InlineCode {
-    fn len(&self) -> usize {
-        self.text.len() + 2
-    }
-}
-
-impl Deserializer for InlineCode {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut matcher = Matcher::new(input);
-        if let Some(inline_code) = matcher.get_match("`", "`", false) {
-            return Some(InlineCode::new(inline_code.body));
+impl Parse for InlineCode {
+    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+        if input[current_position..].starts_with('`') {
+            if let Some(end) = input[current_position + 1..].find('`') {
+                return Some((
+                    InlineCode::new(&input[current_position + 1..current_position + end + 1]),
+                    end + 2,
+                ));
+            }
         }
         None
     }
@@ -39,8 +37,9 @@ impl Deserializer for InlineCode {
 
 #[cfg(test)]
 mod tests {
+    use crate::toolkit::parser::Parse;
+
     use super::InlineCode;
-    use crate::toolkit::deserializer::Deserializer;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -51,11 +50,14 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(InlineCode::deserialize("`1`"), Some(InlineCode::new('1')));
         assert_eq!(
-            InlineCode::deserialize("`const \nfoo='bar'`"),
-            Some(InlineCode::new("const \nfoo='bar'"))
+            InlineCode::parse("`1`", 0, None),
+            Some((InlineCode::new('1'), 3))
         );
-        assert_eq!(InlineCode::deserialize("`a"), None);
+        assert_eq!(
+            InlineCode::parse("`const \nfoo='bar'`", 0, None),
+            Some((InlineCode::new("const \nfoo='bar'"), 18))
+        );
+        assert_eq!(InlineCode::parse("`a", 0, None), None);
     }
 }

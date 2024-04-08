@@ -2,11 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use serde::Serialize;
 
-use crate::{
-    toolkit::context::Context,
-    toolkit::deserializer::Deserializer,
-    toolkit::{matcher::Matcher, node::Node},
-};
+use crate::toolkit::{context::Context, parser::Parse};
 
 /// Representation of an anchor
 #[derive(Debug, PartialEq, Serialize, Clone)]
@@ -30,18 +26,28 @@ impl Display for Anchor {
     }
 }
 
-impl Node for Anchor {
-    fn len(&self) -> usize {
-        self.text.len() + self.url.len() + 4
-    }
-}
-
-impl Deserializer for Anchor {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut matcher = Matcher::new(input);
-        if let Some(text) = matcher.get_match("[", "]", false) {
-            if let Some(url) = matcher.get_match("(", ")", false) {
-                return Some(Anchor::new(text.body, url.body));
+impl Parse for Anchor {
+    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+        if input[current_position..].starts_with('[') {
+            if let Some(middle) = input[current_position + 1..].find("](") {
+                let mut level = 1;
+                for (i, c) in input[current_position + middle + 3..].char_indices() {
+                    if c == '(' {
+                        level += 1;
+                    } else if c == ')' {
+                        level -= 1;
+                    }
+                    if level == 0 {
+                        return Some((
+                            Anchor::new(
+                                &input[current_position + 1..current_position + middle + 1],
+                                &input[current_position + middle + 3
+                                    ..current_position + middle + 3 + i],
+                            ),
+                            middle + 3 + i + 1,
+                        ));
+                    }
+                }
             }
         }
         None
@@ -50,8 +56,9 @@ impl Deserializer for Anchor {
 
 #[cfg(test)]
 mod tests {
+    use crate::toolkit::parser::Parse;
+
     use super::Anchor;
-    use crate::toolkit::{deserializer::Deserializer, node::Node};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -68,27 +75,30 @@ mod tests {
     }
 
     #[test]
-    fn deserialize() {
-        assert_eq!(Anchor::deserialize("[1](2)"), Some(Anchor::new("1", "2")));
-        assert_eq!(Anchor::deserialize("[1"), None);
-        assert_eq!(Anchor::deserialize("[1](2"), None);
+    fn parse() {
+        assert_eq!(
+            Anchor::parse("[1](2)", 0, None),
+            Some((Anchor::new("1", "2"), 6))
+        );
+        assert_eq!(Anchor::parse("[1", 0, None), None);
+        assert_eq!(Anchor::parse("[1](2", 0, None), None);
     }
 
     #[test]
     fn deserilalze_with_parentesis_in_url() {
         assert_eq!(
-            Anchor::deserialize(
-                "[the Rope data structure](https://en.wikipedia.org/wiki/Rope_(data_structure))"
+            Anchor::parse(
+                "[the Rope data structure](https://en.wikipedia.org/wiki/Rope_(data_structure))",
+                0,
+                None
             ),
-            Some(Anchor::new(
-                "the Rope data structure",
-                "https://en.wikipedia.org/wiki/Rope_(data_structure)"
+            Some((
+                Anchor::new(
+                    "the Rope data structure",
+                    "https://en.wikipedia.org/wiki/Rope_(data_structure)"
+                ),
+                78
             ))
         );
-    }
-
-    #[test]
-    fn len() {
-        assert_eq!(Anchor::new("a", "b").len(), 6);
     }
 }

@@ -12,7 +12,6 @@ pub mod inline_code;
 pub mod italic;
 pub mod list;
 pub mod list_item;
-pub mod list_item_content;
 pub mod metadata;
 pub mod paragraph;
 pub mod strikethrough;

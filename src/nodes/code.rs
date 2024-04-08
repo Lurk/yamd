@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
+use crate::toolkit::{context::Context, parser::Parse};
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Code {
@@ -25,18 +25,23 @@ impl Display for Code {
     }
 }
 
-impl Node for Code {
-    fn len(&self) -> usize {
-        self.lang.len() + self.code.len() + 8
-    }
-}
-
-impl Deserializer for Code {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut matcher = Matcher::new(input);
-        if let Some(lang) = matcher.get_match("```", "\n", false) {
-            if let Some(code) = matcher.get_match("", "\n```", false) {
-                return Some(Self::new(lang.body, code.body));
+impl Parse for Code {
+    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)>
+    where
+        Self: Sized,
+    {
+        if input[current_position..].starts_with("```") {
+            if let Some(lang) = input[current_position + 3..].find('\n') {
+                if let Some(end) = input[current_position + 3 + lang + 1..].find("\n```") {
+                    return Some((
+                        Code::new(
+                            &input[current_position + 3..current_position + 3 + lang],
+                            &input[current_position + 3 + lang + 1
+                                ..current_position + 3 + lang + 1 + end],
+                        ),
+                        3 + lang + 1 + end + 4,
+                    ));
+                }
             }
         }
         None
@@ -45,10 +50,7 @@ impl Deserializer for Code {
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        nodes::code::Code,
-        toolkit::{deserializer::Deserializer, node::Node},
-    };
+    use crate::{nodes::code::Code, toolkit::parser::Parse};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -60,20 +62,13 @@ mod tests {
     }
 
     #[test]
-    fn len() {
-        assert_eq!(Code::new('r', 'b').len(), 10);
-    }
-
-    #[test]
-    fn deserializer() {
+    fn parser() {
         assert_eq!(
-            Code::deserialize("```rust\nlet a=1;\n```"),
-            Some(Code::new("rust", "let a=1;"))
+            Code::parse("```rust\nlet a=1;\n```", 0, None),
+            Some((Code::new("rust", "let a=1;"), 20))
         );
-        assert_eq!(
-            Code::deserialize("```rust\nlet a=1;\n```\n\n"),
-            Some(Code::new("rust", "let a=1;"))
-        );
-        assert_eq!(Code::deserialize("```rust\nlet a=1;\n"), None);
+        assert_eq!(Code::parse("```rust\nlet a=1;\n", 0, None), None);
+        assert_eq!(Code::parse("not a code block", 0, None), None);
+        assert_eq!(Code::parse("``````", 0, None), None);
     }
 }
