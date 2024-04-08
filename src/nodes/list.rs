@@ -313,4 +313,32 @@ mod tests {
  - two"#;
         assert_eq!(List::parse(input, 0, None), Some((list, 12)));
     }
+
+    #[test]
+    fn parse_nested() {
+        let input = r#"- one
+ - two
+something"#;
+        let list = List::new(
+            ListTypes::Unordered,
+            0,
+            vec![ListItem::new(
+                ListTypes::Unordered,
+                0,
+                Paragraph::new(vec![Text::new("one").into()]).into(),
+                Some(List::new(
+                    ListTypes::Unordered,
+                    1,
+                    vec![ListItem::new(
+                        ListTypes::Unordered,
+                        1,
+                        Paragraph::new(vec![Text::new("two\nsomething").into()]),
+                        None,
+                    )],
+                )),
+            )],
+        );
+
+        assert_eq!(List::parse(input, 0, None), Some((list, input.len())));
+    }
 }
