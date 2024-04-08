@@ -69,5 +69,6 @@ mod tests {
         );
         assert_eq!(Code::parse("```rust\nlet a=1;\n", 0, None), None);
         assert_eq!(Code::parse("not a code block", 0, None), None);
+        assert_eq!(Code::parse("``````", 0, None), None);
     }
 }
