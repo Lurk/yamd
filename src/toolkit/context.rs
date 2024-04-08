@@ -2,21 +2,16 @@ use std::collections::HashMap;
 
 /// Context allows to pass arbitrary amount of key/value pairs between nodes in a type safe way
 ///
+/// TODO: used only in list.rs, should be removed
+///
 #[derive(Debug, Clone)]
 pub enum ContextValues {
     Usize(usize),
-    Char(char),
 }
 
 impl From<usize> for ContextValues {
     fn from(value: usize) -> Self {
         ContextValues::Usize(value)
-    }
-}
-
-impl From<char> for ContextValues {
-    fn from(value: char) -> Self {
-        ContextValues::Char(value)
     }
 }
 
