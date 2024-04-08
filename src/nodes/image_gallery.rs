@@ -153,5 +153,6 @@ mod tests {
             ImageGallery::parse("!!!\n![a](u)\n![a2](u2)\n", 0, None),
             None
         );
+        assert_eq!(ImageGallery::parse("!!!\nrandom\n!!!", 0, None), None);
     }
 }
