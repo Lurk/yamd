@@ -136,4 +136,22 @@ mod tests {
             ))
         );
     }
+
+    #[test]
+    fn default() {
+        assert_eq!(ImageGallery::default().to_string(), "!!!\n\n!!!");
+    }
+
+    #[test]
+    fn fail_parse() {
+        assert_eq!(ImageGallery::parse("not a gallery", 0, None), None);
+        assert_eq!(
+            ImageGallery::parse("!!!\n![a](u)\n![a2](u2)!!!", 0, None),
+            None
+        );
+        assert_eq!(
+            ImageGallery::parse("!!!\n![a](u)\n![a2](u2)\n", 0, None),
+            None
+        );
+    }
 }
