@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
+use crate::toolkit::{context::Context, parser::Parse};
 
 #[derive(Debug, PartialEq, Serialize, Clone, Default)]
 pub struct Divider {}
@@ -19,39 +19,26 @@ impl Display for Divider {
     }
 }
 
-impl Node for Divider {
-    fn len(&self) -> usize {
-        5
-    }
-}
-
-impl Deserializer for Divider {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut matcher = Matcher::new(input);
-        if matcher.get_match("-----", "\n\n", true).is_some() {
-            return Some(Divider {});
+impl Parse for Divider {
+    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)>
+    where
+        Self: Sized,
+    {
+        if input[current_position..].starts_with("-----") {
+            Some((Divider::new(), 5))
+        } else {
+            None
         }
-        None
     }
 }
-
 #[cfg(test)]
 mod tests {
-    use crate::{
-        nodes::divider::Divider,
-        toolkit::{deserializer::Deserializer, node::Node},
-    };
+    use crate::{nodes::divider::Divider, toolkit::parser::Parse};
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn deserialize() {
-        assert_eq!(Divider::deserialize("-----"), Some(Divider {}));
-        assert_eq!(Divider::deserialize("----\n\n"), None);
-    }
-
-    #[test]
-    fn len() {
-        assert_eq!(Divider::new().len(), 5);
+    fn parse() {
+        assert_eq!(Divider::parse("-----", 0, None), Some((Divider {}, 5)));
     }
 
     #[test]

@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::{context::Context, deserializer::Deserializer, matcher::Matcher, node::Node};
+use crate::toolkit::{context::Context, parser::Parse};
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Image {
@@ -25,18 +25,28 @@ impl Display for Image {
     }
 }
 
-impl Node for Image {
-    fn len(&self) -> usize {
-        self.alt.len() + self.src.len() + 5
-    }
-}
-
-impl Deserializer for Image {
-    fn deserialize_with_context(input: &str, _: Option<Context>) -> Option<Self> {
-        let mut matcher = Matcher::new(input);
-        if let Some(alt) = matcher.get_match("![", "]", false) {
-            if let Some(url) = matcher.get_match("(", ")", false) {
-                return Some(Self::new(alt.body, url.body));
+impl Parse for Image {
+    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+        if input[current_position..].starts_with("![") {
+            if let Some(middle) = input[current_position + 2..].find("](") {
+                let mut level = 1;
+                for (i, c) in input[current_position + 2 + middle + 2..].char_indices() {
+                    if c == '(' {
+                        level += 1;
+                    } else if c == ')' {
+                        level -= 1;
+                    }
+                    if level == 0 {
+                        return Some((
+                            Image::new(
+                                &input[current_position + 2..current_position + 2 + middle],
+                                &input[current_position + 2 + middle + 2
+                                    ..current_position + 2 + middle + 2 + i],
+                            ),
+                            2 + middle + 2 + i + 1,
+                        ));
+                    }
+                }
             }
         }
         None
@@ -45,8 +55,9 @@ impl Deserializer for Image {
 
 #[cfg(test)]
 mod tests {
+    use crate::toolkit::parser::Parse;
+
     use super::Image;
-    use crate::toolkit::{deserializer::Deserializer, node::Node};
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -55,17 +66,25 @@ mod tests {
     }
 
     #[test]
-    fn len() {
-        assert_eq!(Image::new('a', 'u').len(), 7);
+    fn parser() {
+        assert_eq!(
+            Image::parse("![alt](url)", 0, None),
+            Some((Image::new("alt", "url"), 11))
+        );
+        assert_eq!(Image::parse("![alt](url", 0, None), None);
+        assert_eq!(Image::parse("[alt](url)", 0, None), None);
+        assert_eq!(Image::parse("![alt]", 0, None), None);
     }
 
     #[test]
-    fn deserializer() {
+    fn nested() {
+        let input = "![hello [there]](url with (parenthesis))";
         assert_eq!(
-            Image::deserialize("![alt](url)"),
-            Some(Image::new("alt", "url"))
-        );
-        assert_eq!(Image::deserialize("![alt](url"), None);
-        assert_eq!(Image::deserialize("[alt](url)"), None);
+            Image::parse("![hello [there]](url with (parenthesis))", 0, None),
+            Some((
+                Image::new("hello [there]", "url with (parenthesis)"),
+                input.len()
+            ))
+        )
     }
 }
