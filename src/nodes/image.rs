@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::{context::Context, parser::Parse};
+use crate::toolkit::parser::Parse;
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Image {
@@ -26,7 +26,7 @@ impl Display for Image {
 }
 
 impl Parse for Image {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
         if input[current_position..].starts_with("![") {
             if let Some(middle) = input[current_position + 2..].find("](") {
                 let mut level = 1;
@@ -68,19 +68,19 @@ mod tests {
     #[test]
     fn parser() {
         assert_eq!(
-            Image::parse("![alt](url)", 0, None),
+            Image::parse("![alt](url)", 0),
             Some((Image::new("alt", "url"), 11))
         );
-        assert_eq!(Image::parse("![alt](url", 0, None), None);
-        assert_eq!(Image::parse("[alt](url)", 0, None), None);
-        assert_eq!(Image::parse("![alt]", 0, None), None);
+        assert_eq!(Image::parse("![alt](url", 0), None);
+        assert_eq!(Image::parse("[alt](url)", 0), None);
+        assert_eq!(Image::parse("![alt]", 0), None);
     }
 
     #[test]
     fn nested() {
         let input = "![hello [there]](url with (parenthesis))";
         assert_eq!(
-            Image::parse("![hello [there]](url with (parenthesis))", 0, None),
+            Image::parse("![hello [there]](url with (parenthesis))", 0),
             Some((
                 Image::new("hello [there]", "url with (parenthesis)"),
                 input.len()

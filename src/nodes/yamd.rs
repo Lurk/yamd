@@ -2,10 +2,7 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::{
-    context::Context,
-    parser::{parse_to_consumer, parse_to_parser, Branch, Consumer, Parse, Parser},
-};
+use crate::toolkit::parser::{parse_to_consumer, parse_to_parser, Branch, Consumer, Parse, Parser};
 
 use super::{
     code::Code, collapsible::Collapsible, divider::Divider, embed::Embed, heading::Heading,
@@ -160,13 +157,13 @@ impl Branch<YamdNodes> for Yamd {
 }
 
 impl Parse for Yamd {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
-        let (metadata, consumed_length) = Metadata::parse(input, current_position, None)
-            .map_or((None, 0), |(m, l)| (Some(m), l + 2));
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
+        let (metadata, consumed_length) =
+            Metadata::parse(input, current_position).map_or((None, 0), |(m, l)| (Some(m), l + 2));
 
         let yamd = Self::new(metadata, vec![]);
         let yamd = yamd
-            .parse_branch(&input[current_position + consumed_length..], "\n\n", None)
+            .parse_branch(&input[current_position + consumed_length..], "\n\n")
             .expect("yamd should never fail");
         Some((yamd, input.len() - current_position))
     }
@@ -276,7 +273,7 @@ end"#;
     #[test]
     fn parse() {
         assert_eq!(
-            Yamd::parse(TEST_CASE, 0, None),
+            Yamd::parse(TEST_CASE, 0),
             Some((
                 Yamd::new(
                     Some(Metadata {
@@ -439,7 +436,7 @@ end"#;
                 Paragraph::new(vec![Text::new("3").into()]).into(),
             ],
         );
-        let actual = Yamd::parse(input, 0, None).unwrap();
+        let actual = Yamd::parse(input, 0).unwrap();
         assert_eq!(expected, actual.0);
     }
 
@@ -455,7 +452,7 @@ end"#;
                 Heading::new(1, vec![Text::new("header").into()]).into(),
             ],
         );
-        let actual = Yamd::parse(input, 0, None).unwrap();
+        let actual = Yamd::parse(input, 0).unwrap();
         assert_eq!(expected, actual.0);
     }
 
@@ -466,7 +463,7 @@ end"#;
             None,
             vec![Paragraph::new(vec![Text::new("text - text").into()]).into()],
         );
-        let actual = Yamd::parse(input, 0, None).unwrap();
+        let actual = Yamd::parse(input, 0).unwrap();
         assert_eq!(expected, actual.0);
     }
 
@@ -480,7 +477,7 @@ end"#;
                 Paragraph::new(vec![]).into(),
             ],
         );
-        let actual = Yamd::parse(input, 0, None).unwrap();
+        let actual = Yamd::parse(input, 0).unwrap();
         assert_eq!(expected, actual.0);
     }
 }

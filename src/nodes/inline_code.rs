@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::{context::Context, parser::Parse};
+use crate::toolkit::parser::Parse;
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct InlineCode {
@@ -22,7 +22,7 @@ impl Display for InlineCode {
 }
 
 impl Parse for InlineCode {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
         if input[current_position..].starts_with('`') {
             if let Some(end) = input[current_position + 1..].find('`') {
                 return Some((
@@ -50,14 +50,11 @@ mod tests {
 
     #[test]
     fn from_string() {
+        assert_eq!(InlineCode::parse("`1`", 0), Some((InlineCode::new('1'), 3)));
         assert_eq!(
-            InlineCode::parse("`1`", 0, None),
-            Some((InlineCode::new('1'), 3))
-        );
-        assert_eq!(
-            InlineCode::parse("`const \nfoo='bar'`", 0, None),
+            InlineCode::parse("`const \nfoo='bar'`", 0),
             Some((InlineCode::new("const \nfoo='bar'"), 18))
         );
-        assert_eq!(InlineCode::parse("`a", 0, None), None);
+        assert_eq!(InlineCode::parse("`a", 0), None);
     }
 }

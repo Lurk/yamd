@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::{context::Context, parser::Parse};
+use crate::toolkit::parser::Parse;
 
 use super::paragraph::Paragraph;
 
@@ -52,7 +52,7 @@ impl Display for Highlight {
 }
 
 impl Parse for Highlight {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)>
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)>
     where
         Self: Sized,
     {
@@ -79,7 +79,7 @@ impl Parse for Highlight {
                 input[start..current_position + 4 + end]
                     .split("\n\n")
                     .for_each(|node| {
-                        let (node, _) = Paragraph::parse(node, 0, None)
+                        let (node, _) = Paragraph::parse(node, 0)
                             .expect("Paragraph should never fail to parse");
                         nodes.push(node);
                     });
@@ -132,7 +132,7 @@ mod tests {
     #[test]
     fn parse() {
         assert_eq!(
-            Highlight::parse(">>>\n>> h\n> i\nt\n\nt\n>>>", 0, None),
+            Highlight::parse(">>>\n>> h\n> i\nt\n\nt\n>>>", 0),
             Some((
                 Highlight::new(
                     Some("h"),
@@ -162,7 +162,7 @@ test
 
 test2
 >>>";
-        let highlight = Highlight::parse(input, 0, None).unwrap();
+        let highlight = Highlight::parse(input, 0).unwrap();
         assert_eq!(
             highlight,
             (

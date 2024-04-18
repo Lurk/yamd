@@ -209,7 +209,7 @@ mod toolkit;
 /// let yamd = deserialize(input).unwrap();
 /// ```
 pub fn deserialize(input: &str) -> Option<Yamd> {
-    Yamd::parse(input, 0, None).map(|(yamd, _)| yamd)
+    Yamd::parse(input, 0).map(|(yamd, _)| yamd)
 }
 
 /// Serialize a Yamd struct into a string

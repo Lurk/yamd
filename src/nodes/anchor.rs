@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use serde::Serialize;
 
-use crate::toolkit::{context::Context, parser::Parse};
+use crate::toolkit::parser::Parse;
 
 /// Representation of an anchor
 #[derive(Debug, PartialEq, Serialize, Clone)]
@@ -27,7 +27,7 @@ impl Display for Anchor {
 }
 
 impl Parse for Anchor {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
         if input[current_position..].starts_with('[') {
             if let Some(middle) = input[current_position + 1..].find("](") {
                 let mut level = 1;
@@ -76,12 +76,9 @@ mod tests {
 
     #[test]
     fn parse() {
-        assert_eq!(
-            Anchor::parse("[1](2)", 0, None),
-            Some((Anchor::new("1", "2"), 6))
-        );
-        assert_eq!(Anchor::parse("[1", 0, None), None);
-        assert_eq!(Anchor::parse("[1](2", 0, None), None);
+        assert_eq!(Anchor::parse("[1](2)", 0), Some((Anchor::new("1", "2"), 6)));
+        assert_eq!(Anchor::parse("[1", 0), None);
+        assert_eq!(Anchor::parse("[1](2", 0), None);
     }
 
     #[test]
@@ -89,8 +86,7 @@ mod tests {
         assert_eq!(
             Anchor::parse(
                 "[the Rope data structure](https://en.wikipedia.org/wiki/Rope_(data_structure))",
-                0,
-                None
+                0
             ),
             Some((
                 Anchor::new(

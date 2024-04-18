@@ -1,4 +1,4 @@
-use crate::toolkit::{context::Context, parser::Parse};
+use crate::toolkit::parser::Parse;
 use serde::Serialize;
 use std::fmt::{Display, Formatter};
 
@@ -15,7 +15,7 @@ impl Strikethrough {
 }
 
 impl Parse for Strikethrough {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
         if input[current_position..].starts_with("~~") {
             if let Some(end) = input[current_position + 2..].find("~~") {
                 return Some((
@@ -55,16 +55,16 @@ mod tests {
     #[test]
     fn parse() {
         assert_eq!(
-            Strikethrough::parse("~~2+2=5~~", 0, None),
+            Strikethrough::parse("~~2+2=5~~", 0),
             Some((Strikethrough::new("2+2=5"), 9))
         );
         assert_eq!(
-            Strikethrough::parse("~~is~~not", 0, None),
+            Strikethrough::parse("~~is~~not", 0),
             Some((Strikethrough::new("is"), 6))
         );
-        assert_eq!(Strikethrough::parse("~~not", 0, None), None);
+        assert_eq!(Strikethrough::parse("~~not", 0), None);
         assert_eq!(
-            Strikethrough::parse("~~i\ns~~", 0, None),
+            Strikethrough::parse("~~i\ns~~", 0),
             Some((Strikethrough::new("i\ns"), 7))
         );
     }

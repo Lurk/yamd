@@ -2,10 +2,7 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::{
-    context::Context,
-    parser::{parse_to_consumer, parse_to_parser, Branch, Consumer, Parse, Parser},
-};
+use crate::toolkit::parser::{parse_to_consumer, parse_to_parser, Branch, Consumer, Parse, Parser};
 
 use super::{
     code::Code, divider::Divider, embed::Embed, heading::Heading, image::Image,
@@ -151,7 +148,7 @@ impl Branch<CollapsibleNodes> for Collapsible {
 }
 
 impl Parse for Collapsible {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
         if input[current_position..].starts_with("{% ") {
             let start = current_position + 3;
             if let Some(end_of_title) = input[start..].find('\n') {
@@ -172,7 +169,6 @@ impl Parse for Collapsible {
                                     &input[start + end_of_title + 1
                                         ..start + end_of_title + 1 + index],
                                     "\n\n",
-                                    None,
                                 )
                                 .expect("collapsible branch should always succeed"),
                             3 + end_of_title + 1 + index + 3,
@@ -210,7 +206,7 @@ mod tests {
     #[test]
     fn test_collapsible_parse() {
         assert_eq!(
-            Collapsible::parse("{% Title\n# Heading\n%}", 0, None),
+            Collapsible::parse("{% Title\n# Heading\n%}", 0),
             Some((
                 Collapsible::new(
                     "Title",
@@ -235,11 +231,8 @@ mod tests {
 
     #[test]
     fn fail_to_parse_collapsible() {
-        assert_eq!(
-            Collapsible::parse("I am not an accordion tab", 0, None),
-            None
-        );
-        assert_eq!(Collapsible::parse("{% \n%}", 0, None), None);
+        assert_eq!(Collapsible::parse("I am not an accordion tab", 0), None);
+        assert_eq!(Collapsible::parse("{% \n%}", 0), None);
     }
 
     #[test]
@@ -322,14 +315,14 @@ t**b**
             ],
         );
         assert_eq!(tab.to_string(), input);
-        assert_eq!(Collapsible::parse(input, 0, None), Some((tab, input.len())));
+        assert_eq!(Collapsible::parse(input, 0), Some((tab, input.len())));
     }
 
     #[test]
     fn parse_empty() {
         let input = "{% Title\n\n%}";
         assert_eq!(
-            Collapsible::parse(input, 0, None),
+            Collapsible::parse(input, 0),
             Some((Collapsible::new("Title", vec![]), input.len()))
         );
     }

@@ -2,10 +2,7 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::{
-    context::Context,
-    parser::{parse_to_consumer, parse_to_parser, Branch, Consumer, Parse, Parser},
-};
+use crate::toolkit::parser::{parse_to_consumer, parse_to_parser, Branch, Consumer, Parse, Parser};
 
 use super::{anchor::Anchor, text::Text};
 
@@ -72,7 +69,7 @@ impl Branch<HeadingNodes> for Heading {
 }
 
 impl Parse for Heading {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
         let start_tokens = ["# ", "## ", "### ", "#### ", "##### ", "###### "];
 
         for start_token in start_tokens.iter() {
@@ -88,7 +85,6 @@ impl Parse for Heading {
                             &input[current_position + start_token.len()
                                 ..current_position + start_token.len() + end],
                             "",
-                            None,
                         )
                         .expect("heading should always succeed"),
                     start_token.len() + end,
@@ -152,22 +148,22 @@ mod tests {
     #[test]
     fn from_string() {
         assert_eq!(
-            Heading::parse("## Header", 0, None),
+            Heading::parse("## Header", 0),
             Some((Heading::new(2, vec![Text::new("Header").into()]), 9))
         );
         assert_eq!(
-            Heading::parse("### Head", 0, None),
+            Heading::parse("### Head", 0),
             Some((Heading::new(3, vec![Text::new("Head").into()]), 8))
         );
-        assert_eq!(Heading::parse("not a header", 0, None), None);
-        assert_eq!(Heading::parse("######", 0, None), None);
-        assert_eq!(Heading::parse("######also not a header", 0, None), None);
+        assert_eq!(Heading::parse("not a header", 0), None);
+        assert_eq!(Heading::parse("######", 0), None);
+        assert_eq!(Heading::parse("######also not a header", 0), None);
     }
 
     #[test]
     fn with_anchor() {
         let str = "## hey [a](b)";
-        let h = Heading::parse(str, 0, None);
+        let h = Heading::parse(str, 0);
         assert_eq!(
             h,
             Some((
