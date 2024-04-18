@@ -2,10 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use serde::Serialize;
 
-use crate::toolkit::{
-    context::Context,
-    parser::{parse_to_parser, Branch, Consumer, Parse, Parser},
-};
+use crate::toolkit::parser::{parse_to_parser, Branch, Consumer, Parse, Parser};
 
 use super::image::Image;
 
@@ -77,7 +74,7 @@ impl Branch<ImageGalleryNodes> for ImageGallery {
 }
 
 impl Parse for ImageGallery {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)>
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)>
     where
         Self: Sized,
     {
@@ -87,7 +84,6 @@ impl Parse for ImageGallery {
                 if let Some(node) = gallery.parse_branch(
                     &input[current_position + 4..current_position + 4 + end],
                     "\n",
-                    None,
                 ) {
                     return Some((node, 4 + end + 4));
                 }
@@ -126,7 +122,7 @@ mod tests {
     #[test]
     fn parse() {
         assert_eq!(
-            ImageGallery::parse("!!!\n![a](u)\n![a2](u2)\n!!!", 0, None),
+            ImageGallery::parse("!!!\n![a](u)\n![a2](u2)\n!!!", 0),
             Some((
                 ImageGallery::new(vec![
                     Image::new("a", "u").into(),
@@ -144,15 +140,9 @@ mod tests {
 
     #[test]
     fn fail_parse() {
-        assert_eq!(ImageGallery::parse("not a gallery", 0, None), None);
-        assert_eq!(
-            ImageGallery::parse("!!!\n![a](u)\n![a2](u2)!!!", 0, None),
-            None
-        );
-        assert_eq!(
-            ImageGallery::parse("!!!\n![a](u)\n![a2](u2)\n", 0, None),
-            None
-        );
-        assert_eq!(ImageGallery::parse("!!!\nrandom\n!!!", 0, None), None);
+        assert_eq!(ImageGallery::parse("not a gallery", 0), None);
+        assert_eq!(ImageGallery::parse("!!!\n![a](u)\n![a2](u2)!!!", 0), None);
+        assert_eq!(ImageGallery::parse("!!!\n![a](u)\n![a2](u2)\n", 0), None);
+        assert_eq!(ImageGallery::parse("!!!\nrandom\n!!!", 0), None);
     }
 }

@@ -1,4 +1,4 @@
-use crate::toolkit::{context::Context, parser::Parse};
+use crate::toolkit::parser::Parse;
 use serde::Serialize;
 use std::fmt::Display;
 
@@ -14,7 +14,7 @@ impl Text {
 }
 
 impl Parse for Text {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
         Some((
             Text::new(&input[current_position..]),
             input.len() - current_position,
@@ -49,6 +49,6 @@ mod tests {
 
     #[test]
     fn from_string() {
-        assert_eq!(Text::parse("t", 0, None), Some((Text::new("t"), 1)));
+        assert_eq!(Text::parse("t", 0), Some((Text::new("t"), 1)));
     }
 }

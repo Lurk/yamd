@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::{context::Context, parser::Parse};
+use crate::toolkit::parser::Parse;
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Code {
@@ -26,7 +26,7 @@ impl Display for Code {
 }
 
 impl Parse for Code {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)>
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)>
     where
         Self: Sized,
     {
@@ -64,11 +64,11 @@ mod tests {
     #[test]
     fn parser() {
         assert_eq!(
-            Code::parse("```rust\nlet a=1;\n```", 0, None),
+            Code::parse("```rust\nlet a=1;\n```", 0),
             Some((Code::new("rust", "let a=1;"), 20))
         );
-        assert_eq!(Code::parse("```rust\nlet a=1;\n", 0, None), None);
-        assert_eq!(Code::parse("not a code block", 0, None), None);
-        assert_eq!(Code::parse("``````", 0, None), None);
+        assert_eq!(Code::parse("```rust\nlet a=1;\n", 0), None);
+        assert_eq!(Code::parse("not a code block", 0), None);
+        assert_eq!(Code::parse("``````", 0), None);
     }
 }

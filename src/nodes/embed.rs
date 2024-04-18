@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::{context::Context, parser::Parse};
+use crate::toolkit::parser::Parse;
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Embed {
@@ -26,7 +26,7 @@ impl Display for Embed {
 }
 
 impl Parse for Embed {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)>
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)>
     where
         Self: Sized,
     {
@@ -63,11 +63,7 @@ mod tests {
     #[test]
     fn parse() {
         assert_eq!(
-            Embed::parse(
-                "{{youtube|https://www.youtube.com/embed/wsfdjlkjsdf}}",
-                0,
-                None
-            ),
+            Embed::parse("{{youtube|https://www.youtube.com/embed/wsfdjlkjsdf}}", 0),
             Some((
                 Embed::new("youtube", "https://www.youtube.com/embed/wsfdjlkjsdf",),
                 53
@@ -77,7 +73,7 @@ mod tests {
 
     #[test]
     fn failed_parse() {
-        assert_eq!(Embed::parse("{{youtube}}", 0, None), None);
-        assert_eq!(Embed::parse("{{youtube|", 0, None), None);
+        assert_eq!(Embed::parse("{{youtube}}", 0), None);
+        assert_eq!(Embed::parse("{{youtube|", 0), None);
     }
 }

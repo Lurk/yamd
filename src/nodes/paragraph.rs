@@ -7,10 +7,7 @@ use crate::{
         anchor::Anchor, bold::Bold, inline_code::InlineCode, italic::Italic,
         strikethrough::Strikethrough, text::Text,
     },
-    toolkit::{
-        context::Context,
-        parser::{parse_to_consumer, parse_to_parser, Branch, Consumer, Parse, Parser},
-    },
+    toolkit::parser::{parse_to_consumer, parse_to_parser, Branch, Consumer, Parse, Parser},
 };
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
@@ -125,14 +122,14 @@ impl Branch<ParagraphNodes> for Paragraph {
 }
 
 impl Parse for Paragraph {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
         let end = input[current_position..]
             .find("\n\n")
             .unwrap_or(input.len());
         let paragraph = Paragraph::default();
         Some((
             paragraph
-                .parse_branch(&input[current_position..end], "", None)
+                .parse_branch(&input[current_position..end], "")
                 .expect("paragraph should always succed"),
             end,
         ))
@@ -183,11 +180,7 @@ mod tests {
     #[test]
     fn parse() {
         assert_eq!(
-            Paragraph::parse(
-                "simple text **bold text**`let foo='bar';`[t](u)_I_~~S~~",
-                0,
-                None
-            ),
+            Paragraph::parse("simple text **bold text**`let foo='bar';`[t](u)_I_~~S~~", 0),
             Some((
                 Paragraph::new(vec![
                     Text::new("simple text ").into(),

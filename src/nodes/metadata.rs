@@ -3,7 +3,7 @@ use std::fmt::Display;
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 
-use crate::toolkit::{context::Context, parser::Parse};
+use crate::toolkit::parser::Parse;
 
 #[derive(Debug, PartialEq, Serialize, Default, Clone, Deserialize)]
 pub struct Metadata {
@@ -41,7 +41,7 @@ impl Metadata {
 }
 
 impl Parse for Metadata {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
         if input[current_position..].starts_with("---\n") {
             let start = current_position + 4;
             if let Some(end) = input[start..].find("\n---") {
@@ -99,13 +99,13 @@ mod tests {
             is_draft: Some(true),
         };
         let str = "---\ntitle: title\ndate: 2022-12-30T20:33:55+01:00\nimage: image\npreview: preview\ntags:\n- tag1\n- tag2\nis_draft: true\n---";
-        assert_eq!(Metadata::parse(str, 0, None), Some((metadata, str.len())));
+        assert_eq!(Metadata::parse(str, 0), Some((metadata, str.len())));
     }
 
     #[test]
     fn parse_empty() {
         assert_eq!(
-            Metadata::parse("---\n\n---", 0, None),
+            Metadata::parse("---\n\n---", 0),
             Some((
                 Metadata {
                     title: None,
@@ -122,14 +122,14 @@ mod tests {
 
     #[test]
     fn parse_fail() {
-        assert_eq!(Metadata::parse("random string", 0, None), None);
-        assert_eq!(Metadata::parse("---\nrandom string---", 0, None), None);
+        assert_eq!(Metadata::parse("random string", 0), None);
+        assert_eq!(Metadata::parse("---\nrandom string---", 0), None);
     }
 
     #[test]
     fn parse_only_with_title() {
         assert_eq!(
-            Metadata::parse("---\ntitle: header\n---", 0, None),
+            Metadata::parse("---\ntitle: header\n---", 0),
             Some((
                 Metadata {
                     title: Some("header".to_string()),
@@ -156,7 +156,7 @@ mod tests {
     #[test]
     fn deserialize_with_quotes() {
         let input = "---\ntitle: \"header\"\n---";
-        let m = Metadata::parse(input, 0, None);
+        let m = Metadata::parse(input, 0);
         assert_eq!(input.len(), m.unwrap().1);
     }
 }

@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use serde::Serialize;
 
-use crate::toolkit::{context::Context, parser::Parse};
+use crate::toolkit::parser::Parse;
 
 /// Representation of an Italic text
 #[derive(Debug, PartialEq, Serialize, Clone)]
@@ -17,7 +17,7 @@ impl Italic {
 }
 
 impl Parse for Italic {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
         if input[current_position..].starts_with('_') {
             if let Some(end) = input[current_position + 1..].find('_') {
                 return Some((
@@ -57,23 +57,23 @@ mod tests {
     #[test]
     fn from_string() {
         assert_eq!(
-            Italic::parse("_italic_", 0, None),
+            Italic::parse("_italic_", 0),
             Some((Italic::new("italic"), 8))
         );
         assert_eq!(
-            Italic::parse("_italic_not", 0, None),
+            Italic::parse("_italic_not", 0),
             Some((Italic::new("italic"), 8))
         );
         assert_eq!(
-            Italic::parse("_it alic_not", 0, None),
+            Italic::parse("_it alic_not", 0),
             Some((Italic::new("it alic"), 9))
         );
-        assert_eq!(Italic::parse("not italic_not", 0, None), None);
-        assert_eq!(Italic::parse("*italic not", 0, None), None);
+        assert_eq!(Italic::parse("not italic_not", 0), None);
+        assert_eq!(Italic::parse("*italic not", 0), None);
         assert_eq!(
-            Italic::parse("_ita\nlic_", 0, None),
+            Italic::parse("_ita\nlic_", 0),
             Some((Italic::new("ita\nlic"), 9))
         );
-        assert_eq!(Italic::parse("_italic", 0, None), None);
+        assert_eq!(Italic::parse("_italic", 0), None);
     }
 }

@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::{context::Context, parser::Parse};
+use crate::toolkit::parser::Parse;
 
 #[derive(Debug, PartialEq, Serialize, Clone, Default)]
 pub struct Divider {}
@@ -20,7 +20,7 @@ impl Display for Divider {
 }
 
 impl Parse for Divider {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)>
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)>
     where
         Self: Sized,
     {
@@ -38,7 +38,7 @@ mod tests {
 
     #[test]
     fn parse() {
-        assert_eq!(Divider::parse("-----", 0, None), Some((Divider {}, 5)));
+        assert_eq!(Divider::parse("-----", 0), Some((Divider {}, 5)));
     }
 
     #[test]

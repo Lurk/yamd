@@ -2,7 +2,7 @@ use std::{fmt::Display, usize};
 
 use serde::Serialize;
 
-use crate::toolkit::{context::Context, parser::Parse};
+use crate::toolkit::parser::Parse;
 
 use super::{list_item::ListItem, paragraph::Paragraph};
 
@@ -30,9 +30,7 @@ impl List {
 
     fn get_text_slice_and_nested_list<'a>(&self, input: &'a str) -> (&'a str, Option<List>) {
         if let Some((left, right)) = input.split_once('\n') {
-            let mut ctx = Context::new();
-            ctx.add("level", self.level + 1);
-            if let Some((list, consumed)) = List::parse(right, 0, Some(&ctx)) {
+            if let Some((list, consumed)) = List::parse_with_level(right, 0, self.level + 1) {
                 if consumed == right.len() {
                     return (left, Some(list));
                 }
@@ -58,7 +56,7 @@ impl List {
             self.nodes.push(ListItem::new(
                 self.list_type.clone(),
                 self.level,
-                Paragraph::parse(text_slice, 0, None)
+                Paragraph::parse(text_slice, 0)
                     .map(|(paragraph, _)| paragraph)
                     .expect("paragraph should always succeed"),
                 nested_list,
@@ -72,15 +70,12 @@ impl List {
         }
         end
     }
-}
 
-impl Parse for List {
-    fn parse(input: &str, current_position: usize, ctx: Option<&Context>) -> Option<(Self, usize)> {
-        let level = match ctx {
-            Some(ctx) => ctx.get_usize_value("level").unwrap_or(0),
-            None => 0,
-        };
-
+    fn parse_with_level(
+        input: &str,
+        current_position: usize,
+        level: usize,
+    ) -> Option<(Self, usize)> {
         if input[current_position..].starts_with(format!("{}- ", " ".repeat(level)).as_str()) {
             let end = input[current_position..]
                 .find("\n\n")
@@ -97,6 +92,12 @@ impl Parse for List {
         }
 
         None
+    }
+}
+
+impl Parse for List {
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
+        List::parse_with_level(input, current_position, 0)
     }
 }
 
@@ -119,7 +120,7 @@ mod tests {
     use super::{List, ListTypes};
     use crate::{
         nodes::{list_item::ListItem, paragraph::Paragraph, text::Text},
-        toolkit::{context::Context, parser::Parse},
+        toolkit::parser::Parse,
     };
     use pretty_assertions::assert_eq;
 
@@ -197,15 +198,13 @@ mod tests {
 
     #[test]
     fn parse_wrong_level() {
-        let mut ctx = Context::new();
-        ctx.add("level", 1);
-        assert_eq!(List::parse("- level 0\n- level 0", 0, Some(&ctx)), None);
+        assert_eq!(List::parse_with_level("- level 0\n- level 0", 0, 1), None);
     }
 
     #[test]
     fn parse_unordered() {
         assert_eq!(
-            List::parse("- level 0\n- level 0", 0, None),
+            List::parse("- level 0\n- level 0", 0),
             Some((
                 List::new(
                     ListTypes::Unordered,
@@ -233,7 +232,7 @@ mod tests {
     #[test]
     fn parse_ordered() {
         assert_eq!(
-            List::parse("+ level 0\n+ level 0", 0, None),
+            List::parse("+ level 0\n+ level 0", 0),
             Some((
                 List::new(
                     ListTypes::Ordered,
@@ -281,10 +280,7 @@ mod tests {
             .into()],
         );
 
-        assert_eq!(
-            List::parse("+ level 0\n - level 0", 0, None),
-            Some((list, 20))
-        );
+        assert_eq!(List::parse("+ level 0\n - level 0", 0), Some((list, 20)));
     }
 
     #[test]
@@ -311,7 +307,7 @@ mod tests {
 
         let input = r#"- one
  - two"#;
-        assert_eq!(List::parse(input, 0, None), Some((list, 12)));
+        assert_eq!(List::parse(input, 0), Some((list, 12)));
     }
 
     #[test]
@@ -339,6 +335,6 @@ something"#;
             )],
         );
 
-        assert_eq!(List::parse(input, 0, None), Some((list, input.len())));
+        assert_eq!(List::parse(input, 0), Some((list, input.len())));
     }
 }

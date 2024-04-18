@@ -4,10 +4,7 @@ use serde::Serialize;
 
 use crate::{
     nodes::{italic::Italic, strikethrough::Strikethrough, text::Text},
-    toolkit::{
-        context::Context,
-        parser::{parse_to_consumer, parse_to_parser, Branch, Consumer, Parse, Parser},
-    },
+    toolkit::parser::{parse_to_consumer, parse_to_parser, Branch, Consumer, Parse, Parser},
 };
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
@@ -59,17 +56,13 @@ impl Branch<BoldNodes> for Bold {
 }
 
 impl Parse for Bold {
-    fn parse(input: &str, current_position: usize, _: Option<&Context>) -> Option<(Self, usize)> {
+    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
         if input[current_position..].starts_with("**") {
             if let Some(end) = input[current_position + 2..].find("**") {
                 let b = Bold::new(vec![]);
                 return Some((
-                    b.parse_branch(
-                        &input[current_position + 2..current_position + 2 + end],
-                        "",
-                        None,
-                    )
-                    .expect("bold should always succed"),
+                    b.parse_branch(&input[current_position + 2..current_position + 2 + end], "")
+                        .expect("bold should always succed"),
                     end + 4,
                 ));
             }
@@ -138,12 +131,12 @@ mod tests {
     #[test]
     fn from_string() {
         assert_eq!(
-            Bold::parse("**b**", 0, None),
+            Bold::parse("**b**", 0),
             Some((Bold::new(vec![Text::new("b").into()]), 5))
         );
 
         assert_eq!(
-            Bold::parse("**b ~~st~~ _i t_**", 0, None),
+            Bold::parse("**b ~~st~~ _i t_**", 0),
             Some((
                 Bold::new(vec![
                     Text::new("b ").into(),
