@@ -76,21 +76,23 @@ impl List {
         current_position: usize,
         level: usize,
     ) -> Option<(Self, usize)> {
+        let mut list_type: Option<ListTypes> = None;
         if input[current_position..].starts_with(format!("{}- ", " ".repeat(level)).as_str()) {
-            let end = input[current_position..]
-                .find("\n\n")
-                .map_or(input.len(), |pos| pos + current_position);
-            let mut list = List::new(ListTypes::Unordered, level, vec![]);
-            let end = list.parse_list_items(&input[current_position..end]);
-            return Some((list, end));
+            list_type = Some(ListTypes::Unordered);
         }
 
         if input[current_position..].starts_with(format!("{}+ ", " ".repeat(level)).as_str()) {
-            let mut list = List::new(ListTypes::Ordered, level, vec![]);
-            let end = list.parse_list_items(input);
-            return Some((list, end));
+            list_type = Some(ListTypes::Ordered);
         }
 
+        if let Some(list_type) = list_type {
+            let end = input[current_position..]
+                .find("\n\n")
+                .map_or(input.len(), |pos| pos + current_position);
+            let mut list = List::new(list_type, level, vec![]);
+            let end = list.parse_list_items(&input[current_position..end]);
+            return Some((list, end));
+        }
         None
     }
 }
@@ -336,5 +338,29 @@ something"#;
         );
 
         assert_eq!(List::parse(input, 0), Some((list, input.len())));
+    }
+
+    #[test]
+    fn ordered_suranded_by_text() {
+        let input = "some text\n\n+ one\n+ two\n\nsome text";
+        let list = List::new(
+            ListTypes::Ordered,
+            0,
+            vec![
+                ListItem::new(
+                    ListTypes::Ordered,
+                    0,
+                    Paragraph::new(vec![Text::new("one").into()]),
+                    None,
+                ),
+                ListItem::new(
+                    ListTypes::Ordered,
+                    0,
+                    Paragraph::new(vec![Text::new("two").into()]),
+                    None,
+                ),
+            ],
+        );
+        assert_eq!(List::parse(input, 11).unwrap(), (list, 11));
     }
 }
