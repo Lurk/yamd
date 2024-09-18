@@ -2,26 +2,24 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-use crate::toolkit::parser::{parse_to_consumer, parse_to_parser, Branch, Consumer, Parse, Parser};
-
-use super::{anchor::Anchor, text::Text};
+use super::Anchor;
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
 #[serde(tag = "type")]
 pub enum HeadingNodes {
-    Text(Text),
-    A(Anchor),
+    Text(String),
+    Anchor(Anchor),
 }
 
-impl From<Text> for HeadingNodes {
-    fn from(text: Text) -> Self {
+impl From<String> for HeadingNodes {
+    fn from(text: String) -> Self {
         Self::Text(text)
     }
 }
 
 impl From<Anchor> for HeadingNodes {
     fn from(anchor: Anchor) -> Self {
-        Self::A(anchor)
+        Self::Anchor(anchor)
     }
 }
 
@@ -29,70 +27,44 @@ impl Display for HeadingNodes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Text(text) => write!(f, "{}", text),
-            Self::A(anchor) => write!(f, "{}", anchor),
+            Self::Anchor(anchor) => write!(f, "{}", anchor),
         }
     }
 }
 
+/// # Heading
+///
+/// Starts with [Hash](type@crate::lexer::TokenKind::Hash) of length < 7, followed by
+/// [Space](type@crate::lexer::TokenKind::Space).
+///
+/// [Level](Heading::level) is determined by the amount of [Hash](type@crate::lexer::TokenKind::Hash)'es
+/// before [Space](type@crate::lexer::TokenKind::Space).
+///
+/// [Body](Heading::body) can contain one or more:
+///
+/// - [Anchor]
+/// - [String]
+///
+/// Example:
+///
+/// ```text
+/// ### Header can contain an [anchor](#) or regular text.
+/// ```
+///
+/// HTML equivalent:
+///
+/// ```html
+/// <h3>Header can contain an <a href="#">anchor</a> or regular text.</h3>
+/// ```
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Heading {
     pub level: u8,
-    pub nodes: Vec<HeadingNodes>,
+    pub body: Vec<HeadingNodes>,
 }
 
 impl Heading {
     pub fn new(level: u8, nodes: Vec<HeadingNodes>) -> Self {
-        let normalized_level = match level {
-            0 => 1,
-            7.. => 6,
-            l => l,
-        };
-        Heading {
-            nodes,
-            level: normalized_level,
-        }
-    }
-}
-
-impl Branch<HeadingNodes> for Heading {
-    fn push_node(&mut self, node: HeadingNodes) {
-        self.nodes.push(node);
-    }
-
-    fn get_parsers(&self) -> Vec<Parser<HeadingNodes>> {
-        vec![parse_to_parser::<HeadingNodes, Anchor>()]
-    }
-
-    fn get_consumer(&self) -> Option<Consumer<HeadingNodes>> {
-        Some(parse_to_consumer::<HeadingNodes, Text>())
-    }
-}
-
-impl Parse for Heading {
-    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
-        let start_tokens = ["# ", "## ", "### ", "#### ", "##### ", "###### "];
-
-        for start_token in start_tokens.iter() {
-            if input[current_position..].starts_with(start_token) {
-                let end = input[current_position + start_token.len()..]
-                    .find("\n\n")
-                    .unwrap_or(input[current_position + start_token.len()..].len());
-                let heading = Heading::new((start_token.len() - 1).try_into().unwrap_or(1), vec![]);
-
-                return Some((
-                    heading
-                        .parse_branch(
-                            &input[current_position + start_token.len()
-                                ..current_position + start_token.len() + end],
-                            "",
-                        )
-                        .expect("heading should always succeed"),
-                    start_token.len() + end,
-                ));
-            }
-        }
-
-        None
+        Self { level, body: nodes }
     }
 }
 
@@ -103,77 +75,7 @@ impl Display for Heading {
             f,
             "{} {}",
             level,
-            self.nodes.iter().map(|n| n.to_string()).collect::<String>()
+            self.body.iter().map(|n| n.to_string()).collect::<String>()
         )
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Heading;
-    use crate::{
-        nodes::{anchor::Anchor, text::Text},
-        toolkit::parser::Parse,
-    };
-    use pretty_assertions::assert_eq;
-
-    #[test]
-    fn level_one() {
-        assert_eq!(
-            Heading::new(1, vec![Text::new("Header").into()]).to_string(),
-            "# Header"
-        );
-    }
-
-    #[test]
-    fn level_gt_six() {
-        let h = Heading::new(7, vec![Text::new("Header").into()]).to_string();
-        assert_eq!(h, "###### Header");
-        let h = Heading::new(34, vec![Text::new("Header").into()]).to_string();
-        assert_eq!(h, "###### Header");
-    }
-
-    #[test]
-    fn level_eq_zero() {
-        let h = Heading::new(0, vec![Text::new("Header").into()]).to_string();
-        assert_eq!(h, "# Header");
-    }
-
-    #[test]
-    fn level_eq_four() {
-        let h = Heading::new(4, vec![Text::new("Header").into()]).to_string();
-        assert_eq!(h, "#### Header");
-    }
-
-    #[test]
-    fn from_string() {
-        assert_eq!(
-            Heading::parse("## Header", 0),
-            Some((Heading::new(2, vec![Text::new("Header").into()]), 9))
-        );
-        assert_eq!(
-            Heading::parse("### Head", 0),
-            Some((Heading::new(3, vec![Text::new("Head").into()]), 8))
-        );
-        assert_eq!(Heading::parse("not a header", 0), None);
-        assert_eq!(Heading::parse("######", 0), None);
-        assert_eq!(Heading::parse("######also not a header", 0), None);
-    }
-
-    #[test]
-    fn with_anchor() {
-        let str = "## hey [a](b)";
-        let h = Heading::parse(str, 0);
-        assert_eq!(
-            h,
-            Some((
-                Heading::new(
-                    2,
-                    vec![Text::new("hey ").into(), Anchor::new("a", "b").into()]
-                ),
-                13
-            ))
-        );
-        assert_eq!(h.map(|(node, _)| node.to_string()).unwrap(), str);
     }
 }

@@ -1,71 +1,36 @@
-use crate::toolkit::parser::Parse;
 use serde::Serialize;
 use std::fmt::{Display, Formatter};
 
-/// Representation of strike through
+/// # Strikethrough
+///
+/// Any token except [Terminator](type@crate::lexer::TokenKind::Terminator) surrounded by
+/// [Tilde](type@crate::lexer::TokenKind::Tilde) of length 2.
+///
+/// Example:
+///
+/// ```text
+/// ~~Strikethrough can contain any token
+/// even EOL~~
+/// ```
+///
+/// HTML equivalent:
+///
+/// ```html
+/// <s>Strikethrough can contain any token
+/// even EOL</s>
+/// ```
+
 #[derive(Debug, PartialEq, Serialize, Clone)]
-pub struct Strikethrough {
-    pub text: String,
-}
+pub struct Strikethrough(pub String);
 
 impl Strikethrough {
-    pub fn new<IS: Into<String>>(text: IS) -> Self {
-        Strikethrough { text: text.into() }
-    }
-}
-
-impl Parse for Strikethrough {
-    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
-        if input[current_position..].starts_with("~~") {
-            if let Some(end) = input[current_position + 2..].find("~~") {
-                return Some((
-                    Strikethrough::new(&input[current_position + 2..current_position + 2 + end]),
-                    end + 4,
-                ));
-            }
-        }
-        None
+    pub fn new<Body: Into<String>>(body: Body) -> Self {
+        Strikethrough(body.into())
     }
 }
 
 impl Display for Strikethrough {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "~~{}~~", self.text)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Strikethrough;
-    use crate::toolkit::parser::Parse;
-    use pretty_assertions::assert_eq;
-
-    #[test]
-    fn happy_path() {
-        let s = Strikethrough::new("2+2=5");
-        assert_eq!(s.text, "2+2=5".to_string());
-    }
-
-    #[test]
-    fn to_string() {
-        let s: String = Strikethrough::new("2+2=5").to_string();
-        assert_eq!(s, "~~2+2=5~~".to_string());
-    }
-
-    #[test]
-    fn parse() {
-        assert_eq!(
-            Strikethrough::parse("~~2+2=5~~", 0),
-            Some((Strikethrough::new("2+2=5"), 9))
-        );
-        assert_eq!(
-            Strikethrough::parse("~~is~~not", 0),
-            Some((Strikethrough::new("is"), 6))
-        );
-        assert_eq!(Strikethrough::parse("~~not", 0), None);
-        assert_eq!(
-            Strikethrough::parse("~~i\ns~~", 0),
-            Some((Strikethrough::new("i\ns"), 7))
-        );
+        write!(f, "~~{}~~", self.0)
     }
 }
