@@ -3,8 +3,7 @@ use std::fmt::Display;
 use serde::Serialize;
 
 use super::{
-    Code, Collapsible, Embed, Heading, Highlight, Image, Images, List, Metadata, Paragraph,
-    ThematicBreak,
+    Code, Collapsible, Embed, Heading, Highlight, Image, Images, List, Paragraph, ThematicBreak,
 };
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
@@ -101,7 +100,23 @@ impl Display for YamdNodes {
 
 /// # Yamd
 ///
-/// [Metadata](Yamd::metadata) is optional Frontmatter. Check [Metadata] for more info.
+/// [Metadata](Yamd::metadata) is optional Frontmatter.
+///
+/// Can be only in the beginning of the document surrounded by [Minus](type@crate::lexer::TokenKind::Minus)
+/// of length 3 followed by [EOL](type@crate::lexer::TokenKind::Eol) and [EOL](type@crate::lexer::TokenKind::Eol)
+/// followed by [Minus](type@crate::lexer::TokenKind::Minus) of length 3. Can contain any string that is
+/// parsable by the consumer.
+///
+/// For example toml:
+///
+/// ```text
+/// ---
+/// title: "Yamd"
+/// tags:
+/// - software
+/// - rust
+/// ---
+/// ```
 ///
 /// [Body](Yamd::body) can contain one or more:
 ///
@@ -232,12 +247,12 @@ impl Display for YamdNodes {
 
 #[derive(Debug, PartialEq, Serialize, Clone, Default)]
 pub struct Yamd {
-    pub metadata: Option<Metadata>,
+    pub metadata: Option<String>,
     pub body: Vec<YamdNodes>,
 }
 
 impl Yamd {
-    pub fn new(metadata: Option<Metadata>, body: Vec<YamdNodes>) -> Self {
+    pub fn new(metadata: Option<String>, body: Vec<YamdNodes>) -> Self {
         Self { metadata, body }
     }
 }

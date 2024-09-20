@@ -4,16 +4,16 @@ use serde::Serialize;
 
 use super::YamdNodes;
 
-#[derive(Debug, PartialEq, Serialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 pub struct Collapsible {
     pub title: String,
-    pub nodes: Vec<YamdNodes>,
+    pub body: Vec<YamdNodes>,
 }
 
 impl Collapsible {
-    pub fn new<S: Into<String>>(title: S, nodes: Vec<YamdNodes>) -> Self {
+    pub fn new<S: Into<String>>(title: S, body: Vec<YamdNodes>) -> Self {
         Self {
-            nodes,
+            body,
             title: title.into(),
         }
     }
@@ -26,7 +26,7 @@ impl Display for Collapsible {
             "{{% {title}\n{nodes}\n%}}",
             title = self.title,
             nodes = self
-                .nodes
+                .body
                 .iter()
                 .map(|node| node.to_string())
                 .collect::<Vec<String>>()
