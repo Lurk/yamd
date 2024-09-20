@@ -158,7 +158,7 @@ mod tests {
     pub fn stop_cb() {
         let mut p = Parser::new("_i_ ~~s~~ **b[a](u) \n%} `c` ");
         assert_eq!(
-            paragraph(&mut p, |t| t.kind == TokenKind::ColapsibleEnd),
+            paragraph(&mut p, |t| t.kind == TokenKind::CollapsibleEnd),
             Some(Paragraph::new(vec![
                 Italic::new("i").into(),
                 String::from(" ").into(),
@@ -174,14 +174,14 @@ mod tests {
     pub fn stop_cb_empty() {
         let mut p = Parser::new("\n%} `c` ");
         assert_eq!(
-            paragraph(&mut p, |t| t.kind == TokenKind::ColapsibleEnd),
+            paragraph(&mut p, |t| t.kind == TokenKind::CollapsibleEnd),
             None
         );
         assert_eq!(
             p.peek(),
             Some((
                 &Token::new(
-                    TokenKind::ColapsibleEnd,
+                    TokenKind::CollapsibleEnd,
                     "%}",
                     Position {
                         byte_index: 1,

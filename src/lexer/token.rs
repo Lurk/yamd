@@ -11,9 +11,9 @@ pub enum TokenKind {
     /// One or more `}`
     RightCurlyBrace,
     /// Exactly one `{%` combination
-    ColapsibleStart,
+    CollapsibleStart,
     /// Exactly one `%}` combination
-    ColapsibleEnd,
+    CollapsibleEnd,
     /// One or more `~`
     Tilde,
     /// One or more `*`

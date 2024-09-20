@@ -4,7 +4,7 @@ use crate::{
 };
 
 use super::{
-    code, colapsible, embed, heading, highlight, images, list, metadata, paragraph, Parser,
+    code, collapsible, embed, heading, highlight, images, list, metadata, paragraph, Parser,
 };
 
 pub(crate) fn yamd<Callback>(p: &mut Parser, f: Callback) -> Yamd
@@ -64,8 +64,8 @@ where
                     yamd.body.push(c.into())
                 }
             }
-            TokenKind::ColapsibleStart => {
-                if let Some(n) = colapsible(p) {
+            TokenKind::CollapsibleStart => {
+                if let Some(n) = collapsible(p) {
                     yamd.body.push(n.into());
                 }
             }

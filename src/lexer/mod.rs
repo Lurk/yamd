@@ -122,10 +122,10 @@ impl<'input> Lexer<'input> {
             '\n' => self.eol(position, 1),
             '\r' if self.next_is('\n') => self.eol(position, 2),
             '{' if self.next_is('%') => {
-                self.emit(self.to_token(TokenKind::ColapsibleStart, position, 2))
+                self.emit(self.to_token(TokenKind::CollapsibleStart, position, 2))
             }
             '%' if self.next_is('}') => {
-                self.emit(self.to_token(TokenKind::ColapsibleEnd, position, 2))
+                self.emit(self.to_token(TokenKind::CollapsibleEnd, position, 2))
             }
             '\\' => {
                 self.emit_literal_if_started(position.byte_index);
@@ -461,7 +461,7 @@ mod tests {
         assert_eq!(
             Lexer::new("{%").collect::<Vec<_>>(),
             vec![Token::new(
-                TokenKind::ColapsibleStart,
+                TokenKind::CollapsibleStart,
                 "{%",
                 Position::default()
             )]
@@ -473,7 +473,7 @@ mod tests {
         assert_eq!(
             Lexer::new("{%").collect::<Vec<_>>(),
             vec![Token::new(
-                TokenKind::ColapsibleStart,
+                TokenKind::CollapsibleStart,
                 "{%",
                 Position::default()
             )]
