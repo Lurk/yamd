@@ -45,15 +45,15 @@ where
                     yamd.body.push(h.into());
                 }
             }
-            TokenKind::Plus if t.slice.len() == 2 => {
+            TokenKind::Bang if t.slice.len() == 2 => {
                 if let Some(h) = highlight(p) {
                     yamd.body.push(h.into());
                 }
             }
             TokenKind::Bang if t.slice.len() == 1 => {
                 if let Some(mut i) = images(p, &f) {
-                    if i.nodes.len() == 1 {
-                        yamd.body.push(i.nodes.swap_remove(0).into());
+                    if i.body.len() == 1 {
+                        yamd.body.push(i.body.swap_remove(0).into());
                     } else {
                         yamd.body.push(i.into());
                     }
@@ -88,7 +88,7 @@ mod tests {
     use crate::{
         nodes::{
             Bold, Code, Collapsible, Embed, Heading, Highlight, Image, Images, Italic, List,
-            ListItem, ListTypes, Metadata, Paragraph, Strikethrough, ThematicBreak, Yamd,
+            ListItem, ListTypes, Paragraph, Strikethrough, ThematicBreak, Yamd,
         },
         parser::{yamd, Parser},
     };
@@ -116,12 +116,12 @@ t**b**
 ![a](u)
 ![a2](u2)
 
-++ H
-+ I
+!! H
+! I
 ~~s~~
 
 _I_
-++
+!!
 
 -----
 
@@ -148,7 +148,7 @@ end"#;
         assert_eq!(
             yamd(&mut p, |_| false),
             Yamd::new(
-                Some(Metadata::new(
+                Some(String::from(
                     "title: test\ndate: 2022-01-01T00:00:00+02:00\nimage: image\npreview: preview\ntags:\n- tag1\n- tag2"
                 )),
                     vec![

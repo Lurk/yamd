@@ -40,7 +40,7 @@ pub(crate) fn highlight(p: &mut Parser) -> Option<Highlight> {
                     break;
                 }
             }
-            TokenKind::Plus if t.slice.len() == 1 && state == State::Icon && icon.is_none() => {
+            TokenKind::Bang if t.slice.len() == 1 && state == State::Icon && icon.is_none() => {
                 state = State::IconCommit;
                 p.next_token();
             }
@@ -56,7 +56,7 @@ pub(crate) fn highlight(p: &mut Parser) -> Option<Highlight> {
                 state = State::Icon;
                 p.next_token();
             }
-            TokenKind::Plus if t.slice.len() == 2 => {
+            TokenKind::Bang if t.slice.len() == 2 => {
                 p.next_token();
                 return Some(Highlight::new(
                     title.map(|r| p.range_to_string(r)),
@@ -66,7 +66,7 @@ pub(crate) fn highlight(p: &mut Parser) -> Option<Highlight> {
             }
             _ if state == State::Body || state == State::Icon => {
                 state = State::Body;
-                if let Some(n) = paragraph(p, |t| t.kind == TokenKind::Plus && t.slice.len() == 2) {
+                if let Some(n) = paragraph(p, |t| t.kind == TokenKind::Bang && t.slice.len() == 2) {
                     nodes.push(n);
                 }
             }
@@ -92,7 +92,7 @@ mod tests {
 
     #[test]
     fn happy_path() {
-        let mut p = Parser::new("++ Title\n+ Icon\n_i_ **b**\n\nt~~s~~t\n++");
+        let mut p = Parser::new("!! Title\n! Icon\n_i_ **b**\n\nt~~s~~t\n!!");
         assert_eq!(
             highlight(&mut p),
             Some(Highlight::new(
@@ -116,7 +116,7 @@ mod tests {
 
     #[test]
     fn no_title() {
-        let mut p = Parser::new("++\n+ Icon\n_i_ **b**\n\nt~~s~~t\n++");
+        let mut p = Parser::new("!!\n! Icon\n_i_ **b**\n\nt~~s~~t\n!!");
         assert_eq!(
             highlight(&mut p),
             Some(Highlight::new(
@@ -140,7 +140,7 @@ mod tests {
 
     #[test]
     fn no_icon() {
-        let mut p = Parser::new("++ Title\n_i_ **b**\n\nt~~s~~t\n++");
+        let mut p = Parser::new("!! Title\n_i_ **b**\n\nt~~s~~t\n!!");
         assert_eq!(
             highlight(&mut p),
             Some(Highlight::new(
@@ -164,12 +164,12 @@ mod tests {
 
     #[test]
     fn no_closing_token() {
-        let mut p = Parser::new("++ Title\n_i_ **b**\n\nt~~s~~t++");
+        let mut p = Parser::new("!! Title\n_i_ **b**\n\nt~~s~~t!!");
         assert_eq!(highlight(&mut p), None);
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "++", Position::default()),
+                &Token::new(TokenKind::Literal, "!!", Position::default()),
                 0
             ))
         );
@@ -177,12 +177,12 @@ mod tests {
 
     #[test]
     fn no_space_between_start_and_title() {
-        let mut p = Parser::new("++Title\n_i_ **b**\n\nt~~s~~t\n++");
+        let mut p = Parser::new("!!Title\n_i_ **b**\n\nt~~s~~t\n!!");
         assert_eq!(highlight(&mut p), None);
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "++", Position::default()),
+                &Token::new(TokenKind::Literal, "!!", Position::default()),
                 0
             ))
         );
@@ -190,12 +190,12 @@ mod tests {
 
     #[test]
     fn terminator_in_title() {
-        let mut p = Parser::new("++ Title\n\n_i_ **b**\n\nt~~s~~t\n++");
+        let mut p = Parser::new("!! Title\n\n_i_ **b**\n\nt~~s~~t\n!!");
         assert_eq!(highlight(&mut p), None);
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "++", Position::default()),
+                &Token::new(TokenKind::Literal, "!!", Position::default()),
                 0
             ))
         );
@@ -203,12 +203,12 @@ mod tests {
 
     #[test]
     fn terminator_in_icon() {
-        let mut p = Parser::new("++\n+ icon\n\n_i_ **b**\n\nt~~s~~t\n++");
+        let mut p = Parser::new("!!\n! icon\n\n_i_ **b**\n\nt~~s~~t\n!!");
         assert_eq!(highlight(&mut p), None);
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "++", Position::default()),
+                &Token::new(TokenKind::Literal, "!!", Position::default()),
                 0
             ))
         );
@@ -216,12 +216,12 @@ mod tests {
 
     #[test]
     fn no_space_before_icon() {
-        let mut p = Parser::new("++ Title\n+Icon\n++");
+        let mut p = Parser::new("!! Title\n!Icon\n!!");
         assert_eq!(highlight(&mut p), None);
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "++", Position::default()),
+                &Token::new(TokenKind::Literal, "!!", Position::default()),
                 0
             ))
         );

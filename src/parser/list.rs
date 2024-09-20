@@ -120,7 +120,7 @@ fn parse_list(p: &mut Parser<'_>, list_type: &ListTypes, level: usize) -> Option
                 state = State::Idle;
                 if let Some(nested_list) = parse_list(p, &ListTypes::Unordered, level + 1) {
                     list_item.nested_list.replace(nested_list);
-                    list.nodes.push(list_item);
+                    list.body.push(list_item);
                     list_item = ListItem::new(list_type.clone(), level, vec![], None);
                 } else {
                     p.next_token();
@@ -130,7 +130,7 @@ fn parse_list(p: &mut Parser<'_>, list_type: &ListTypes, level: usize) -> Option
                 state = State::Idle;
                 if let Some(nested_list) = parse_list(p, &ListTypes::Ordered, level + 1) {
                     list_item.nested_list.replace(nested_list);
-                    list.nodes.push(list_item);
+                    list.body.push(list_item);
                     list_item = ListItem::new(list_type.clone(), level, vec![], None);
                 } else {
                     p.next_token();
@@ -138,7 +138,7 @@ fn parse_list(p: &mut Parser<'_>, list_type: &ListTypes, level: usize) -> Option
             }
             TokenKind::Space if state == State::SameLevelCommit => {
                 state = State::Idle;
-                list.nodes.push(list_item);
+                list.body.push(list_item);
                 list_item = ListItem::new(list_type.clone(), level, vec![], None);
                 p.next_token();
             }
@@ -161,10 +161,10 @@ fn parse_list(p: &mut Parser<'_>, list_type: &ListTypes, level: usize) -> Option
     }
 
     if !list_item.text.is_empty() {
-        list.nodes.push(list_item);
+        list.body.push(list_item);
     }
 
-    if list.nodes.is_empty() {
+    if list.body.is_empty() {
         p.move_to(start_pos);
         p.flip_to_literal_at(start_pos);
         return None;

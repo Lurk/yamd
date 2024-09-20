@@ -6,15 +6,15 @@ use super::Paragraph;
 
 /// # Highlight
 ///
-/// Must start and end with [GreaterThan](type@crate::lexer::TokenKind::Plus) of length 2.
+/// Must start and end with [Bang](type@crate::lexer::TokenKind::Bang) of length 2.
 ///
 /// [Title](Highlight::title) is sequence of tokens between first
-/// [GreaterThan](type@crate::lexer::TokenKind::Plus) of length 2 followed by
+/// [Bang](type@crate::lexer::TokenKind::Bang) of length 2 followed by
 /// [Space](type@crate::lexer::TokenKind::Space) and [Eol](type@crate::lexer::TokenKind::Eol).
 /// Can be omitted.
 ///
 /// [Icon](Highlight::icon) is sequence of tokens between
-/// [GreaterThan](type@crate::lexer::TokenKind::Plus) of length 1 followed by
+/// [Bang](type@crate::lexer::TokenKind::Bang) of length 1 followed by
 /// [Space](type@crate::lexer::TokenKind::Space) and [Eol](type@crate::lexer::TokenKind::Eol).
 /// Can be omitted.
 ///
@@ -26,30 +26,30 @@ use super::Paragraph;
 /// Example:
 ///
 /// ```text
-/// >> Tile
-/// > Icon
+/// !! Tile
+/// ! Icon
 /// body
-/// >>
+/// !!
 /// ```
 ///
 /// Example without title:
 ///
 /// ```text
-/// >>
-/// > Icon
+/// !!
+/// ! Icon
 /// body
-/// >>
+/// !!
 /// ```
 ///
 /// Example without icon:
 ///
 /// ```text
-/// >> Tile
+/// !! Tile
 /// body
-/// >>
+/// !!
 /// ```
 ///
-#[derive(Debug, PartialEq, Serialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 pub struct Highlight {
     pub title: Option<String>,
     pub icon: Option<String>,

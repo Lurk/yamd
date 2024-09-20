@@ -1,8 +1,8 @@
-use crate::{lexer::TokenKind, nodes::Metadata};
+use crate::lexer::TokenKind;
 
 use super::Parser;
 
-pub(crate) fn metadata(p: &mut Parser) -> Option<Metadata> {
+pub(crate) fn metadata(p: &mut Parser) -> Option<String> {
     let start = p.pos();
 
     p.next_token();
@@ -13,7 +13,7 @@ pub(crate) fn metadata(p: &mut Parser) -> Option<Metadata> {
                 match t.kind {
                     TokenKind::Minus if t.slice.len() == 3 && t.position.column == 0 => {
                         p.next_token();
-                        return Some(Metadata::new(p.range_to_string(start + 2..pos - 1)));
+                        return Some(p.range_to_string(start + 2..pos - 1));
                     }
                     _ => {
                         p.next_token();
@@ -35,7 +35,6 @@ mod tests {
 
     use crate::{
         lexer::{Position, Token, TokenKind},
-        nodes::Metadata,
         parser::{metadata, Parser},
     };
 
@@ -44,7 +43,7 @@ mod tests {
         let mut p = Parser::new("---\ncan contain any\n\ntoken\n\n---");
         assert_eq!(
             metadata(&mut p),
-            Some(Metadata::new("can contain any\n\ntoken"))
+            Some(String::from("can contain any\n\ntoken"))
         );
     }
 
