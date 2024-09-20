@@ -91,7 +91,6 @@ impl<'input> Lexer<'input> {
     fn next_char(&mut self, escaped: bool) -> Option<(Position, char)> {
         if let Some((byte_offset, char)) = self.iter.next() {
             self.position.byte_index = byte_offset;
-            println!("char: {}\n {:?}", char, self.position);
             let res = Some((self.position.clone(), char));
             if char != '\\' || escaped {
                 self.position.column += 1;
