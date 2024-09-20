@@ -28,9 +28,25 @@ pub enum ListTypes {
 ///  + Ordered list item
 /// ```
 ///
+/// HTML equivalent:
+///
+/// ```html
+/// <ul><li>Unordered list item<ol><li>Ordered list item</li></ol></li></ul>
+/// ```
+///
+/// ----
+///
 /// ```text
 /// - Unordered list item
 /// + Even though this looks like ordered list item, it will be part of Unordered list item
+/// ```
+///
+/// HTML equivalent:
+///
+/// ```html
+/// <ul><li>Unordered list item
+/// + Even though this looks like ordered list item, it will be part of Unordered list item</li></ul>
+///
 /// ```
 ///
 /// ## Level
@@ -52,11 +68,58 @@ pub enum ListTypes {
 /// - Level 0
 /// ```
 ///
-/// ```text
-/// + level 0
-///   + this will be part of level 0 (notice two spaces before `-`)
+/// HTML equivalent:
+///
+/// ```html
+/// <ul>
+///     <li>
+///         Level 0
+///         <ul>
+///             <li>
+///                 Level 1
+///                 <ul>
+///                     <li>
+///                         Level 2
+///                     </li>
+///                 </ul>
+///             </li>
+///             <li>
+///                 Level 1
+///             </li>
+///         </ul>
+///     </li>
+///     <li>
+///         Level 0
+///         <ul>
+///             <li>
+///                 Level 1
+///                 <ul>
+///                     <li>
+///                         Level 2
+///                     </li>
+///                 </ul>
+///             </li>
+///         </ul>
+///     </li>
+///     <li>
+///         Level 0
+///     </li>
+/// </ul>
 /// ```
 ///
+/// -----
+///
+/// ```text
+/// + level 0
+///   + this will be part of level 0 (notice two spaces before `+`)
+/// ```
+///
+/// HTML equivalent:
+///
+/// ```html
+/// <ol><li>level 0
+///   + this will be part of level 0 (notice two spaces before `+`)</li></ol>
+/// ```
 ///
 #[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 pub struct List {
