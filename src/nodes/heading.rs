@@ -5,7 +5,7 @@ use serde::Serialize;
 use super::Anchor;
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
-#[serde(tag = "type")]
+#[serde(tag = "type", content = "value")]
 pub enum HeadingNodes {
     Text(String),
     Anchor(Anchor),

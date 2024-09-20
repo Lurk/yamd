@@ -5,7 +5,7 @@ use serde::Serialize;
 use super::{Anchor, Bold, CodeSpan, Italic, Strikethrough};
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
-#[serde(tag = "type")]
+#[serde(tag = "type", content = "value")]
 pub enum ParagraphNodes {
     Anchor(Anchor),
     Bold(Bold),

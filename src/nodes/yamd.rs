@@ -7,7 +7,7 @@ use super::{
 };
 
 #[derive(Debug, PartialEq, Serialize, Clone)]
-#[serde(tag = "type")]
+#[serde(tag = "type", content = "value")]
 pub enum YamdNodes {
     Pargargaph(Paragraph),
     Heading(Heading),
