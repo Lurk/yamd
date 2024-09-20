@@ -62,22 +62,22 @@ pub enum ListTypes {
 pub struct List {
     pub list_type: ListTypes,
     pub level: usize,
-    pub nodes: Vec<ListItem>,
+    pub body: Vec<ListItem>,
 }
 
 impl List {
-    pub fn new(list_type: ListTypes, level: usize, nodes: Vec<ListItem>) -> Self {
+    pub fn new(list_type: ListTypes, level: usize, body: Vec<ListItem>) -> Self {
         Self {
             list_type,
             level,
-            nodes,
+            body,
         }
     }
 }
 
 impl Display for List {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        for n in self.nodes.iter() {
+        for n in self.body.iter() {
             f.write_str(n.to_string().as_str())?;
         }
         Ok(())

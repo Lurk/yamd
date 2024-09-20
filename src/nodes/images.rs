@@ -7,12 +7,12 @@ use super::Image;
 /// Image Gallery node is a node that contains multiple Image nodes
 #[derive(Debug, PartialEq, Serialize, Clone)]
 pub struct Images {
-    pub nodes: Vec<Image>,
+    pub body: Vec<Image>,
 }
 
 impl Images {
-    pub fn new(nodes: Vec<Image>) -> Self {
-        Self { nodes }
+    pub fn new(body: Vec<Image>) -> Self {
+        Self { body }
     }
 }
 
@@ -24,7 +24,7 @@ impl Default for Images {
 
 impl Display for Images {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        for n in self.nodes.iter() {
+        for n in self.body.iter() {
             f.write_str(n.to_string().as_str())?;
         }
         Ok(())
