@@ -5,7 +5,7 @@ use serde::Serialize;
 use super::Image;
 
 /// Image Gallery node is a node that contains multiple Image nodes
-#[derive(Debug, PartialEq, Serialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 pub struct Images {
     pub body: Vec<Image>,
 }

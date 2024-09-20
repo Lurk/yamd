@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use super::ListItem;
 
-#[derive(Debug, PartialEq, Clone, Serialize)]
+#[derive(Debug, PartialEq, Clone, Serialize, Eq)]
 pub enum ListTypes {
     /// List item starts with `-` ([Minus](type@crate::lexer::TokenKind::Minus) of length 1) followed by space
     /// [Space](type@crate::lexer::TokenKind::Space). Must be rendered as bullet marked list.
@@ -58,7 +58,7 @@ pub enum ListTypes {
 /// ```
 ///
 ///
-#[derive(Debug, PartialEq, Serialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 pub struct List {
     pub list_type: ListTypes,
     pub level: usize,

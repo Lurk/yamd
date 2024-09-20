@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use super::{List, ListTypes, ParagraphNodes};
 
-#[derive(Debug, PartialEq, Serialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 pub struct ListItem {
     pub list_type: ListTypes,
     pub level: usize,

@@ -20,7 +20,7 @@ use std::fmt::{Display, Formatter};
 /// even EOL</s>
 /// ```
 
-#[derive(Debug, PartialEq, Serialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 pub struct Strikethrough(pub String);
 
 impl Strikethrough {

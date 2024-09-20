@@ -6,7 +6,7 @@ use super::{
     Code, Collapsible, Embed, Heading, Highlight, Image, Images, List, Paragraph, ThematicBreak,
 };
 
-#[derive(Debug, PartialEq, Serialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 #[serde(tag = "type", content = "value")]
 pub enum YamdNodes {
     Pargargaph(Paragraph),
@@ -245,7 +245,7 @@ impl Display for YamdNodes {
 /// ```
 ///
 
-#[derive(Debug, PartialEq, Serialize, Clone, Default)]
+#[derive(Debug, PartialEq, Serialize, Clone, Default, Eq)]
 pub struct Yamd {
     pub metadata: Option<String>,
     pub body: Vec<YamdNodes>,

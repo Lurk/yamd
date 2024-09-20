@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use super::{Italic, Strikethrough};
 
-#[derive(Debug, PartialEq, Serialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 #[serde(tag = "type", content = "value")]
 pub enum BoldNodes {
     Italic(Italic),
@@ -60,7 +60,7 @@ impl From<String> for BoldNodes {
 ///     , or regular text
 /// </b>
 /// ```
-#[derive(Debug, PartialEq, Serialize, Clone, Default)]
+#[derive(Debug, PartialEq, Serialize, Clone, Default, Eq)]
 pub struct Bold {
     pub body: Vec<BoldNodes>,
 }

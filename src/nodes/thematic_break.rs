@@ -10,7 +10,7 @@ use serde::Serialize;
 /// ```text
 /// -----
 /// ```
-#[derive(Debug, PartialEq, Serialize, Clone, Default)]
+#[derive(Debug, PartialEq, Serialize, Clone, Default, Eq)]
 pub struct ThematicBreak {}
 
 impl ThematicBreak {

@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use super::Anchor;
 
-#[derive(Debug, PartialEq, Serialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 #[serde(tag = "type", content = "value")]
 pub enum HeadingNodes {
     Text(String),
@@ -56,7 +56,7 @@ impl Display for HeadingNodes {
 /// ```html
 /// <h3>Header can contain an <a href="#">anchor</a> or regular text.</h3>
 /// ```
-#[derive(Debug, PartialEq, Serialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 pub struct Heading {
     pub level: u8,
     pub body: Vec<HeadingNodes>,

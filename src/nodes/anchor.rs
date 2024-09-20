@@ -31,7 +31,7 @@ use serde::Serialize;
 /// | `[link]`                              | `<p>[link]</p>`                               |
 /// | `[link](url with unclosed paren`      | `<p>[link](url with unclosed paren</p>`       |
 ///
-#[derive(Debug, PartialEq, Serialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 pub struct Anchor {
     pub text: String,
     pub url: String,

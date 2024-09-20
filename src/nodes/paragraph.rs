@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use super::{Anchor, Bold, CodeSpan, Italic, Strikethrough};
 
-#[derive(Debug, PartialEq, Serialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 #[serde(tag = "type", content = "value")]
 pub enum ParagraphNodes {
     Anchor(Anchor),
@@ -102,7 +102,7 @@ impl Display for ParagraphNodes {
 /// </p>
 /// ```
 ///
-#[derive(Debug, PartialEq, Serialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 pub struct Paragraph {
     pub body: Vec<ParagraphNodes>,
 }

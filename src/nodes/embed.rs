@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-#[derive(Debug, PartialEq, Serialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 pub struct Embed {
     pub args: String,
     pub kind: String,

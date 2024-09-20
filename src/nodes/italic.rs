@@ -20,7 +20,7 @@ use serde::Serialize;
 /// <i>Italic can contain any token
 /// even EOL</i>
 /// ```
-#[derive(Debug, PartialEq, Serialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 pub struct Italic(pub String);
 
 impl Italic {

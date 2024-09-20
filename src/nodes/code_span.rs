@@ -20,7 +20,7 @@ use serde::Serialize;
 /// <code>anything even EOL
 /// can be it</code>
 /// ```
-#[derive(Debug, PartialEq, Serialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 pub struct CodeSpan(pub String);
 
 impl CodeSpan {

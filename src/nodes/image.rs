@@ -2,7 +2,6 @@ use std::fmt::Display;
 
 use serde::Serialize;
 
-#[derive(Debug, PartialEq, Serialize, Clone)]
 /// # Image
 ///
 /// Starts with [Bang](type@crate::lexer::TokenKind::Bang) of length 1, and has two required parts.
@@ -33,6 +32,7 @@ use serde::Serialize;
 /// | `![alt](src with unclosed paren`      | `<p>![alt](src with unclosed paren</p>`       |
 ///
 
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 pub struct Image {
     pub alt: String,
     pub src: String,
