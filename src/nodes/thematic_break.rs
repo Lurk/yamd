@@ -10,6 +10,12 @@ use serde::Serialize;
 /// ```text
 /// -----
 /// ```
+///
+/// HTML equivalent:
+///
+/// ```html
+/// <hr />
+/// ```
 #[derive(Debug, PartialEq, Serialize, Clone, Default, Eq)]
 pub struct ThematicBreak {}
 
