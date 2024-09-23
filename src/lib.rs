@@ -54,6 +54,9 @@
 //! List of supported [nodes](crate::nodes) and their formatting. The best starting point is
 //! [YAMD](crate::nodes::Yamd).
 //!
+//! # MSRV
+//!
+//! YAMD minimal supported Rust version is 1.80.0 due to [Option::take_if] usage
 //!
 pub mod lexer;
 pub mod nodes;
