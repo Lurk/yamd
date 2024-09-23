@@ -5,42 +5,11 @@ use crate::{
 
 use super::{paragraph, Parser};
 
-pub(crate) fn list(p: &mut Parser) -> Option<List> {
-    let mut state: State = State::Idle;
-    let start = p.pos();
-    while let Some((t, _)) = p.peek() {
-        match t.kind {
-            TokenKind::Minus => {
-                state = State::NextLevelUnordered;
-                p.next_token();
-            }
-            TokenKind::Plus => {
-                state = State::NextLevelOrdered;
-                p.next_token();
-            }
-            TokenKind::Space if state == State::NextLevelUnordered => {
-                let Some(l) = parse_list(p, &ListTypes::Unordered, 0) else {
-                    break;
-                };
-                return Some(l);
-            }
-            TokenKind::Space if state == State::NextLevelOrdered => {
-                let Some(l) = parse_list(p, &ListTypes::Ordered, 0) else {
-                    break;
-                };
-                return Some(l);
-            }
-            _ => {
-                break;
-            }
-        }
-    }
-    p.move_to(start);
-    p.flip_to_literal_at(start);
-    None
+pub(crate) fn list(p: &mut Parser, list_type: &ListTypes) -> Option<List> {
+    parse_list(p, list_type, 0)
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 enum State {
     NextLevel,
     NextLevelOrdered,
@@ -55,23 +24,23 @@ enum State {
 fn parse_list(p: &mut Parser<'_>, list_type: &ListTypes, level: usize) -> Option<List> {
     let start_pos = p.pos();
     let mut list = List::new(list_type.clone(), level, vec![]);
-    let mut list_item = ListItem::new(list_type.clone(), level, vec![], None);
-    let mut state: State = State::Idle;
+    let mut list_item = ListItem::new(vec![], None);
+    let mut state: State = State::SameLevelCommit;
 
     p.next_token();
 
     while let Some((t, pos)) = p.peek() {
         match t.kind {
             TokenKind::Terminator => break,
-            TokenKind::Space if state == State::Idle && t.slice.len() < level => {
+            TokenKind::Space if t.position.column == 0 && t.slice.len() < level => {
                 state = State::PreviousLevel;
                 p.next_token();
             }
-            TokenKind::Space if state == State::Idle && t.slice.len() == level => {
+            TokenKind::Space if t.position.column == 0 && t.slice.len() == level => {
                 state = State::SameLevel;
                 p.next_token();
             }
-            TokenKind::Space if state == State::Idle && t.slice.len() == level + 1 => {
+            TokenKind::Space if t.position.column == 0 && t.slice.len() == level + 1 => {
                 state = State::NextLevel;
                 p.next_token();
             }
@@ -83,31 +52,6 @@ fn parse_list(p: &mut Parser<'_>, list_type: &ListTypes, level: usize) -> Option
                 state = State::NextLevelOrdered;
                 p.next_token();
             }
-            TokenKind::Minus
-                if t.slice.len() == 1
-                    && state == State::SameLevel
-                    && list_type == &ListTypes::Unordered =>
-            {
-                state = State::SameLevelCommit;
-                p.next_token();
-            }
-            TokenKind::Plus
-                if t.slice.len() == 1
-                    && state == State::SameLevel
-                    && list_type == &ListTypes::Ordered =>
-            {
-                state = State::SameLevelCommit;
-                p.next_token();
-            }
-            TokenKind::Minus if t.slice.len() == 1 && list_type == &ListTypes::Unordered => {
-                state = State::SameLevelCommit;
-                p.next_token();
-            }
-
-            TokenKind::Plus if t.slice.len() == 1 && list_type == &ListTypes::Ordered => {
-                state = State::SameLevelCommit;
-                p.next_token();
-            }
             TokenKind::Minus if t.slice.len() == 1 && state == State::PreviousLevel => {
                 state = State::PreviousLevelCommit;
                 p.next_token();
@@ -116,12 +60,45 @@ fn parse_list(p: &mut Parser<'_>, list_type: &ListTypes, level: usize) -> Option
                 state = State::PreviousLevelCommit;
                 p.next_token();
             }
+            TokenKind::Minus if t.slice.len() == 1 && state == State::SameLevel => {
+                state = State::SameLevelCommit;
+                p.next_token();
+            }
+            TokenKind::Plus if t.slice.len() == 1 && state == State::SameLevel => {
+                state = State::SameLevelCommit;
+                p.next_token();
+            }
+
+            TokenKind::Minus
+                if t.slice.len() == 1
+                    && t.position.column == 0
+                    && list_type == &ListTypes::Unordered =>
+            {
+                if level == 0 {
+                    state = State::SameLevelCommit;
+                } else {
+                    state = State::PreviousLevelCommit;
+                }
+                p.next_token();
+            }
+            TokenKind::Plus
+                if t.slice.len() == 1
+                    && t.position.column == 0
+                    && list_type == &ListTypes::Ordered =>
+            {
+                if level == 0 {
+                    state = State::SameLevelCommit;
+                } else {
+                    state = State::PreviousLevelCommit;
+                }
+                p.next_token();
+            }
             TokenKind::Space if state == State::NextLevelUnordered => {
                 state = State::Idle;
                 if let Some(nested_list) = parse_list(p, &ListTypes::Unordered, level + 1) {
                     list_item.nested_list.replace(nested_list);
                     list.body.push(list_item);
-                    list_item = ListItem::new(list_type.clone(), level, vec![], None);
+                    list_item = ListItem::new(vec![], None);
                 } else {
                     p.next_token();
                 }
@@ -131,20 +108,22 @@ fn parse_list(p: &mut Parser<'_>, list_type: &ListTypes, level: usize) -> Option
                 if let Some(nested_list) = parse_list(p, &ListTypes::Ordered, level + 1) {
                     list_item.nested_list.replace(nested_list);
                     list.body.push(list_item);
-                    list_item = ListItem::new(list_type.clone(), level, vec![], None);
+                    list_item = ListItem::new(vec![], None);
                 } else {
                     p.next_token();
                 }
             }
             TokenKind::Space if state == State::SameLevelCommit => {
                 state = State::Idle;
-                list.body.push(list_item);
-                list_item = ListItem::new(list_type.clone(), level, vec![], None);
+                if !list_item.text.is_empty() {
+                    list.body.push(list_item);
+                    list_item = ListItem::new(vec![], None);
+                }
                 p.next_token();
             }
             TokenKind::Space if state == State::PreviousLevelCommit => {
-                // back to EOL so Previous level can decide what to do.
-                p.move_to(pos - 3);
+                // back to new line so Previous level can decide what to do.
+                p.move_to(if level == 1 { pos - 1 } else { pos - 2 });
                 break;
             }
             _ => {
@@ -177,6 +156,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use crate::{
+        lexer::{Position, Token, TokenKind},
         nodes::{List, ListItem, ListTypes},
         parser::{list, Parser},
     };
@@ -186,23 +166,13 @@ mod tests {
         let mut p = Parser::new("- level 0\n- level 0");
 
         assert_eq!(
-            list(&mut p),
+            list(&mut p, &ListTypes::Unordered),
             Some(List::new(
                 ListTypes::Unordered,
                 0,
                 vec![
-                    ListItem::new(
-                        ListTypes::Unordered,
-                        0,
-                        vec![String::from("level 0").into()],
-                        None
-                    ),
-                    ListItem::new(
-                        ListTypes::Unordered,
-                        0,
-                        vec![String::from("level 0").into()],
-                        None
-                    )
+                    ListItem::new(vec![String::from("level 0").into()], None),
+                    ListItem::new(vec![String::from("level 0").into()], None)
                 ],
             ))
         );
@@ -213,23 +183,13 @@ mod tests {
         let mut p = Parser::new("+ level 0\n+ same level");
 
         assert_eq!(
-            list(&mut p),
+            list(&mut p, &ListTypes::Ordered),
             Some(List::new(
                 ListTypes::Ordered,
                 0,
                 vec![
-                    ListItem::new(
-                        ListTypes::Ordered,
-                        0,
-                        vec![String::from("level 0").into()],
-                        None
-                    ),
-                    ListItem::new(
-                        ListTypes::Ordered,
-                        0,
-                        vec![String::from("same level").into()],
-                        None
-                    ),
+                    ListItem::new(vec![String::from("level 0").into()], None),
+                    ListItem::new(vec![String::from("same level").into()], None),
                 ],
             ))
         );
@@ -243,24 +203,17 @@ mod tests {
             ListTypes::Ordered,
             0,
             vec![ListItem::new(
-                ListTypes::Ordered,
-                0,
                 vec![String::from("level 0").into()],
                 Some(List::new(
                     ListTypes::Unordered,
                     1,
-                    vec![ListItem::new(
-                        ListTypes::Unordered,
-                        1,
-                        vec![String::from("level 0").into()],
-                        None,
-                    )],
+                    vec![ListItem::new(vec![String::from("level 0").into()], None)],
                 )),
             )
             .into()],
         );
 
-        assert_eq!(list(&mut p), Some(list_node));
+        assert_eq!(list(&mut p, &ListTypes::Ordered), Some(list_node));
     }
 
     #[test]
@@ -273,23 +226,16 @@ mod tests {
             ListTypes::Unordered,
             0,
             vec![ListItem::new(
-                ListTypes::Unordered,
-                0,
                 vec![String::from("one").into()],
                 Some(List::new(
                     ListTypes::Unordered,
                     1,
-                    vec![ListItem::new(
-                        ListTypes::Unordered,
-                        1,
-                        vec![String::from("two").into()],
-                        None,
-                    )],
+                    vec![ListItem::new(vec![String::from("two").into()], None)],
                 )),
             )],
         );
 
-        assert_eq!(list(&mut p), Some(list_node));
+        assert_eq!(list(&mut p, &ListTypes::Unordered), Some(list_node));
     }
 
     #[test]
@@ -303,15 +249,11 @@ something"#;
             ListTypes::Unordered,
             0,
             vec![ListItem::new(
-                ListTypes::Unordered,
-                0,
                 vec![String::from("one").into()],
                 Some(List::new(
                     ListTypes::Unordered,
                     1,
                     vec![ListItem::new(
-                        ListTypes::Unordered,
-                        1,
                         vec![String::from("two\nsomething").into()],
                         None,
                     )],
@@ -319,7 +261,7 @@ something"#;
             )],
         );
 
-        assert_eq!(list(&mut p), Some(list_node));
+        assert_eq!(list(&mut p, &ListTypes::Unordered), Some(list_node));
     }
 
     #[test]
@@ -327,13 +269,11 @@ something"#;
         let mut p = Parser::new("+ level 0\n- same level");
 
         assert_eq!(
-            list(&mut p),
+            list(&mut p, &ListTypes::Ordered),
             Some(List::new(
                 ListTypes::Ordered,
                 0,
                 vec![ListItem::new(
-                    ListTypes::Ordered,
-                    0,
                     vec![
                         String::from("level 0").into(),
                         String::from("- same level").into()
@@ -349,13 +289,11 @@ something"#;
         let mut p = Parser::new("- level 0\n+ same level");
 
         assert_eq!(
-            list(&mut p),
+            list(&mut p, &ListTypes::Unordered),
             Some(List::new(
                 ListTypes::Unordered,
                 0,
                 vec![ListItem::new(
-                    ListTypes::Unordered,
-                    0,
                     vec![
                         String::from("level 0").into(),
                         String::from("+ same level").into()
@@ -363,6 +301,125 @@ something"#;
                     None
                 ),],
             ))
+        );
+    }
+
+    #[test]
+    fn multiple_levels_unordered() {
+        let mut p = Parser::new(
+            "- Level 0\n - Level 1\n  - Level 2\n - Level 1\n- Level 0\n - Level 1\n  - Level 2\n- Level 0"
+        );
+
+        assert_eq!(
+            list(&mut p, &ListTypes::Unordered),
+            Some(List::new(
+                ListTypes::Unordered,
+                0,
+                vec![
+                    ListItem::new(
+                        vec![String::from("Level 0").into(),],
+                        Some(List::new(
+                            ListTypes::Unordered,
+                            1,
+                            vec![
+                                ListItem::new(
+                                    vec![String::from("Level 1").into()],
+                                    Some(List::new(
+                                        ListTypes::Unordered,
+                                        2,
+                                        vec![ListItem::new(
+                                            vec![String::from("Level 2").into()],
+                                            None
+                                        )]
+                                    ))
+                                ),
+                                ListItem::new(vec![String::from("Level 1").into()], None)
+                            ]
+                        ))
+                    ),
+                    ListItem::new(
+                        vec![String::from("Level 0").into()],
+                        Some(List::new(
+                            ListTypes::Unordered,
+                            1,
+                            vec![ListItem::new(
+                                vec![String::from("Level 1").into()],
+                                Some(List::new(
+                                    ListTypes::Unordered,
+                                    2,
+                                    vec![ListItem::new(vec![String::from("Level 2").into()], None)]
+                                ))
+                            )]
+                        ))
+                    ),
+                    ListItem::new(vec![String::from("Level 0").into()], None),
+                ],
+            ))
+        );
+    }
+
+    #[test]
+    fn multiple_levels_ordered() {
+        let mut p = Parser::new(
+            "+ Level 0\n + Level 1\n  + Level 2\n + Level 1\n+ Level 0\n + Level 1\n  + Level 2\n+ Level 0"
+        );
+
+        assert_eq!(
+            list(&mut p, &ListTypes::Ordered),
+            Some(List::new(
+                ListTypes::Ordered,
+                0,
+                vec![
+                    ListItem::new(
+                        vec![String::from("Level 0").into(),],
+                        Some(List::new(
+                            ListTypes::Ordered,
+                            1,
+                            vec![
+                                ListItem::new(
+                                    vec![String::from("Level 1").into()],
+                                    Some(List::new(
+                                        ListTypes::Ordered,
+                                        2,
+                                        vec![ListItem::new(
+                                            vec![String::from("Level 2").into()],
+                                            None
+                                        )]
+                                    ))
+                                ),
+                                ListItem::new(vec![String::from("Level 1").into()], None)
+                            ]
+                        ))
+                    ),
+                    ListItem::new(
+                        vec![String::from("Level 0").into()],
+                        Some(List::new(
+                            ListTypes::Ordered,
+                            1,
+                            vec![ListItem::new(
+                                vec![String::from("Level 1").into()],
+                                Some(List::new(
+                                    ListTypes::Ordered,
+                                    2,
+                                    vec![ListItem::new(vec![String::from("Level 2").into()], None)]
+                                ))
+                            )]
+                        ))
+                    ),
+                    ListItem::new(vec![String::from("Level 0").into()], None),
+                ],
+            ))
+        );
+    }
+
+    #[test]
+    fn empty_body() {
+        let mut p = Parser::new("- ");
+
+        assert_eq!(list(&mut p, &ListTypes::Unordered), None);
+        assert_eq!(
+            p.peek(),
+            Some((&Token::new(TokenKind::Literal, "-", Position::default()), 0))
         );
     }
 }

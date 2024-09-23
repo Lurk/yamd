@@ -1,6 +1,6 @@
 use crate::{
     lexer::{Token, TokenKind},
-    nodes::{ThematicBreak, Yamd},
+    nodes::{ListTypes, ThematicBreak, Yamd},
 };
 
 use super::{
@@ -24,12 +24,12 @@ where
                 }
             }
             TokenKind::Minus if t.slice.len() == 1 => {
-                if let Some(l) = list(p) {
+                if let Some(l) = list(p, &ListTypes::Unordered) {
                     yamd.body.push(l.into())
                 }
             }
             TokenKind::Plus if t.slice.len() == 1 => {
-                if let Some(l) = list(p) {
+                if let Some(l) = list(p, &ListTypes::Ordered) {
                     yamd.body.push(l.into())
                 }
             }
@@ -179,15 +179,11 @@ end"#;
                             ListTypes::Unordered,
                             0,
                             vec![ListItem::new(
-                                ListTypes::Unordered,
-                                0,
                                 vec![String::from("one").into()],
                                 Some(List::new(
                                     ListTypes::Unordered,
                                     1,
                                     vec![ListItem::new(
-                                        ListTypes::Unordered,
-                                        1,
                                     vec![String::from("two").into()],
                                         None
                                     )]

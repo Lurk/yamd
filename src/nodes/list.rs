@@ -14,6 +14,15 @@ pub enum ListTypes {
     Ordered,
 }
 
+impl Display for ListTypes {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ListTypes::Unordered => f.write_str("-"),
+            ListTypes::Ordered => f.write_str("+"),
+        }
+    }
+}
+
 /// # List
 ///
 /// ## Types
@@ -140,8 +149,9 @@ impl List {
 
 impl Display for List {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let level = String::from(" ").repeat(self.level);
         for n in self.body.iter() {
-            f.write_str(n.to_string().as_str())?;
+            f.write_str(format!("{}{} {}", level, self.list_type, n.to_string()).as_str())?;
         }
         Ok(())
     }
