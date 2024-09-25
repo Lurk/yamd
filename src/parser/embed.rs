@@ -11,8 +11,8 @@ pub(crate) fn embed(p: &mut Parser<'_>) -> Option<Embed> {
         match t.kind {
             TokenKind::Terminator if kind.is_none() => break,
             TokenKind::RightCurlyBrace if t.slice.len() == 2 => {
+                p.next_token();
                 if let Some(kind) = kind {
-                    p.next_token();
                     return Some(Embed::new(
                         p.range_to_string(start_pos + 1..kind),
                         p.range_to_string(kind + 1..pos),
@@ -73,5 +73,18 @@ mod tests {
                 0
             ))
         );
+    }
+
+    #[test]
+    fn no_pipe() {
+        let mut p = Parser::new("{{happy}}");
+        assert_eq!(embed(&mut p), None);
+        assert_eq!(
+            p.peek(),
+            Some((
+                &Token::new(TokenKind::Literal, "{{", Position::default()),
+                0
+            ))
+        )
     }
 }
