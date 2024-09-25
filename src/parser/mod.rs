@@ -15,7 +15,7 @@ mod strikethrough;
 mod yamd;
 
 use std::{
-    fmt::{Debug, Formatter},
+    fmt::Debug,
     iter::Peekable,
     ops::{Bound, Range, RangeBounds, RangeTo},
 };
@@ -42,17 +42,6 @@ pub struct Parser<'input> {
     lexer: Peekable<Lexer<'input>>,
     stack: Vec<Token<'input>>,
     stack_pos: usize,
-}
-
-impl Debug for Parser<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "stack_len: {}\nstack_pos: {}",
-            self.stack.len(),
-            self.stack_pos
-        )
-    }
 }
 
 impl<'input> Parser<'input> {
@@ -202,5 +191,16 @@ mod tests {
             p.next_token(),
             Some(&Token::new(TokenKind::Literal, "test", Position::default()))
         );
+    }
+
+    #[test]
+    fn advance_until() {
+        let mut p = Parser::new("!test");
+
+        assert_eq!(p.advance_until(|t| t.kind == TokenKind::Space), None);
+        assert_eq!(
+            p.peek(),
+            Some((&Token::new(TokenKind::Literal, "!", Position::default()), 0))
+        )
     }
 }
