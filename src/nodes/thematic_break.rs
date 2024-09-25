@@ -1,5 +1,3 @@
-use std::fmt::{Display, Formatter};
-
 use serde::Serialize;
 
 /// # Thematic Break
@@ -22,11 +20,5 @@ pub struct ThematicBreak {}
 impl ThematicBreak {
     pub fn new() -> Self {
         Self {}
-    }
-}
-
-impl Display for ThematicBreak {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str("-----")
     }
 }

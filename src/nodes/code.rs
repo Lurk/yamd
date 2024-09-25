@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use serde::Serialize;
 
 /// # Code
@@ -39,11 +37,5 @@ impl Code {
             lang: lang.into(),
             code: code.into(),
         }
-    }
-}
-
-impl Display for Code {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "```{}\n{}\n```", self.lang, self.code)
     }
 }

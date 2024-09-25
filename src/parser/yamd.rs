@@ -203,7 +203,7 @@ end"#;
 
     #[test]
     fn default() {
-        assert_eq!(Yamd::default().to_string(), String::new());
+        assert_eq!(Yamd::default(), Yamd::new(None, vec![]));
     }
 
     #[test]

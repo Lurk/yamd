@@ -1,5 +1,3 @@
-use std::fmt::{Display, Formatter};
-
 use serde::Serialize;
 
 use super::{Italic, Strikethrough};
@@ -68,29 +66,5 @@ pub struct Bold {
 impl Bold {
     pub fn new(body: Vec<BoldNodes>) -> Self {
         Self { body }
-    }
-}
-
-impl Display for BoldNodes {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            BoldNodes::Text(node) => write!(f, "{}", node),
-            BoldNodes::Italic(node) => write!(f, "{}", node),
-            BoldNodes::Strikethrough(node) => write!(f, "{}", node),
-        }
-    }
-}
-
-impl Display for Bold {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "**{}**",
-            self.body
-                .iter()
-                .map(|node| { node.to_string() })
-                .collect::<Vec<String>>()
-                .concat()
-        )
     }
 }

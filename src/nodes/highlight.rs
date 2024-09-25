@@ -1,5 +1,3 @@
-use std::fmt::{Display, Formatter};
-
 use serde::Serialize;
 
 use super::Paragraph;
@@ -67,31 +65,5 @@ impl Highlight {
             icon: icon.map(|icon| icon.into()),
             body,
         }
-    }
-}
-
-impl Display for Highlight {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        writeln!(
-            f,
-            ">>{}",
-            self.title
-                .as_ref()
-                .map_or(String::new(), |t| format!(" {}", t))
-        )?;
-
-        if let Some(icon) = &self.icon {
-            writeln!(f, "> {}", icon)?;
-        }
-
-        write!(
-            f,
-            "{}\n>>",
-            self.body
-                .iter()
-                .map(|paragraph| paragraph.to_string())
-                .collect::<Vec<String>>()
-                .join("\n\n"),
-        )
     }
 }

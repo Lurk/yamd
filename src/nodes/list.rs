@@ -1,5 +1,3 @@
-use std::fmt::{Display, Formatter};
-
 use serde::Serialize;
 
 use super::ListItem;
@@ -12,15 +10,6 @@ pub enum ListTypes {
     /// List item starts with `+` ([Plus](type@crate::lexer::TokenKind::Plus) of length 1) followed by space
     /// [Space](type@crate::lexer::TokenKind::Space). Must be rendered as numeric list.
     Ordered,
-}
-
-impl Display for ListTypes {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ListTypes::Unordered => f.write_str("-"),
-            ListTypes::Ordered => f.write_str("+"),
-        }
-    }
 }
 
 /// # List
@@ -144,15 +133,5 @@ impl List {
             level,
             body,
         }
-    }
-}
-
-impl Display for List {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let level = String::from(" ").repeat(self.level);
-        for n in self.body.iter() {
-            f.write_str(format!("{}{} {}", level, self.list_type, n.to_string()).as_str())?;
-        }
-        Ok(())
     }
 }

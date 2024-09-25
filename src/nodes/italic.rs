@@ -1,5 +1,3 @@
-use std::fmt::{Display, Formatter};
-
 use serde::Serialize;
 
 /// # Italic
@@ -26,11 +24,5 @@ pub struct Italic(pub String);
 impl Italic {
     pub fn new<Body: Into<String>>(body: Body) -> Self {
         Italic(body.into())
-    }
-}
-
-impl Display for Italic {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "_{}_", self.0)
     }
 }

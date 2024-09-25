@@ -1,5 +1,3 @@
-use std::fmt::{Display, Formatter};
-
 use serde::Serialize;
 
 /// # Code span
@@ -26,12 +24,5 @@ pub struct CodeSpan(pub String);
 impl CodeSpan {
     pub fn new<Body: Into<String>>(body: Body) -> Self {
         CodeSpan(body.into())
-    }
-}
-
-impl Display for CodeSpan {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        // TODO: escape with `\` every `\`` in self.0
-        write!(f, "`{}`", self.0)
     }
 }

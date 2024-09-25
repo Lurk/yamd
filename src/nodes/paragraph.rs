@@ -1,5 +1,3 @@
-use std::fmt::{Display, Formatter};
-
 use serde::Serialize;
 
 use super::{Anchor, Bold, CodeSpan, Italic, Strikethrough};
@@ -48,19 +46,6 @@ impl From<String> for ParagraphNodes {
 impl From<CodeSpan> for ParagraphNodes {
     fn from(value: CodeSpan) -> Self {
         ParagraphNodes::CodeSpan(value)
-    }
-}
-
-impl Display for ParagraphNodes {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ParagraphNodes::Anchor(node) => write!(f, "{}", node),
-            ParagraphNodes::Bold(node) => write!(f, "{}", node),
-            ParagraphNodes::Italic(node) => write!(f, "{}", node),
-            ParagraphNodes::Strikethrough(node) => write!(f, "{}", node),
-            ParagraphNodes::Text(node) => write!(f, "{}", node),
-            ParagraphNodes::CodeSpan(node) => write!(f, "{}", node),
-        }
     }
 }
 
@@ -116,19 +101,5 @@ impl Paragraph {
 impl Default for Paragraph {
     fn default() -> Self {
         Self::new(vec![])
-    }
-}
-
-impl Display for Paragraph {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            self.body
-                .iter()
-                .map(|node| node.to_string())
-                .collect::<Vec<String>>()
-                .concat(),
-        )
     }
 }

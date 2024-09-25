@@ -1,5 +1,3 @@
-use std::fmt::{Display, Formatter};
-
 use serde::Serialize;
 
 use super::Image;
@@ -39,14 +37,5 @@ impl Images {
 impl Default for Images {
     fn default() -> Self {
         Self::new(vec![])
-    }
-}
-
-impl Display for Images {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        for n in self.body.iter() {
-            f.write_str(n.to_string().as_str())?;
-        }
-        Ok(())
     }
 }

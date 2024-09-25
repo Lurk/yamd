@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use serde::Serialize;
 
 /// # Image
@@ -44,11 +42,5 @@ impl Image {
             alt: alt.into(),
             src: src.into(),
         }
-    }
-}
-
-impl Display for Image {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "![{}]({})", self.alt, self.src)
     }
 }

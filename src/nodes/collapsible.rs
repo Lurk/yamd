@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use serde::Serialize;
 
 use super::YamdNodes;
@@ -46,21 +44,5 @@ impl Collapsible {
             body,
             title: title.into(),
         }
-    }
-}
-
-impl Display for Collapsible {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{{% {title}\n{nodes}\n%}}",
-            title = self.title,
-            nodes = self
-                .body
-                .iter()
-                .map(|node| node.to_string())
-                .collect::<Vec<String>>()
-                .join("\n\n"),
-        )
     }
 }

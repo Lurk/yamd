@@ -1,5 +1,3 @@
-use std::fmt::{Display, Formatter};
-
 use serde::Serialize;
 
 /// # Anchor
@@ -43,12 +41,5 @@ impl Anchor {
             text: text.into(),
             url: url.into(),
         }
-    }
-}
-
-impl Display for Anchor {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        // TODO: escape with `\` every `]` in self.text
-        write!(f, "[{}]({})", self.text, self.url)
     }
 }

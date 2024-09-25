@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use serde::Serialize;
 
 use super::Anchor;
@@ -20,15 +18,6 @@ impl From<String> for HeadingNodes {
 impl From<Anchor> for HeadingNodes {
     fn from(anchor: Anchor) -> Self {
         Self::Anchor(anchor)
-    }
-}
-
-impl Display for HeadingNodes {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Text(text) => write!(f, "{}", text),
-            Self::Anchor(anchor) => write!(f, "{}", anchor),
-        }
     }
 }
 
@@ -65,17 +54,5 @@ pub struct Heading {
 impl Heading {
     pub fn new(level: u8, nodes: Vec<HeadingNodes>) -> Self {
         Self { level, body: nodes }
-    }
-}
-
-impl Display for Heading {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let level = String::from('#').repeat(self.level as usize);
-        write!(
-            f,
-            "{} {}",
-            level,
-            self.body.iter().map(|n| n.to_string()).collect::<String>()
-        )
     }
 }

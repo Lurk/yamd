@@ -78,18 +78,6 @@ pub fn deserialize(str: &str) -> Yamd {
     yamd(&mut p, |_| false)
 }
 
-/// Serialize a Yamd struct into a string
-/// # Example
-/// ```
-/// use yamd::{deserialize, serialize};
-/// let input = "# header";
-/// let yamd = deserialize(input);
-/// let output = serialize(&yamd);
-/// ```
-pub fn serialize(input: &Yamd) -> String {
-    input.to_string()
-}
-
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
@@ -97,7 +85,6 @@ mod tests {
     use crate::{
         deserialize,
         nodes::{Anchor, Heading, Paragraph, Yamd},
-        serialize,
     };
 
     #[test]
@@ -108,17 +95,6 @@ mod tests {
             vec![Heading::new(1, vec![String::from("header").into()]).into()],
         );
         let actual = deserialize(input);
-        assert_eq!(expected, actual);
-    }
-
-    #[test]
-    fn test_serialize() {
-        let input = Yamd::new(
-            None,
-            vec![Heading::new(1, vec![String::from("header").into()]).into()],
-        );
-        let expected = "# header";
-        let actual = serialize(&input);
         assert_eq!(expected, actual);
     }
 

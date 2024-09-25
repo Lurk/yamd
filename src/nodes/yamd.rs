@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use serde::Serialize;
 
 use super::{
@@ -78,23 +76,6 @@ impl From<Embed> for YamdNodes {
 impl From<Collapsible> for YamdNodes {
     fn from(value: Collapsible) -> Self {
         YamdNodes::Collapsible(value)
-    }
-}
-
-impl Display for YamdNodes {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            YamdNodes::Pargargaph(node) => write!(f, "{}", node),
-            YamdNodes::Heading(node) => write!(f, "{}", node),
-            YamdNodes::Image(node) => write!(f, "{}", node),
-            YamdNodes::Images(node) => write!(f, "{}", node),
-            YamdNodes::Code(node) => write!(f, "{}", node),
-            YamdNodes::List(node) => write!(f, "{}", node),
-            YamdNodes::Highlight(node) => write!(f, "{}", node),
-            YamdNodes::ThematicBreak(node) => write!(f, "{}", node),
-            YamdNodes::Embed(node) => write!(f, "{}", node),
-            YamdNodes::Collapsible(node) => write!(f, "{}", node),
-        }
     }
 }
 
@@ -254,22 +235,5 @@ pub struct Yamd {
 impl Yamd {
     pub fn new(metadata: Option<String>, body: Vec<YamdNodes>) -> Self {
         Self { metadata, body }
-    }
-}
-
-impl Display for Yamd {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}{}",
-            self.metadata
-                .as_ref()
-                .map_or(String::new(), |m| format!("{m}\n\n")),
-            self.body
-                .iter()
-                .map(|node| node.to_string())
-                .collect::<Vec<String>>()
-                .join("\n\n")
-        )
     }
 }

@@ -1,5 +1,4 @@
 use serde::Serialize;
-use std::fmt::{Display, Formatter};
 
 /// # Strikethrough
 ///
@@ -26,11 +25,5 @@ pub struct Strikethrough(pub String);
 impl Strikethrough {
     pub fn new<Body: Into<String>>(body: Body) -> Self {
         Strikethrough(body.into())
-    }
-}
-
-impl Display for Strikethrough {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "~~{}~~", self.0)
     }
 }

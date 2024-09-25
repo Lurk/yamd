@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use serde::Serialize;
 
 /// # Embed
@@ -35,11 +33,5 @@ impl Embed {
             kind: kind.into(),
             args: args.into(),
         }
-    }
-}
-
-impl Display for Embed {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{{{{{}|{}}}}}", self.kind, self.args)
     }
 }
