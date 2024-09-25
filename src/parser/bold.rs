@@ -107,4 +107,27 @@ mod tests {
             ))
         );
     }
+
+    #[test]
+    fn text_before_strikethrough() {
+        let mut p = Parser::new("**text ~~happy~~ _path_**");
+        assert_eq!(
+            bold(&mut p),
+            Some(Bold::new(vec![
+                String::from("text ").into(),
+                Strikethrough::new("happy").into(),
+                String::from(" ").into(),
+                Italic::new("path").into()
+            ]))
+        );
+    }
+
+    #[test]
+    fn unclosed_italic() {
+        let mut p = Parser::new("**_path**");
+        assert_eq!(
+            bold(&mut p),
+            Some(Bold::new(vec![String::from("_path").into()]))
+        );
+    }
 }
