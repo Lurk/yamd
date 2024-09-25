@@ -203,4 +203,15 @@ mod tests {
             Some((&Token::new(TokenKind::Literal, "!", Position::default()), 0))
         )
     }
+
+    #[test]
+    fn advance_until_new_line() {
+        let mut p = Parser::new("!test");
+
+        assert_eq!(p.advance_until_new_line(), None);
+        assert_eq!(
+            p.peek(),
+            Some((&Token::new(TokenKind::Literal, "!", Position::default()), 0))
+        )
+    }
 }
