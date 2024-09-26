@@ -143,6 +143,10 @@ _I_
 
 %}
 
++
+
+-
+
 ![](
 
 ```
@@ -218,6 +222,8 @@ end"#;
                         Embed::new("cloudinary_gallery", "cloud_name&tag",).into(),
                         Collapsible::new("collapsible", vec![]).into(),
                         Collapsible::new("one more collapsible", vec![]).into(),
+                        Paragraph::new(vec![String::from("+").into()]).into(),
+                        Paragraph::new(vec![String::from("-").into()]).into(),
                         Paragraph::new(vec![String::from("![](").into()]).into(),
                         Paragraph::new(vec![String::from("```").into()]).into(),
                         Paragraph::new(vec![String::from("end").into()]).into()
