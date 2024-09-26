@@ -33,9 +33,3 @@ impl Images {
         Self { body }
     }
 }
-
-impl Default for Images {
-    fn default() -> Self {
-        Self::new(vec![])
-    }
-}
