@@ -100,7 +100,8 @@ fn parse_list(p: &mut Parser<'_>, list_type: &ListTypes, level: usize) -> Option
                     list.body.push(list_item);
                     list_item = ListItem::new(vec![], None);
                 } else {
-                    p.next_token();
+                    p.flip_to_literal_at(pos - 2);
+                    p.move_to(pos - 3);
                 }
             }
             TokenKind::Space if state == State::NextLevelOrdered => {
@@ -110,7 +111,8 @@ fn parse_list(p: &mut Parser<'_>, list_type: &ListTypes, level: usize) -> Option
                     list.body.push(list_item);
                     list_item = ListItem::new(vec![], None);
                 } else {
-                    p.next_token();
+                    p.flip_to_literal_at(pos - 2);
+                    p.move_to(pos - 3);
                 }
             }
             TokenKind::Space if state == State::SameLevelCommit => {
@@ -420,6 +422,39 @@ something"#;
         assert_eq!(
             p.peek(),
             Some((&Token::new(TokenKind::Literal, "-", Position::default()), 0))
+        );
+    }
+
+    #[test]
+    fn no_nested_ordered_list() {
+        let mut p = Parser::new("+ level 0\n + ");
+
+        assert_eq!(
+            list(&mut p, &ListTypes::Unordered),
+            Some(List::new(
+                ListTypes::Unordered,
+                0,
+                vec![ListItem::new(
+                    vec![String::from("level 0").into(), String::from("\n + ").into()],
+                    None
+                ),],
+            ))
+        );
+    }
+    #[test]
+    fn no_nested_unordered_list() {
+        let mut p = Parser::new("+ level 0\n - ");
+
+        assert_eq!(
+            list(&mut p, &ListTypes::Unordered),
+            Some(List::new(
+                ListTypes::Unordered,
+                0,
+                vec![ListItem::new(
+                    vec![String::from("level 0").into(), String::from("\n - ").into()],
+                    None
+                ),],
+            ))
         );
     }
 }
