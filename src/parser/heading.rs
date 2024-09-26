@@ -165,4 +165,17 @@ mod tests {
             ))
         );
     }
+
+    #[test]
+    fn only_one_token() {
+        let mut p = Parser::new("##");
+        assert_eq!(heading(&mut p, |_| false), None);
+        assert_eq!(
+            p.peek(),
+            Some((
+                &Token::new(TokenKind::Literal, "##", Position::default()),
+                0
+            ))
+        );
+    }
 }
