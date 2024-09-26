@@ -37,9 +37,7 @@ where
             TokenKind::LeftSquareBracket => {
                 if let Some(a) = anchor(p) {
                     if let Some(start) = text_start.take() {
-                        heading
-                            .body
-                            .push(String::from(p.range_to_string(start..pos)).into());
+                        heading.body.push(p.range_to_string(start..pos).into());
                     }
                     heading.body.push(a.into());
                 } else {
@@ -62,7 +60,7 @@ where
     if let Some(start) = text_start.take() {
         heading
             .body
-            .push(String::from(p.range_to_string(start..p.pos() - end_modifier)).into());
+            .push(p.range_to_string(start..p.pos() - end_modifier).into());
     }
 
     if !heading.body.is_empty() {
