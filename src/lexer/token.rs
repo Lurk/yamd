@@ -77,3 +77,18 @@ impl Display for Token<'_> {
         f.write_str(self.slice)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use pretty_assertions::assert_eq;
+
+    use crate::lexer::{Position, Token, TokenKind};
+
+    #[test]
+    fn display() {
+        assert_eq!(
+            Token::new(TokenKind::Literal, "str", Position::default()).to_string(),
+            "str"
+        );
+    }
+}
