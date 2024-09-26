@@ -229,11 +229,14 @@ mod tests {
 
     #[test]
     fn only_one_token() {
-        let mut p = Parser::new("#");
+        let mut p = Parser::new("!!");
         assert_eq!(highlight(&mut p), None);
         assert_eq!(
             p.peek(),
-            Some((&Token::new(TokenKind::Literal, "#", Position::default()), 0))
+            Some((
+                &Token::new(TokenKind::Literal, "!!", Position::default()),
+                0
+            ))
         );
     }
 }
