@@ -214,4 +214,31 @@ mod tests {
             ]))
         )
     }
+
+    #[test]
+    fn not_closed_code_span() {
+        let mut p = Parser::new("`");
+        assert_eq!(
+            paragraph(&mut p, |_| false),
+            Some(Paragraph::new(vec![String::from("`").into()]))
+        )
+    }
+
+    #[test]
+    fn not_anchor() {
+        let mut p = Parser::new("[]");
+        assert_eq!(
+            paragraph(&mut p, |_| false),
+            Some(Paragraph::new(vec![String::from("[]").into()]))
+        )
+    }
+
+    #[test]
+    fn not_italic() {
+        let mut p = Parser::new("_");
+        assert_eq!(
+            paragraph(&mut p, |_| false),
+            Some(Paragraph::new(vec![String::from("_").into()]))
+        )
+    }
 }

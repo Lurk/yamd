@@ -128,6 +128,9 @@ _I_
 - one
  - two
 
++ first
+ + second
+
 {{youtube|123}}
 
 {{cloudinary_gallery|cloud_name&tag}}
@@ -139,6 +142,10 @@ _I_
 {% one more collapsible
 
 %}
+
+![](
+
+```
 
 end"#;
 
@@ -191,10 +198,28 @@ end"#;
                             )]
                         )
                         .into(),
+                        List::new(
+                            ListTypes::Ordered,
+                            0,
+                            vec![ListItem::new(
+                                vec![String::from("first").into()],
+                                Some(List::new(
+                                    ListTypes::Ordered,
+                                    1,
+                                    vec![ListItem::new(
+                                    vec![String::from("second").into()],
+                                        None
+                                    )]
+                                ))
+                            )]
+                        )
+                        .into(),
                         Embed::new("youtube", "123",).into(),
                         Embed::new("cloudinary_gallery", "cloud_name&tag",).into(),
                         Collapsible::new("collapsible", vec![]).into(),
                         Collapsible::new("one more collapsible", vec![]).into(),
+                        Paragraph::new(vec![String::from("![](").into()]).into(),
+                        Paragraph::new(vec![String::from("```").into()]).into(),
                         Paragraph::new(vec![String::from("end").into()]).into()
                     ]
                 ),
