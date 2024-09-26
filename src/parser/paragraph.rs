@@ -241,4 +241,13 @@ mod tests {
             Some(Paragraph::new(vec![String::from("_").into()]))
         )
     }
+
+    #[test]
+    fn not_strikethrough() {
+        let mut p = Parser::new("~~");
+        assert_eq!(
+            paragraph(&mut p, |_| false),
+            Some(Paragraph::new(vec![String::from("~~").into()]))
+        )
+    }
 }
