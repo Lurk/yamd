@@ -112,4 +112,17 @@ mod tests {
             ))
         );
     }
+
+    #[test]
+    fn only_two_tokens() {
+        let mut p = Parser::new("{% ");
+        assert_eq!(collapsible(&mut p), None);
+        assert_eq!(
+            p.peek(),
+            Some((
+                &Token::new(TokenKind::Literal, "{%", Position::default()),
+                0
+            ))
+        );
+    }
 }
