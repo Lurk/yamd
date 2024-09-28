@@ -79,7 +79,7 @@ jobs:
     # https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
     strategy:
       matrix:
-        msrv: [1.67.1] #version at the moment of creation 
+        msrv: [1.80.0] # due to Option::take_if usage
     name: ubuntu / ${{ matrix.msrv }}
     steps:
       - uses: actions/checkout@v4

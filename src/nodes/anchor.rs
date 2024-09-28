@@ -1,11 +1,35 @@
-use std::fmt::{Display, Formatter};
-
 use serde::Serialize;
 
-use crate::toolkit::parser::Parse;
-
-/// Representation of an anchor
-#[derive(Debug, PartialEq, Serialize, Clone)]
+/// # Anchor
+///
+/// Anchor has two required parts.
+///
+/// [Text](Anchor::text) can contain any character and is surrounded by square brackets
+/// [LeftSquareBracket](type@crate::lexer::TokenKind::LeftSquareBracket) and
+/// [RightSquareBracket](type@crate::lexer::TokenKind::RightSquareBracket) respectively.
+///
+/// [URL](Anchor::url) can contain any character surrounded by parenthesis
+/// [LeftParenthesis](type@crate::lexer::TokenKind::LeftParenthesis) and
+/// [RightParenthesis](type@crate::lexer::TokenKind::RightParenthesis). Must support any number of
+/// nested parenthesis.
+///
+/// Examples:
+///
+/// |                yamd                   | html equivalent                               |
+/// |---------------------------------------|-----------------------------------------------|
+/// | `[link](url)`                         | `<a href="url">link</a>`                      |
+/// | `[link [nested squares\]](url)`       | `<a href="url">link [nested squares]</a>`     |
+/// | `[link](url(with nested)paren)`       | `<a href="url(with nested)paren>link</a>`     |
+/// | `[link](url(with(unclosed)nested`     | `<a href="url(with(unclosed">link</a>`        |
+///
+/// Examples of things that are not valid Anchor:
+///
+/// |                yamd                   | html equivalent                               |
+/// |---------------------------------------|-----------------------------------------------|
+/// | `[link]`                              | `<p>[link]</p>`                               |
+/// | `[link](url with unclosed paren`      | `<p>[link](url with unclosed paren</p>`       |
+///
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 pub struct Anchor {
     pub text: String,
     pub url: String,
@@ -17,84 +41,5 @@ impl Anchor {
             text: text.into(),
             url: url.into(),
         }
-    }
-}
-
-impl Display for Anchor {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[{}]({})", self.text, self.url)
-    }
-}
-
-impl Parse for Anchor {
-    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
-        if input[current_position..].starts_with('[') {
-            if let Some(middle) = input[current_position + 1..].find("](") {
-                let mut level = 1;
-                for (i, c) in input[current_position + middle + 3..].char_indices() {
-                    if c == '(' {
-                        level += 1;
-                    } else if c == ')' {
-                        level -= 1;
-                    }
-                    if level == 0 {
-                        return Some((
-                            Anchor::new(
-                                &input[current_position + 1..current_position + middle + 1],
-                                &input[current_position + middle + 3
-                                    ..current_position + middle + 3 + i],
-                            ),
-                            middle + 3 + i + 1,
-                        ));
-                    }
-                }
-            }
-        }
-        None
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::toolkit::parser::Parse;
-
-    use super::Anchor;
-    use pretty_assertions::assert_eq;
-
-    #[test]
-    fn happy_path() {
-        let a = Anchor::new("nice link", "https://test.io");
-        assert_eq!(a.text, "nice link");
-        assert_eq!(a.url, "https://test.io");
-    }
-
-    #[test]
-    fn serialize() {
-        let a: String = Anchor::new("nice link", "https://test.io").to_string();
-        assert_eq!(a, "[nice link](https://test.io)".to_string());
-    }
-
-    #[test]
-    fn parse() {
-        assert_eq!(Anchor::parse("[1](2)", 0), Some((Anchor::new("1", "2"), 6)));
-        assert_eq!(Anchor::parse("[1", 0), None);
-        assert_eq!(Anchor::parse("[1](2", 0), None);
-    }
-
-    #[test]
-    fn deserilalze_with_parentesis_in_url() {
-        assert_eq!(
-            Anchor::parse(
-                "[the Rope data structure](https://en.wikipedia.org/wiki/Rope_(data_structure))",
-                0
-            ),
-            Some((
-                Anchor::new(
-                    "the Rope data structure",
-                    "https://en.wikipedia.org/wiki/Rope_(data_structure)"
-                ),
-                78
-            ))
-        );
     }
 }

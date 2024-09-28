@@ -1,18 +1,13 @@
-use std::fmt::Display;
-
 use serde::Serialize;
 
-use crate::{
-    nodes::{italic::Italic, strikethrough::Strikethrough, text::Text},
-    toolkit::parser::{parse_to_consumer, parse_to_parser, Branch, Consumer, Parse, Parser},
-};
+use super::{Italic, Strikethrough};
 
-#[derive(Debug, PartialEq, Serialize, Clone)]
-#[serde(tag = "type")]
+#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
+#[serde(tag = "type", content = "value")]
 pub enum BoldNodes {
     Italic(Italic),
     Strikethrough(Strikethrough),
-    Text(Text),
+    Text(String),
 }
 
 impl From<Italic> for BoldNodes {
@@ -27,125 +22,49 @@ impl From<Strikethrough> for BoldNodes {
     }
 }
 
-impl From<Text> for BoldNodes {
-    fn from(t: Text) -> Self {
+impl From<String> for BoldNodes {
+    fn from(t: String) -> Self {
         BoldNodes::Text(t)
     }
 }
 
-#[derive(Debug, PartialEq, Serialize, Clone, Default)]
+/// # Bold
+///
+/// Any token except [Terminator](type@crate::lexer::TokenKind::Terminator) surrounded by
+/// [Star](type@crate::lexer::TokenKind::Star) of length 2.
+///
+/// [Body](Bold::body) can contain one or more:
+///
+/// - [Italic]
+/// - [Strikethrough]
+/// - [String]
+///
+/// Example:
+///
+/// ```text
+/// **Bold can contain an [anchor](#) and _italic_, or ~~strikethrough~~, or regular text**
+/// ```
+///
+/// HTML equivalent:
+///
+/// ```html
+/// <b>
+///     Bold can contain an
+///     <a href="#">anchor</a>
+///     and
+///     <i>italic</i>
+///     , or
+///     <s>strikethrough</s>
+///     , or regular text
+/// </b>
+/// ```
+#[derive(Debug, PartialEq, Serialize, Clone, Default, Eq)]
 pub struct Bold {
-    nodes: Vec<BoldNodes>,
-}
-
-impl Branch<BoldNodes> for Bold {
-    fn get_parsers(&self) -> Vec<Parser<BoldNodes>> {
-        vec![
-            parse_to_parser::<BoldNodes, Italic>(),
-            parse_to_parser::<BoldNodes, Strikethrough>(),
-        ]
-    }
-
-    fn push_node(&mut self, node: BoldNodes) {
-        self.nodes.push(node);
-    }
-
-    fn get_consumer(&self) -> Option<Consumer<BoldNodes>> {
-        Some(parse_to_consumer::<BoldNodes, Text>())
-    }
-}
-
-impl Parse for Bold {
-    fn parse(input: &str, current_position: usize) -> Option<(Self, usize)> {
-        if input[current_position..].starts_with("**") {
-            if let Some(end) = input[current_position + 2..].find("**") {
-                let b = Bold::new(vec![]);
-                return Some((
-                    b.parse_branch(&input[current_position + 2..current_position + 2 + end], "")
-                        .expect("bold should always succed"),
-                    end + 4,
-                ));
-            }
-        }
-        None
-    }
+    pub body: Vec<BoldNodes>,
 }
 
 impl Bold {
-    pub fn new(nodes: Vec<BoldNodes>) -> Self {
-        Self { nodes }
-    }
-}
-
-impl Display for BoldNodes {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            BoldNodes::Text(node) => write!(f, "{}", node),
-            BoldNodes::Italic(node) => write!(f, "{}", node),
-            BoldNodes::Strikethrough(node) => write!(f, "{}", node),
-        }
-    }
-}
-
-impl Display for Bold {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "**{}**",
-            self.nodes
-                .iter()
-                .map(|element| { element.to_string() })
-                .collect::<Vec<String>>()
-                .concat()
-        )
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::{
-        nodes::{bold::Bold, italic::Italic, strikethrough::Strikethrough, text::Text},
-        toolkit::parser::{Branch, Parse},
-    };
-    use pretty_assertions::assert_eq;
-
-    #[test]
-    fn only_text() {
-        let mut b = Bold::default();
-        b.push_node(Text::new("B as bold").into());
-        let str = b.to_string();
-        assert_eq!(str, "**B as bold**".to_string());
-    }
-
-    #[test]
-    fn from_vec() {
-        let b: String = Bold::new(vec![
-            Text::new("B as bold ").into(),
-            Italic::new("Italic").into(),
-            Strikethrough::new("Strikethrough").into(),
-        ])
-        .to_string();
-        assert_eq!(b, "**B as bold _Italic_~~Strikethrough~~**".to_string());
-    }
-
-    #[test]
-    fn from_string() {
-        assert_eq!(
-            Bold::parse("**b**", 0),
-            Some((Bold::new(vec![Text::new("b").into()]), 5))
-        );
-
-        assert_eq!(
-            Bold::parse("**b ~~st~~ _i t_**", 0),
-            Some((
-                Bold::new(vec![
-                    Text::new("b ").into(),
-                    Strikethrough::new("st").into(),
-                    Text::new(" ").into(),
-                    Italic::new("i t").into()
-                ]),
-                18
-            ))
-        );
+    pub fn new(body: Vec<BoldNodes>) -> Self {
+        Self { body }
     }
 }

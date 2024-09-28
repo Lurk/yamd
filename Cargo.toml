@@ -1,17 +1,17 @@
 [package]
 name = "yamd"
-version = "0.13.3"
+description = "Yet Another Markdown Document (flavour)"
+version = "0.14.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-description = "Yet Another Markdown Document (flavor)"
 repository = "https://github.com/Lurk/yamd"
 readme = "README.md"
 keywords = ["markdown", "parser"]
 
+[dependencies]
+serde = { version = "1.0.197", features = ["derive"] }
+
 [dev-dependencies]
 pretty_assertions = "1.4.0"
 
-[dependencies]
-serde = { version = "1.0.197", features = ["derive"] }
-chrono = { version = "0.4.37", features = ["serde"] }
-serde_yaml = "0.9.34"
+
