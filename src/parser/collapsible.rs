@@ -16,7 +16,7 @@ pub(crate) fn collapsible(p: &mut Parser) -> Option<Collapsible> {
     while let Some((t, _)) = p.peek() {
         match t.kind {
             TokenKind::Space if title.is_none() => {
-                if let Some((start, end)) = p.advance_until_new_line() {
+                if let Some((start, end)) = p.advance_until(|t| t.position.column == 0, true) {
                     title.replace(start + 1..end - 1);
                 } else {
                     break;

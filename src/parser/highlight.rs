@@ -33,7 +33,8 @@ pub(crate) fn highlight(p: &mut Parser) -> Option<Highlight> {
                 p.next_token();
             }
             TokenKind::Space if state == State::TitleCommit && title.is_none() => {
-                if let Some((start, end)) = p.advance_until(|t| t.kind == TokenKind::Eol) {
+                if let Some((start, end)) = p.advance_until_terminated(|t| t.kind == TokenKind::Eol)
+                {
                     state = State::Icon;
                     title.replace(start + 1..end);
                 } else {
@@ -45,7 +46,8 @@ pub(crate) fn highlight(p: &mut Parser) -> Option<Highlight> {
                 p.next_token();
             }
             TokenKind::Space if state == State::IconCommit && icon.is_none() => {
-                if let Some((start, end)) = p.advance_until(|t| t.kind == TokenKind::Eol) {
+                if let Some((start, end)) = p.advance_until_terminated(|t| t.kind == TokenKind::Eol)
+                {
                     state = State::Body;
                     icon.replace(start + 1..end);
                 } else {

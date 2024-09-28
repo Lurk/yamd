@@ -3,7 +3,7 @@ use crate::{lexer::TokenKind, nodes::Strikethrough};
 use super::Parser;
 
 pub(crate) fn strikethrough(p: &mut Parser) -> Option<Strikethrough> {
-    p.advance_until(|t| t.kind == TokenKind::Tilde && t.slice.len() == 2)
+    p.advance_until_terminated(|t| t.kind == TokenKind::Tilde && t.slice.len() == 2)
         .map(|(start, end)| Strikethrough::new(p.range_to_string(start + 1..end)))
 }
 

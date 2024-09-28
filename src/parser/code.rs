@@ -4,34 +4,24 @@ use super::Parser;
 
 pub(crate) fn code(p: &mut Parser<'_>) -> Option<Code> {
     let start_pos = p.pos();
-    let mut lang: Option<usize> = None;
+    let lang = p
+        .advance_until_terminated(|t| t.kind == TokenKind::Eol)
+        .map(|(_, end)| end)?;
+
+    let Some((start, end)) = p.advance_until(
+        |t| t.kind == TokenKind::Backtick && t.position.column == 0 && t.slice.len() == 3,
+        true,
+    ) else {
+        p.move_to(start_pos);
+        p.flip_to_literal_at(start_pos);
+        return None;
+    };
 
     p.next_token();
-    while let Some((t, pos)) = p.peek() {
-        match t.kind {
-            TokenKind::Terminator if lang.is_none() => break,
-            TokenKind::Backtick if t.position.column == 0 && t.slice.len() == 3 => {
-                if let Some(lang) = lang {
-                    p.next_token();
-                    return Some(Code::new(
-                        p.range_to_string(start_pos + 1..lang),
-                        p.range_to_string(lang + 1..pos - 1),
-                    ));
-                }
-            }
-            TokenKind::Eol if lang.is_none() => {
-                lang.replace(pos);
-                p.next_token();
-            }
-            _ => {
-                p.next_token();
-            }
-        }
-    }
-
-    p.move_to(start_pos);
-    p.flip_to_literal_at(start_pos);
-    None
+    Some(Code::new(
+        p.range_to_string(start_pos + 1..lang),
+        p.range_to_string(start..end - 1),
+    ))
 }
 
 #[cfg(test)]
@@ -44,6 +34,7 @@ mod tests {
     };
 
     use super::code;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn happy_path() {

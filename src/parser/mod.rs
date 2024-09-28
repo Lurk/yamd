@@ -93,7 +93,11 @@ impl<'input> Parser<'input> {
         false
     }
 
-    pub fn advance_until<Callback>(&mut self, f: Callback) -> Option<(usize, usize)>
+    pub fn advance_until<Callback>(
+        &mut self,
+        f: Callback,
+        skip_terminator: bool,
+    ) -> Option<(usize, usize)>
     where
         Callback: Fn(&Token) -> bool,
     {
@@ -101,35 +105,32 @@ impl<'input> Parser<'input> {
         self.next_token();
 
         while let Some((t, pos)) = self.peek() {
-            if t.kind == TokenKind::Terminator {
+            if t.kind == TokenKind::Terminator && !skip_terminator {
                 break;
             };
 
             if f(t) {
-                self.next_token();
                 return Some((start, pos));
             }
             self.next_token();
         }
 
-        self.move_to(start);
-        self.flip_to_literal_at(start);
         None
     }
 
-    pub fn advance_until_new_line(&mut self) -> Option<(usize, usize)> {
+    pub fn advance_until_terminated<Callback>(&mut self, f: Callback) -> Option<(usize, usize)>
+    where
+        Callback: Fn(&Token) -> bool,
+    {
         let start = self.pos();
-        self.next_token();
-        while let Some((t, pos)) = self.peek() {
-            if t.position.column == 0 {
-                return Some((start, pos));
-            }
-            self.next_token();
-        }
 
-        self.move_to(start);
-        self.flip_to_literal_at(start);
-        None
+        let Some(result) = self.advance_until(f, false) else {
+            self.move_to(start);
+            self.flip_to_literal_at(start);
+            return None;
+        };
+        self.next_token();
+        Some(result)
     }
 
     pub fn pos(&self) -> usize {
@@ -197,18 +198,10 @@ mod tests {
     fn advance_until() {
         let mut p = Parser::new("!test");
 
-        assert_eq!(p.advance_until(|t| t.kind == TokenKind::Space), None);
         assert_eq!(
-            p.peek(),
-            Some((&Token::new(TokenKind::Literal, "!", Position::default()), 0))
-        )
-    }
-
-    #[test]
-    fn advance_until_new_line() {
-        let mut p = Parser::new("!test");
-
-        assert_eq!(p.advance_until_new_line(), None);
+            p.advance_until_terminated(|t| t.kind == TokenKind::Space),
+            None
+        );
         assert_eq!(
             p.peek(),
             Some((&Token::new(TokenKind::Literal, "!", Position::default()), 0))
