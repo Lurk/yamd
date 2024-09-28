@@ -168,6 +168,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::ops::Bound;
+
     use pretty_assertions::assert_eq;
 
     use crate::{
@@ -183,6 +185,10 @@ mod tests {
         assert_eq!(try_range(..1, ..2), Some(0..1));
         assert_eq!(try_range(0..=1, ..2), Some(0..2));
         assert_eq!(try_range(0..3, ..2), None);
+        assert_eq!(
+            try_range((Bound::Excluded(1), Bound::Excluded(2)), ..3),
+            Some(2..2)
+        );
     }
 
     #[test]
