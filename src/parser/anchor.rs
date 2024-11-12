@@ -12,7 +12,7 @@ pub(crate) fn anchor(p: &mut Parser<'_>) -> Option<Anchor> {
             TokenKind::Terminator => break,
             TokenKind::LeftSquareBracket if right_square_bracket_pos.is_none() => {
                 if let Some((_, end)) =
-                    p.advance_until_terminated(|t| t.kind == TokenKind::RightSquareBracket)
+                    p.advance_or_backtrack(|t| t.kind == TokenKind::RightSquareBracket)
                 {
                     right_square_bracket_pos.replace(end);
                 } else {
@@ -57,7 +57,7 @@ pub(crate) fn anchor(p: &mut Parser<'_>) -> Option<Anchor> {
     }
 
     p.flip_to_literal_at(start_pos);
-    p.move_to(start_pos);
+    p.backtrack(start_pos);
     None
 }
 

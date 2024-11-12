@@ -38,7 +38,7 @@ pub(crate) fn collapsible(p: &mut Parser) -> Option<Collapsible> {
         }
     }
 
-    p.move_to(start);
+    p.backtrack(start);
     p.flip_to_literal_at(start);
     None
 }

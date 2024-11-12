@@ -3,7 +3,7 @@ use crate::{lexer::TokenKind, nodes::CodeSpan};
 use super::Parser;
 
 pub(crate) fn code_span(p: &mut Parser) -> Option<CodeSpan> {
-    p.advance_until_terminated(|t| t.kind == TokenKind::Backtick && t.slice.len() == 1)
+    p.advance_or_backtrack(|t| t.kind == TokenKind::Backtick && t.slice.len() == 1)
         .map(|(start, end)| CodeSpan::new(p.range_to_string(start + 1..end)))
 }
 

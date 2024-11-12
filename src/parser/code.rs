@@ -5,14 +5,14 @@ use super::Parser;
 pub(crate) fn code(p: &mut Parser<'_>) -> Option<Code> {
     let start_pos = p.pos();
     let lang = p
-        .advance_until_terminated(|t| t.kind == TokenKind::Eol)
+        .advance_or_backtrack(|t| t.kind == TokenKind::Eol)
         .map(|(_, end)| end)?;
 
     let Some((start, end)) = p.advance_until(
         |t| t.kind == TokenKind::Backtick && t.position.column == 0 && t.slice.len() == 3,
         true,
     ) else {
-        p.move_to(start_pos);
+        p.backtrack(start_pos);
         p.flip_to_literal_at(start_pos);
         return None;
     };

@@ -29,7 +29,7 @@ pub(crate) fn embed(p: &mut Parser<'_>) -> Option<Embed> {
         }
     }
 
-    p.move_to(start_pos);
+    p.backtrack(start_pos);
     p.flip_to_literal_at(start_pos);
     None
 }

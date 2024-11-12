@@ -51,7 +51,7 @@ where
     }
 
     if images.is_empty() || state == State::Fail {
-        p.move_to(start);
+        p.backtrack(start);
         p.flip_to_literal_at(start);
         return None;
     }

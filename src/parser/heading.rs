@@ -25,7 +25,7 @@ where
 
     if let Some(t) = p.next_token() {
         if t.kind != TokenKind::Space {
-            p.move_to(start);
+            p.backtrack(start);
             p.flip_to_literal_at(start);
             return None;
         }
@@ -67,7 +67,7 @@ where
         return Some(heading);
     }
 
-    p.move_to(start);
+    p.backtrack(start);
     p.flip_to_literal_at(start);
 
     None

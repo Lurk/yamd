@@ -79,7 +79,7 @@ impl<'input> Parser<'input> {
             .collect()
     }
 
-    pub fn move_to(&mut self, index: usize) {
+    pub fn backtrack(&mut self, index: usize) {
         if index < self.stack.len() {
             self.stack_pos = index;
         }
@@ -118,14 +118,14 @@ impl<'input> Parser<'input> {
         None
     }
 
-    pub fn advance_until_terminated<Callback>(&mut self, f: Callback) -> Option<(usize, usize)>
+    pub fn advance_or_backtrack<Callback>(&mut self, f: Callback) -> Option<(usize, usize)>
     where
         Callback: Fn(&Token) -> bool,
     {
         let start = self.pos();
 
         let Some(result) = self.advance_until(f, false) else {
-            self.move_to(start);
+            self.backtrack(start);
             self.flip_to_literal_at(start);
             return None;
         };
@@ -204,10 +204,7 @@ mod tests {
     fn advance_until() {
         let mut p = Parser::new("!test");
 
-        assert_eq!(
-            p.advance_until_terminated(|t| t.kind == TokenKind::Space),
-            None
-        );
+        assert_eq!(p.advance_or_backtrack(|t| t.kind == TokenKind::Space), None);
         assert_eq!(
             p.peek(),
             Some((&Token::new(TokenKind::Literal, "!", Position::default()), 0))

@@ -23,7 +23,7 @@ pub(crate) fn metadata(p: &mut Parser) -> Option<String> {
         }
     }
 
-    p.move_to(start);
+    p.backtrack(start);
     p.flip_to_literal_at(start);
 
     None

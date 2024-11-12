@@ -3,7 +3,7 @@ use crate::{lexer::TokenKind, nodes::Italic};
 use super::Parser;
 
 pub(crate) fn italic(p: &mut Parser) -> Option<Italic> {
-    p.advance_until_terminated(|t| t.kind == TokenKind::Underscore && t.slice.len() == 1)
+    p.advance_or_backtrack(|t| t.kind == TokenKind::Underscore && t.slice.len() == 1)
         .map(|(start, end)| Italic::new(p.range_to_string(start + 1..end)))
 }
 

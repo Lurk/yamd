@@ -101,7 +101,7 @@ fn parse_list(p: &mut Parser<'_>, list_type: &ListTypes, level: usize) -> Option
                     list_item = ListItem::new(vec![], None);
                 } else {
                     p.flip_to_literal_at(pos - 2);
-                    p.move_to(pos - 3);
+                    p.backtrack(pos - 3);
                 }
             }
             TokenKind::Space if state == State::NextLevelOrdered => {
@@ -112,7 +112,7 @@ fn parse_list(p: &mut Parser<'_>, list_type: &ListTypes, level: usize) -> Option
                     list_item = ListItem::new(vec![], None);
                 } else {
                     p.flip_to_literal_at(pos - 2);
-                    p.move_to(pos - 3);
+                    p.backtrack(pos - 3);
                 }
             }
             TokenKind::Space if state == State::SameLevelCommit => {
@@ -125,7 +125,7 @@ fn parse_list(p: &mut Parser<'_>, list_type: &ListTypes, level: usize) -> Option
             }
             TokenKind::Space if state == State::PreviousLevelCommit => {
                 // back to new line so Previous level can decide what to do.
-                p.move_to(if level == 1 { pos - 1 } else { pos - 2 });
+                p.backtrack(if level == 1 { pos - 1 } else { pos - 2 });
                 break;
             }
             _ => {
@@ -146,7 +146,7 @@ fn parse_list(p: &mut Parser<'_>, list_type: &ListTypes, level: usize) -> Option
     }
 
     if list.body.is_empty() {
-        p.move_to(start_pos);
+        p.backtrack(start_pos);
         p.flip_to_literal_at(start_pos);
         return None;
     }

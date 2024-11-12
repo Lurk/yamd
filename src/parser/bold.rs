@@ -42,7 +42,7 @@ pub(crate) fn bold(p: &mut Parser<'_>) -> Option<Bold> {
         }
     }
 
-    p.move_to(start_pos);
+    p.backtrack(start_pos);
     p.flip_to_literal_at(start_pos);
     None
 }
