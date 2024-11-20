@@ -55,8 +55,9 @@ impl<'input> Parser<'input> {
 
     pub fn next_token(&mut self) -> Option<&Token<'input>> {
         if self.stack.len() > self.stack_pos {
+            let res = self.stack.get(self.stack_pos);
             self.stack_pos += 1;
-            return self.stack.get(self.stack_pos);
+            return res;
         };
 
         self.stack.push(self.lexer.next()?);
@@ -209,5 +210,16 @@ mod tests {
             p.peek(),
             Some((&Token::new(TokenKind::Literal, "!", Position::default()), 0))
         )
+    }
+
+    #[test]
+    fn backtrack() {
+        let mut p = Parser::new("!");
+        p.next_token();
+        p.backtrack(0);
+        assert_eq!(
+            p.next_token(),
+            Some(&Token::new(TokenKind::Bang, "!", Position::default()))
+        );
     }
 }

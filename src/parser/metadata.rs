@@ -13,7 +13,11 @@ pub(crate) fn metadata(p: &mut Parser) -> Option<String> {
                 match t.kind {
                     TokenKind::Minus if t.slice.len() == 3 && t.position.column == 0 => {
                         p.next_token();
-                        return Some(p.range_to_string(start + 2..pos - 1));
+                        if (start + 2) > (pos - 1) {
+                            return Some(String::from(""));
+                        } else {
+                            return Some(p.range_to_string(start + 2..pos - 1));
+                        }
                     }
                     _ => {
                         p.next_token();
@@ -84,5 +88,11 @@ mod tests {
                 0
             ))
         )
+    }
+
+    #[test]
+    fn no_content() {
+        let mut p = Parser::new("---\n---");
+        assert_eq!(metadata(&mut p), Some(String::from("")));
     }
 }

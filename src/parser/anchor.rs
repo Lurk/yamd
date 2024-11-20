@@ -23,7 +23,9 @@ pub(crate) fn anchor(p: &mut Parser<'_>) -> Option<Anchor> {
                 p.next_token();
                 paren_count += 1;
             }
-            TokenKind::RightParenthesis if right_square_bracket_pos.is_some() => {
+            TokenKind::RightParenthesis
+                if right_square_bracket_pos.is_some() && paren_count > 0 =>
+            {
                 last_right_paren_pos.replace(pos);
                 p.next_token();
                 paren_count -= 1;
@@ -127,6 +129,16 @@ mod tests {
     #[test]
     fn no_paren() {
         let mut p = Parser::new("[a]");
+        assert_eq!(anchor(&mut p), None);
+        assert_eq!(
+            p.peek(),
+            Some((&Token::new(TokenKind::Literal, "[", Position::default()), 0))
+        )
+    }
+
+    #[test]
+    fn right_paren() {
+        let mut p = Parser::new("[a])");
         assert_eq!(anchor(&mut p), None);
         assert_eq!(
             p.peek(),
