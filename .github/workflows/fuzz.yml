@@ -21,6 +21,7 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly
+          targets: x86_64-unknown-linux-musl
       - name: cargo install cargo-fuzz
         uses: taiki-e/install-action@v2
         with:
