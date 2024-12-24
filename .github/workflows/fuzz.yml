@@ -22,6 +22,10 @@ jobs:
         with:
           toolchain: nightly
           targets: x86_64-unknown-linux-gnu
+      - name: Install latest nightly and set it as default
+        run: |
+          rustup install nightly
+          rustup default nightly
       - name: cargo install cargo-fuzz
         uses: taiki-e/install-action@v2
         with:
