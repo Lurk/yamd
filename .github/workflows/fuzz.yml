@@ -21,11 +21,10 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly
-          targets: x86_64-unknown-linux-musl
+          targets: x86_64-unknown-linux-gnu
       - name: cargo install cargo-fuzz
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-fuzz
       - name: cargo fuzz run deserialize -- -max_total_time=5
         run: cargo fuzz run deserialize -- -max_total_time=5
-
