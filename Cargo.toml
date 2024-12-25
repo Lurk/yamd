@@ -15,6 +15,9 @@ serde = { version = "1.0.215", features = ["derive"] }
 pretty_assertions = "1.4.1"
 criterion = "0.5.1"
 
+[lib]
+bench = false # due to https://bheisler.github.io/criterion.rs/book/faq.html#cargo-bench-gives-unrecognized-option-errors-for-valid-command-line-options 
+
 [[bench]]
 name = "throughput"
 harness = false
