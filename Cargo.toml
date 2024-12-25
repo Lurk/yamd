@@ -13,5 +13,8 @@ serde = { version = "1.0.215", features = ["derive"] }
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
+criterion = "0.5.1"
 
-
+[[bench]]
+name = "throughput"
+harness = false
