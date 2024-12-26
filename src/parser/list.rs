@@ -211,8 +211,7 @@ mod tests {
                     1,
                     vec![ListItem::new(vec![String::from("level 0").into()], None)],
                 )),
-            )
-            .into()],
+            )],
         );
 
         assert_eq!(list(&mut p, &ListTypes::Ordered), Some(list_node));
