@@ -51,8 +51,7 @@
 //!
 //! ## Nodes
 //!
-//! List of supported [nodes](crate::nodes) and their formatting. The best starting point is
-//! [YAMD](crate::nodes::Yamd).
+//! List of supported [nodes] and their formatting. The best starting point is [YAMD](crate::nodes::Yamd).
 //!
 //! # MSRV
 //!
