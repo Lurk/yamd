@@ -172,8 +172,8 @@ end"#;
                         .into(),
                         Image::new('a', 'u').into(),
                         Images::new(vec![
-                            Image::new("a", "u").into(),
-                            Image::new("a2", "u2").into()
+                            Image::new("a", "u"),
+                            Image::new("a2", "u2")
                         ],)
                         .into(),
                         Highlight::new(
