@@ -13,7 +13,7 @@ const LONG_RANDOM: &str = include_str!("./random_token.yamd");
 fn long_valid(c: &mut Criterion) {
     let mut group = c.benchmark_group("throughput");
     group.throughput(Throughput::Bytes(LONG_VALID_YAMD.len() as u64));
-    group.bench_function("~344kb lines of YAMD written by humman", |b| {
+    group.bench_function("~344kb of YAMD written by humman", |b| {
         b.iter(|| deserialize(black_box(LONG_VALID_YAMD)))
     });
     group.finish();
