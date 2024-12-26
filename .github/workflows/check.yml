@@ -115,8 +115,6 @@ jobs:
     name: ubuntu / rdme
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: true
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
       - name: cargo install cargo-rdme
