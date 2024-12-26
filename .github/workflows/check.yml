@@ -110,3 +110,16 @@ jobs:
           toolchain: ${{ matrix.msrv }}
       - name: cargo +${{ matrix.msrv }} check
         run: cargo check
+  rdme:
+    runs-on: ubuntu-latest
+    name: ubuntu / rdme
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Install stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: cargo install cargo-rdme
+        uses: taiki-e/install-action@cargo-rdme
+      - name: cargo rdme --check
+        run: cargo rdme --check

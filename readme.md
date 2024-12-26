@@ -10,38 +10,29 @@ YAMD - Yet Another Markdown Document (flavour)
 
 Simplified version of [CommonMark](https://spec.commonmark.org/).
 
-For formatting check YAMD struct documentation.
+For formatting check [`YAMD`](nodes::Yamd) struct documentation.
 
 ## Reasoning
 
 Simplified set of rules allows to have simpler, more efficient, parser and renderer.
-YAMD does not provide render functionality, instead it is a [serde]
+[YAMD](nodes::Yamd) does not provide render functionality, instead it is a [serde]
 serializable structure that allows you to write any renderer for that structure. All HTML
 equivalents in this doc are provided as an example to what it can be rendered.
 
 ## Difference from CommonMark
 
+While YAMD tries to utilize as much CommonMark syntax as possible, there are differences.
+
 ### Escaping
 
 Escaping done on a [lexer] level. Every symbol following the `\` symbol will be treated as a
-literal.
+[literal](lexer::TokenKind::Literal).
 
 Example:
 
 | YAMD      | HTML equivalent |
 |-----------|-----------------|
 | `\**foo**`|`<p>**foo**</p>` |
-
-### Escape character
-
-To get `\` - `\\` must be used.
-
-Example:
-
-| YAMD          | HTML equivalent       |
-|---------------|-----------------------|
-| `\\**foo**`   |`<p>\<b>foo</b></p>`   |
-
 
 ### Precedence
 
@@ -57,7 +48,7 @@ Example:
 | ``- `one\n- two` ``   | `<ol><li><code>one\n- two</code></li></ol>`   |
 
 
-If you want to have two ListItem's use escaping:
+If you want to have two [ListItem](nodes::ListItem)'s use escaping:
 
 | YAMD                      | HTML equivalent                           |
 |---------------------------|-------------------------------------------|
@@ -68,6 +59,10 @@ does not exist yet.
 
 ### Nodes
 
-List of supported [nodes](https://docs.rs/yamd/latest/yamd/nodes/) and their formatting slightly defers from CommonSpec.
+List of supported [nodes] and their formatting. The best starting point is [YAMD](nodes::Yamd).
+
+## MSRV
+
+YAMD minimal supported Rust version is 1.80.0 due to [Option::take_if] usage
 
 <!-- cargo-rdme end -->

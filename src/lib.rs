@@ -2,12 +2,12 @@
 //!
 //! Simplified version of [CommonMark](https://spec.commonmark.org/).
 //!
-//! For formatting check [YAMD](crate::nodes::Yamd) struct documentation.
+//! For formatting check [`YAMD`](nodes::Yamd) struct documentation.
 //!
 //! # Reasoning
 //!
 //! Simplified set of rules allows to have simpler, more efficient, parser and renderer.
-//! [YAMD](crate::nodes::Yamd) does not provide render functionality, instead it is a [serde]
+//! [YAMD](nodes::Yamd) does not provide render functionality, instead it is a [serde]
 //! serializable structure that allows you to write any renderer for that structure. All HTML
 //! equivalents in this doc are provided as an example to what it can be rendered.
 //!
@@ -18,7 +18,7 @@
 //! ## Escaping
 //!
 //! Escaping done on a [lexer] level. Every symbol following the `\` symbol will be treated as a
-//! [literal](crate::lexer::TokenKind::Literal).
+//! [literal](lexer::TokenKind::Literal).
 //!
 //! Example:
 //!
@@ -40,7 +40,7 @@
 //! | ``- `one\n- two` ``   | `<ol><li><code>one\n- two</code></li></ol>`   |
 //!
 //!
-//! If you want to have two [ListItem](crate::nodes::ListItem)'s use escaping:
+//! If you want to have two [ListItem](nodes::ListItem)'s use escaping:
 //!
 //! | YAMD                      | HTML equivalent                           |
 //! |---------------------------|-------------------------------------------|
@@ -51,7 +51,7 @@
 //!
 //! ## Nodes
 //!
-//! List of supported [nodes] and their formatting. The best starting point is [YAMD](crate::nodes::Yamd).
+//! List of supported [nodes] and their formatting. The best starting point is [YAMD](nodes::Yamd).
 //!
 //! # MSRV
 //!
