@@ -71,6 +71,10 @@ impl<'input> Lexer<'input> {
     }
 
     fn emit(&mut self, token: Token<'input>) {
+        if token.kind == TokenKind::Space && self.literal_start.is_some() {
+            return;
+        }
+
         self.emit_literal_if_started(token.position.byte_index);
         if let Some(l) = self.token.replace(token) {
             self.queue.push_back(l);
