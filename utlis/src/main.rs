@@ -8,8 +8,12 @@ use yamd::lexer::TokenKind;
 enum Commands {
     /// Generate random tokens
     Random {
-        /// length of a sequence
+        /// length of a sequence in bytes
         length: usize,
+        /// literal length
+        #[clap(default_value = "10")]
+        #[arg(short, long)]
+        max_literal_len: usize,
     },
 }
 
@@ -23,11 +27,14 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
     match cli.command {
-        Commands::Random { length } => random(length),
+        Commands::Random {
+            length,
+            max_literal_len,
+        } => random(length, max_literal_len),
     }
 }
 
-fn random(length: usize) {
+fn random(length: usize, max_literal_len: usize) {
     let mut rng = rand::thread_rng();
     let t = TokenKind::Eol;
     match t {
@@ -55,8 +62,9 @@ fn random(length: usize) {
         TokenKind::Literal => 21,
     };
 
-    for _ in 0..length {
-        let token_kind = match rng.gen_range(0..=21) {
+    let mut out = String::with_capacity(length + 10);
+    while out.len() < length {
+        let token = match rng.gen_range(0..=21) {
             0 => "\n\n",
             1 => "\n",
             2 => "{",
@@ -78,11 +86,11 @@ fn random(length: usize) {
             18 => ")",
             19 => "_",
             20 => "|",
-            _ => &random_string(rng.gen_range(10..100), &mut rng),
+            _ => &random_string(rng.gen_range(3..max_literal_len), &mut rng),
         };
-        print!("{token_kind}")
+        out.push_str(token);
     }
-    println!()
+    println!("{out}")
 }
 
 fn random_char(rng: &mut ThreadRng) -> char {
