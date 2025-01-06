@@ -17,6 +17,7 @@ pub use token::{Position, Token, TokenKind};
 
 pub struct Lexer<'input> {
     literal_start: Option<Position>,
+    escaped: bool,
     position: Position,
     input: &'input str,
     iter: Peekable<CharIndices<'input>>,
@@ -31,6 +32,7 @@ impl<'input> Lexer<'input> {
             position: Position::default(),
             iter: input.char_indices().peekable(),
             literal_start: None,
+            escaped: false,
             queue: VecDeque::with_capacity(2),
             token: None,
         }
@@ -38,14 +40,15 @@ impl<'input> Lexer<'input> {
 
     fn emit_literal_if_started(&mut self, end_byte_index: usize) {
         if let Some(start_position) = self.literal_start.take() {
-            if let Some(token) = self.token.take() {
+            if let Some(token) = self.token.replace(Token {
+                kind: TokenKind::Literal,
+                slice: &self.input[start_position.byte_index..end_byte_index],
+                position: start_position,
+                escaped: self.escaped,
+            }) {
                 self.queue.push_back(token);
             }
-            self.queue.push_back(Token::new(
-                TokenKind::Literal,
-                &self.input[start_position.byte_index..end_byte_index],
-                start_position,
-            ));
+            self.escaped = false;
         }
     }
 
@@ -130,6 +133,7 @@ impl<'input> Lexer<'input> {
             '\\' => {
                 self.emit_literal_if_started(position.byte_index);
                 if let Some((pos, _)) = self.next_char(true) {
+                    self.escaped = true;
                     self.literal_start.get_or_insert(pos);
                 }
             }
@@ -242,15 +246,16 @@ mod tests {
         assert_eq!(
             Lexer::new("\\![").collect::<Vec<_>>(),
             vec![
-                Token::new(
-                    TokenKind::Literal,
-                    "!",
-                    Position {
+                Token {
+                    kind: TokenKind::Literal,
+                    slice: "!",
+                    position: Position {
                         byte_index: 1,
                         column: 0,
                         row: 0
-                    }
-                ),
+                    },
+                    escaped: true
+                },
                 Token::new(
                     TokenKind::LeftSquareBracket,
                     "[",
@@ -316,15 +321,16 @@ mod tests {
             Lexer::new("###\\   ").collect::<Vec<_>>(),
             vec![
                 Token::new(TokenKind::Hash, "###", Position::default()),
-                Token::new(
-                    TokenKind::Literal,
-                    " ",
-                    Position {
+                Token {
+                    kind: TokenKind::Literal,
+                    slice: " ",
+                    position: Position {
                         byte_index: 4,
                         column: 3,
                         row: 0,
-                    }
-                ),
+                    },
+                    escaped: true
+                },
                 Token::new(
                     TokenKind::Space,
                     "  ",
@@ -525,15 +531,16 @@ mod tests {
     fn double_escape() {
         assert_eq!(
             Lexer::new("\\\\").collect::<Vec<_>>(),
-            vec![Token::new(
-                TokenKind::Literal,
-                "\\",
-                Position {
+            vec![Token {
+                kind: TokenKind::Literal,
+                slice: "\\",
+                position: Position {
                     byte_index: 1,
                     column: 0,
                     row: 0
-                }
-            )]
+                },
+                escaped: true
+            }]
         )
     }
 
@@ -543,24 +550,25 @@ mod tests {
             Lexer::new("literal\\[[").collect::<Vec<_>>(),
             vec![
                 Token::new(TokenKind::Literal, "literal", Position::default()),
-                Token::new(
-                    TokenKind::Literal,
-                    "[",
-                    Position {
+                Token {
+                    kind: TokenKind::Literal,
+                    slice: "[",
+                    position: Position {
                         byte_index: 8,
                         column: 7,
                         row: 0,
                     },
-                ),
-                Token {
-                    kind: TokenKind::LeftSquareBracket,
-                    slice: "[",
-                    position: Position {
+                    escaped: true
+                },
+                Token::new(
+                    TokenKind::LeftSquareBracket,
+                    "[",
+                    Position {
                         byte_index: 9,
                         column: 8,
                         row: 0,
                     },
-                },
+                ),
             ]
         )
     }

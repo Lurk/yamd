@@ -60,6 +60,7 @@ pub struct Token<'input> {
     pub kind: TokenKind,
     pub slice: &'input str,
     pub position: Position,
+    pub escaped: bool,
 }
 
 impl<'input> Token<'input> {
@@ -68,6 +69,7 @@ impl<'input> Token<'input> {
             kind,
             slice,
             position,
+            escaped: false,
         }
     }
 }
