@@ -141,7 +141,9 @@ impl<'input> Lexer<'input> {
             '*' => self.take_while('*', TokenKind::Star, position),
             '}' => self.take_while('}', TokenKind::RightCurlyBrace, position),
             '{' => self.take_while('{', TokenKind::LeftCurlyBrace, position),
-            ' ' => self.take_while(' ', TokenKind::Space, position),
+            ' ' if self.literal_start.is_none() || self.escaped => {
+                self.take_while(' ', TokenKind::Space, position)
+            }
             '-' => self.take_while('-', TokenKind::Minus, position),
             '#' => self.take_while('#', TokenKind::Hash, position),
             '>' => self.take_while('>', TokenKind::GreaterThan, position),
@@ -407,39 +409,23 @@ mod tests {
     fn blob_that_ends_with_emoji() {
         assert_eq!(
             Lexer::new("hello blob😉").collect::<Vec<_>>(),
-            vec![
-                Token::new(TokenKind::Literal, "hello", Position::default()),
-                Token::new(
-                    TokenKind::Space,
-                    " ",
-                    Position {
-                        byte_index: 5,
-                        column: 5,
-                        row: 0
-                    }
-                ),
-                Token::new(
-                    TokenKind::Literal,
-                    "blob😉",
-                    Position {
-                        byte_index: 6,
-                        column: 6,
-                        row: 0
-                    }
-                )
-            ]
+            vec![Token::new(
+                TokenKind::Literal,
+                "hello blob😉",
+                Position::default()
+            ),]
         )
     }
 
     #[test]
     fn correct_position_utf8() {
         assert_eq!(
-            Lexer::new("blob😉 ").collect::<Vec<_>>(),
+            Lexer::new("blob😉-").collect::<Vec<_>>(),
             vec![
                 Token::new(TokenKind::Literal, "blob😉", Position::default()),
                 Token::new(
-                    TokenKind::Space,
-                    " ",
+                    TokenKind::Minus,
+                    "-",
                     Position {
                         byte_index: 8,
                         column: 5,
