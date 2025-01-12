@@ -14,9 +14,9 @@ enum Commands {
     },
     /// Generate random tokens
     Random {
-        /// length of a sequence in bytes
+        /// Length of a sequence in bytes
         length: usize,
-        /// literal length
+        /// Literal length. Higher number means lower token density.
         #[clap(default_value = "10")]
         #[arg(short, long)]
         max_literal_len: usize,
