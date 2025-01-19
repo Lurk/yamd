@@ -141,9 +141,7 @@ impl<'input> Lexer<'input> {
             '*' => self.take_while('*', TokenKind::Star, position),
             '}' => self.take_while('}', TokenKind::RightCurlyBrace, position),
             '{' => self.take_while('{', TokenKind::LeftCurlyBrace, position),
-            ' ' if self.literal_start.is_none() || self.escaped => {
-                self.take_while(' ', TokenKind::Space, position)
-            }
+            ' ' if self.literal_start.is_none() => self.take_while(' ', TokenKind::Space, position),
             '-' => self.take_while('-', TokenKind::Minus, position),
             '#' => self.take_while('#', TokenKind::Hash, position),
             '>' => self.take_while('>', TokenKind::GreaterThan, position),
@@ -325,7 +323,7 @@ mod tests {
                 Token::new(TokenKind::Hash, "###", Position::default()),
                 Token {
                     kind: TokenKind::Literal,
-                    slice: " ",
+                    slice: "   ",
                     position: Position {
                         byte_index: 4,
                         column: 3,
@@ -333,15 +331,35 @@ mod tests {
                     },
                     escaped: true
                 },
-                Token::new(
-                    TokenKind::Space,
-                    "  ",
-                    Position {
-                        byte_index: 5,
-                        column: 4,
+            ]
+        );
+    }
+
+    #[test]
+    fn escaped_space_compression() {
+        assert_eq!(
+            Lexer::new("\\ \\  ").collect::<Vec<_>>(),
+            vec![
+                Token {
+                    kind: TokenKind::Literal,
+                    slice: " ",
+                    position: Position {
+                        byte_index: 1,
+                        column: 0,
                         row: 0
-                    }
-                )
+                    },
+                    escaped: true
+                },
+                Token {
+                    kind: TokenKind::Literal,
+                    slice: "  ",
+                    position: Position {
+                        byte_index: 3,
+                        column: 1,
+                        row: 0
+                    },
+                    escaped: true
+                },
             ]
         );
     }
