@@ -112,3 +112,9 @@ impl Default for Paragraph {
         Self::new(vec![])
     }
 }
+
+impl From<Vec<ParagraphNodes>> for Paragraph {
+    fn from(value: Vec<ParagraphNodes>) -> Self {
+        Self::new(value)
+    }
+}

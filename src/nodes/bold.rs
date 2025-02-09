@@ -68,3 +68,9 @@ impl Bold {
         Self { body }
     }
 }
+
+impl From<Vec<BoldNodes>> for Bold {
+    fn from(value: Vec<BoldNodes>) -> Self {
+        Self::new(value)
+    }
+}
