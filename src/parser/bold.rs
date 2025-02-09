@@ -1,42 +1,24 @@
 use crate::{lexer::TokenKind, nodes::Bold};
 
-use super::{italic, strikethrough, Parser};
+use super::{italic, strikethrough, BranchBuilder, Parser};
 
 pub(crate) fn bold(p: &mut Parser<'_>) -> Option<Bold> {
-    let mut b = Bold::new(vec![]);
-    let mut text_start: Option<usize> = None;
+    let mut b = BranchBuilder::new();
     let start_pos = p.pos();
     p.next_token();
 
     while let Some((t, pos)) = p.peek() {
         match t.kind {
             TokenKind::Terminator => break,
-            TokenKind::Tilde if t.slice.len() == 2 => {
-                if let Some(s) = strikethrough(p) {
-                    if let Some(start) = text_start.take() {
-                        b.body.push(p.range_to_string(start..pos).into());
-                    }
-                    b.body.push(s.into());
-                }
-            }
-            TokenKind::Underscore if t.slice.len() == 1 => {
-                if let Some(i) = italic(p) {
-                    if let Some(start) = text_start.take() {
-                        b.body.push(p.range_to_string(start..pos).into());
-                    }
-                    b.body.push(i.into());
-                }
-            }
+            TokenKind::Tilde if t.slice.len() == 2 => b.push(strikethrough(p), p, pos),
+            TokenKind::Underscore if t.slice.len() == 1 => b.push(italic(p), p, pos),
             TokenKind::Star if t.slice.len() == 2 => {
-                if let Some(start) = text_start.take() {
-                    b.body.push(p.range_to_string(start..pos).into());
-                }
-
+                b.consume_text(p, pos);
                 p.next_token();
-                return Some(b);
+                return b.build();
             }
             _ => {
-                text_start.get_or_insert(pos);
+                b.start_text(pos);
                 p.next_token();
             }
         }

@@ -1,5 +1,6 @@
 mod anchor;
 mod bold;
+mod branch_builder;
 mod code;
 mod code_span;
 mod collapsible;
@@ -23,6 +24,7 @@ use std::{
 
 pub(crate) use anchor::anchor;
 pub(crate) use bold::bold;
+pub(crate) use branch_builder::BranchBuilder;
 pub(crate) use code::code;
 pub(crate) use code_span::code_span;
 pub(crate) use collapsible::collapsible;

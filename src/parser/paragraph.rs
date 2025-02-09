@@ -1,53 +1,16 @@
 use crate::{
     lexer::{Token, TokenKind},
-    nodes::{Paragraph, ParagraphNodes},
+    nodes::Paragraph,
 };
 
-use super::{anchor, bold, code_span, emphasis, italic, strikethrough, Parser};
-
-#[derive(Default)]
-struct ParagraphBuilder {
-    nodes: Vec<ParagraphNodes>,
-    text_start: Option<usize>,
-}
-
-impl ParagraphBuilder {
-    fn push<N: Into<ParagraphNodes>>(&mut self, n: Option<N>, p: &Parser, pos: usize) {
-        if let Some(n) = n {
-            self.consume_text(p, pos);
-            self.nodes.push(n.into());
-        }
-    }
-
-    fn start_text(&mut self, pos: usize) {
-        self.text_start.get_or_insert(pos);
-    }
-
-    #[inline]
-    fn consume_text(&mut self, p: &Parser, end: usize) {
-        if let Some(start) = self.text_start.take() {
-            self.nodes.push(p.range_to_string(start..end).into());
-        }
-    }
-
-    fn clear_text_if_shorter_than(&mut self, pos: usize, size: usize) {
-        self.text_start.take_if(|start| pos - *start < size);
-    }
-
-    fn build(self) -> Option<Paragraph> {
-        if self.nodes.is_empty() {
-            return None;
-        }
-        Some(Paragraph::new(self.nodes))
-    }
-}
+use super::{anchor, bold, code_span, emphasis, italic, strikethrough, BranchBuilder, Parser};
 
 pub(crate) fn paragraph<Callback>(p: &mut Parser<'_>, new_line_check: Callback) -> Option<Paragraph>
 where
     Callback: Fn(&Token) -> bool,
 {
     let start = p.pos();
-    let mut bulder = ParagraphBuilder::default();
+    let mut bulder = BranchBuilder::new();
     let mut end_modifier = 0;
 
     while let Some((t, pos)) = p.peek() {
