@@ -1,90 +1,79 @@
 use crate::{
     lexer::{Token, TokenKind},
-    nodes::Paragraph,
+    nodes::{Paragraph, ParagraphNodes},
 };
 
-use super::{anchor, bold, code_span, italic, strikethrough, Parser};
+use super::{anchor, bold, code_span, emphasis, italic, strikethrough, Parser};
+
+#[derive(Default)]
+struct ParagraphBuilder {
+    nodes: Vec<ParagraphNodes>,
+    text_start: Option<usize>,
+}
+
+impl ParagraphBuilder {
+    fn push<N: Into<ParagraphNodes>>(&mut self, n: Option<N>, p: &Parser, pos: usize) {
+        if let Some(n) = n {
+            self.consume_text(p, pos);
+            self.nodes.push(n.into());
+        }
+    }
+
+    fn start_text(&mut self, pos: usize) {
+        self.text_start.get_or_insert(pos);
+    }
+
+    #[inline]
+    fn consume_text(&mut self, p: &Parser, end: usize) {
+        if let Some(start) = self.text_start.take() {
+            self.nodes.push(p.range_to_string(start..end).into());
+        }
+    }
+
+    fn clear_text_if_shorter_than(&mut self, pos: usize, size: usize) {
+        self.text_start.take_if(|start| pos - *start < size);
+    }
+
+    fn build(self) -> Option<Paragraph> {
+        if self.nodes.is_empty() {
+            return None;
+        }
+        Some(Paragraph::new(self.nodes))
+    }
+}
 
 pub(crate) fn paragraph<Callback>(p: &mut Parser<'_>, new_line_check: Callback) -> Option<Paragraph>
 where
     Callback: Fn(&Token) -> bool,
 {
     let start = p.pos();
-    let mut paragraph = Paragraph::default();
-    let mut text_start: Option<usize> = None;
+    let mut bulder = ParagraphBuilder::default();
     let mut end_modifier = 0;
 
     while let Some((t, pos)) = p.peek() {
         match t.kind {
             TokenKind::Terminator => break,
-            TokenKind::Star if t.slice.len() == 2 => {
-                if let Some(n) = bold(p) {
-                    if let Some(start) = text_start.take() {
-                        paragraph.body.push(p.range_to_string(start..pos).into());
-                    }
-
-                    paragraph.body.push(n.into());
-                }
-            }
-            TokenKind::Underscore if t.slice.len() == 1 => {
-                if let Some(n) = italic(p) {
-                    if let Some(start) = text_start.take() {
-                        paragraph.body.push(p.range_to_string(start..pos).into());
-                    }
-
-                    paragraph.body.push(n.into());
-                }
-            }
-            TokenKind::Tilde if t.slice.len() == 2 => {
-                if let Some(n) = strikethrough(p) {
-                    if let Some(start) = text_start.take() {
-                        paragraph.body.push(p.range_to_string(start..pos).into());
-                    }
-
-                    paragraph.body.push(n.into());
-                }
-            }
-            TokenKind::LeftSquareBracket => {
-                if let Some(n) = anchor(p) {
-                    if let Some(start) = text_start.take() {
-                        paragraph.body.push(p.range_to_string(start..pos).into());
-                    }
-
-                    paragraph.body.push(n.into());
-                }
-            }
-            TokenKind::Backtick if t.slice.len() == 1 => {
-                if let Some(n) = code_span(p) {
-                    if let Some(start) = text_start.take() {
-                        paragraph.body.push(p.range_to_string(start..pos).into());
-                    }
-
-                    paragraph.body.push(n.into());
-                }
-            }
+            TokenKind::Star if t.slice.len() == 2 => bulder.push(bold(p), p, pos),
+            TokenKind::Star if t.slice.len() == 1 => bulder.push(emphasis(p), p, pos),
+            TokenKind::Underscore if t.slice.len() == 1 => bulder.push(italic(p), p, pos),
+            TokenKind::Tilde if t.slice.len() == 2 => bulder.push(strikethrough(p), p, pos),
+            TokenKind::LeftSquareBracket => bulder.push(anchor(p), p, pos),
+            TokenKind::Backtick if t.slice.len() == 1 => bulder.push(code_span(p), p, pos),
             _ if pos != start && t.position.column == 0 && new_line_check(t) => {
                 end_modifier = 1;
-                text_start.take_if(|start| pos - *start < 2);
+                bulder.clear_text_if_shorter_than(pos, 2);
                 break;
             }
             _ => {
-                text_start.get_or_insert(pos);
+                bulder.start_text(pos);
                 p.next_token();
             }
         }
     }
 
-    if let Some(start) = text_start.take() {
-        paragraph
-            .body
-            .push(p.range_to_string(start..p.pos() - end_modifier).into());
-    }
+    bulder.consume_text(p, p.pos() - end_modifier);
 
-    if end_modifier != 0 && paragraph.body.is_empty() {
-        return None;
-    }
-
-    Some(paragraph)
+    bulder.build()
 }
 
 #[cfg(test)]
@@ -93,13 +82,13 @@ mod tests {
 
     use crate::{
         lexer::{Position, Token, TokenKind},
-        nodes::{Anchor, Bold, CodeSpan, Italic, Paragraph, Strikethrough},
+        nodes::{Anchor, Bold, CodeSpan, Emphasis, Italic, Paragraph, Strikethrough},
         parser::{paragraph, Parser},
     };
 
     #[test]
     pub fn terminated() {
-        let mut p = Parser::new("**b** _i_ ~~s~~ [a](u) `c` \n\n");
+        let mut p = Parser::new("**b** _i_ ~~s~~ [a](u) `c` *e* \n\n");
         assert_eq!(
             paragraph(&mut p, |_| false),
             Some(Paragraph::new(vec![
@@ -113,13 +102,15 @@ mod tests {
                 String::from(" ").into(),
                 CodeSpan::new("c").into(),
                 String::from(" ").into(),
+                Emphasis::new("e").into(),
+                String::from(" ").into()
             ]))
         )
     }
 
     #[test]
     pub fn unterminated() {
-        let mut p = Parser::new("_i_ ~~s~~ **b**[a](u) `c` ");
+        let mut p = Parser::new("_i_ ~~s~~ **b**[a](u) `c` *e* ");
         assert_eq!(
             paragraph(&mut p, |_| false),
             Some(Paragraph::new(vec![
@@ -132,6 +123,8 @@ mod tests {
                 String::from(" ").into(),
                 CodeSpan::new("c").into(),
                 String::from(" ").into(),
+                Emphasis::new("e").into(),
+                String::from(" ").into()
             ]))
         )
     }
