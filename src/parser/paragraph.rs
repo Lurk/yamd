@@ -3,20 +3,15 @@ use crate::{
     nodes::{Paragraph, ParagraphNodes},
 };
 
-use super::{anchor, bold, code_span, italic, strikethrough, Parser};
+use super::{anchor, bold, code_span, emphasis, italic, strikethrough, Parser};
+
+#[derive(Default)]
 struct ParagraphBuilder {
     nodes: Vec<ParagraphNodes>,
     text_start: Option<usize>,
 }
 
 impl ParagraphBuilder {
-    pub fn new() -> Self {
-        Self {
-            nodes: vec![],
-            text_start: None,
-        }
-    }
-
     fn push<N: Into<ParagraphNodes>>(&mut self, n: Option<N>, p: &Parser, pos: usize) {
         if let Some(n) = n {
             self.consume_text(p, pos);
@@ -28,6 +23,7 @@ impl ParagraphBuilder {
         self.text_start.get_or_insert(pos);
     }
 
+    #[inline]
     fn consume_text(&mut self, p: &Parser, end: usize) {
         if let Some(start) = self.text_start.take() {
             self.nodes.push(p.range_to_string(start..end).into());
@@ -51,13 +47,14 @@ where
     Callback: Fn(&Token) -> bool,
 {
     let start = p.pos();
-    let mut bulder = ParagraphBuilder::new();
+    let mut bulder = ParagraphBuilder::default();
     let mut end_modifier = 0;
 
     while let Some((t, pos)) = p.peek() {
         match t.kind {
             TokenKind::Terminator => break,
             TokenKind::Star if t.slice.len() == 2 => bulder.push(bold(p), p, pos),
+            TokenKind::Star if t.slice.len() == 1 => bulder.push(emphasis(p), p, pos),
             TokenKind::Underscore if t.slice.len() == 1 => bulder.push(italic(p), p, pos),
             TokenKind::Tilde if t.slice.len() == 2 => bulder.push(strikethrough(p), p, pos),
             TokenKind::LeftSquareBracket => bulder.push(anchor(p), p, pos),
@@ -85,13 +82,13 @@ mod tests {
 
     use crate::{
         lexer::{Position, Token, TokenKind},
-        nodes::{Anchor, Bold, CodeSpan, Italic, Paragraph, Strikethrough},
+        nodes::{Anchor, Bold, CodeSpan, Emphasis, Italic, Paragraph, Strikethrough},
         parser::{paragraph, Parser},
     };
 
     #[test]
     pub fn terminated() {
-        let mut p = Parser::new("**b** _i_ ~~s~~ [a](u) `c` \n\n");
+        let mut p = Parser::new("**b** _i_ ~~s~~ [a](u) `c` *e* \n\n");
         assert_eq!(
             paragraph(&mut p, |_| false),
             Some(Paragraph::new(vec![
@@ -105,13 +102,15 @@ mod tests {
                 String::from(" ").into(),
                 CodeSpan::new("c").into(),
                 String::from(" ").into(),
+                Emphasis::new("e").into(),
+                String::from(" ").into()
             ]))
         )
     }
 
     #[test]
     pub fn unterminated() {
-        let mut p = Parser::new("_i_ ~~s~~ **b**[a](u) `c` ");
+        let mut p = Parser::new("_i_ ~~s~~ **b**[a](u) `c` *e* ");
         assert_eq!(
             paragraph(&mut p, |_| false),
             Some(Paragraph::new(vec![
@@ -124,6 +123,8 @@ mod tests {
                 String::from(" ").into(),
                 CodeSpan::new("c").into(),
                 String::from(" ").into(),
+                Emphasis::new("e").into(),
+                String::from(" ").into()
             ]))
         )
     }

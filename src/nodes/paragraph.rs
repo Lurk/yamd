@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use super::{Anchor, Bold, CodeSpan, Italic, Strikethrough};
+use super::{Anchor, Bold, CodeSpan, Emphasis, Italic, Strikethrough};
 
 #[derive(Debug, PartialEq, Serialize, Clone, Eq)]
 #[serde(tag = "type", content = "value")]
@@ -11,6 +11,7 @@ pub enum ParagraphNodes {
     Strikethrough(Strikethrough),
     Text(String),
     CodeSpan(CodeSpan),
+    Emphasis(Emphasis),
 }
 
 impl From<Anchor> for ParagraphNodes {
@@ -49,6 +50,12 @@ impl From<CodeSpan> for ParagraphNodes {
     }
 }
 
+impl From<Emphasis> for ParagraphNodes {
+    fn from(value: Emphasis) -> Self {
+        ParagraphNodes::Emphasis(value)
+    }
+}
+
 /// # Paragraph
 ///
 /// Any token until [Terminator](type@crate::lexer::TokenKind::Terminator) or end of input.
@@ -60,13 +67,14 @@ impl From<CodeSpan> for ParagraphNodes {
 /// - [Bold]
 /// - [Italic]
 /// - [Strikethrough]
+/// - [Emphasis]
 /// - [String]
 ///
 /// Example:
 ///
 /// ```text
 /// Paragraph can contain an [anchor](#), a `code span`, and **bold**, or _italic_, or ~~strikethrough~~, or
-/// regular text.
+/// *emphasis*, or regular text.
 /// ```
 ///
 /// HTML equivalent:
@@ -83,6 +91,7 @@ impl From<CodeSpan> for ParagraphNodes {
 ///     <i>italic</i>
 ///     , or
 ///     <s>strikethrough</s>
+///     , or <em>emphasis</em>
 ///     , or regular text.
 /// </p>
 /// ```
