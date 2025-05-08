@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::Serialize;
 
 use super::{Anchor, Bold, CodeSpan, Emphasis, Italic, Strikethrough};
@@ -53,6 +55,20 @@ impl From<CodeSpan> for ParagraphNodes {
 impl From<Emphasis> for ParagraphNodes {
     fn from(value: Emphasis) -> Self {
         ParagraphNodes::Emphasis(value)
+    }
+}
+
+impl Display for ParagraphNodes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ParagraphNodes::Anchor(a) => write!(f, "{}", a),
+            ParagraphNodes::Bold(b) => write!(f, "{}", b),
+            ParagraphNodes::Italic(i) => write!(f, "{}", i),
+            ParagraphNodes::Strikethrough(s) => write!(f, "{}", s),
+            ParagraphNodes::Text(t) => write!(f, "{}", t.replace("\n\n", "\\\n\\\n")),
+            ParagraphNodes::CodeSpan(c) => write!(f, "{}", c),
+            ParagraphNodes::Emphasis(e) => write!(f, "{}", e),
+        }
     }
 }
 
@@ -116,5 +132,51 @@ impl Default for Paragraph {
 impl From<Vec<ParagraphNodes>> for Paragraph {
     fn from(value: Vec<ParagraphNodes>) -> Self {
         Self::new(value)
+    }
+}
+
+impl Display for Paragraph {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for node in &self.body {
+            write!(f, "{}", node)?;
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::nodes::{
+        Anchor, Bold, BoldNodes, CodeSpan, Emphasis, Italic, Paragraph, ParagraphNodes,
+        Strikethrough,
+    };
+
+    #[test]
+    fn paragraph() {
+        let paragraph = Paragraph::new(vec![
+            ParagraphNodes::from("Paragraph can contain an ".to_string()),
+            ParagraphNodes::from(Anchor::new("anchor", "https://example.com")),
+            ParagraphNodes::from(", a ".to_string()),
+            ParagraphNodes::from(CodeSpan::new("code span")),
+            ParagraphNodes::from(", or ".to_string()),
+            ParagraphNodes::from(Bold::new(vec![BoldNodes::from("bold".to_string())])),
+            ParagraphNodes::from(", or ".to_string()),
+            ParagraphNodes::from(Italic::new("italic")),
+            ParagraphNodes::from(", or ".to_string()),
+            ParagraphNodes::from(Strikethrough::new("strikethrough")),
+            ParagraphNodes::from(", or ".to_string()),
+            ParagraphNodes::from(Emphasis::new("emphasis")),
+            ParagraphNodes::from(", or regular text.".to_string()),
+        ]);
+        assert_eq!(
+            paragraph.to_string(),
+            "Paragraph can contain an [anchor](https://example.com), a `code span`, or **bold**, or _italic_, or ~~strikethrough~~, or *emphasis*, or regular text."
+        );
+    }
+
+    #[test]
+    fn paragraph_with_terminator() {
+        let paragraph = Paragraph::new(vec![ParagraphNodes::from("\n\n".to_string())]);
+        assert_eq!(paragraph.to_string(), "\\\n\\\n");
     }
 }

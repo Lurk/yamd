@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::Serialize;
 
 /// # Embed
@@ -33,5 +35,33 @@ impl Embed {
             kind: kind.into(),
             args: args.into(),
         }
+    }
+}
+
+impl Display for Embed {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{{{{{}|{}}}}}",
+            self.kind.replace("|", "\\|"),
+            self.args.replace("}", "\\}")
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn embed() {
+        let embed = Embed::new("youtube", "dQw4w9WgXcQ");
+        assert_eq!(embed.to_string(), "{{youtube|dQw4w9WgXcQ}}");
+    }
+
+    #[test]
+    fn embed_with_escaped_parts() {
+        let embed = Embed::new("youtube|as", "dQw4w9WgXcQ}}");
+        assert_eq!(embed.to_string(), "{{youtube\\|as|dQw4w9WgXcQ\\}\\}}}");
     }
 }

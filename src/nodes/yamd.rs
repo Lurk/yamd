@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::Serialize;
 
 use super::{
@@ -76,6 +78,23 @@ impl From<Embed> for YamdNodes {
 impl From<Collapsible> for YamdNodes {
     fn from(value: Collapsible) -> Self {
         YamdNodes::Collapsible(value)
+    }
+}
+
+impl Display for YamdNodes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            YamdNodes::Pargargaph(node) => write!(f, "{}", node),
+            YamdNodes::Heading(node) => write!(f, "{}", node),
+            YamdNodes::Image(node) => write!(f, "{}", node),
+            YamdNodes::Images(node) => write!(f, "{}", node),
+            YamdNodes::Code(node) => write!(f, "{}", node),
+            YamdNodes::List(node) => write!(f, "{}", node),
+            YamdNodes::Highlight(node) => write!(f, "{}", node),
+            YamdNodes::ThematicBreak(node) => write!(f, "{}", node),
+            YamdNodes::Embed(node) => write!(f, "{}", node),
+            YamdNodes::Collapsible(node) => write!(f, "{}", node),
+        }
     }
 }
 
@@ -235,5 +254,56 @@ pub struct Yamd {
 impl Yamd {
     pub fn new(metadata: Option<String>, body: Vec<YamdNodes>) -> Self {
         Self { metadata, body }
+    }
+}
+
+impl Display for Yamd {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(metadata) = &self.metadata {
+            writeln!(f, "---")?;
+            writeln!(f, "{}", metadata)?;
+            write!(f, "---\n\n")?;
+        }
+
+        write!(
+            f,
+            "{}",
+            self.body
+                .iter()
+                .map(|node| node.to_string())
+                .collect::<Vec<_>>()
+                .join("\n\n")
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::nodes::{Collapsible, Highlight, Paragraph, Yamd};
+
+    #[test]
+    fn test_yamd() {
+        let yamd = Yamd::new(
+            Some("title: \"Yamd\"".to_string()),
+            vec![
+                Paragraph::new(vec!["paragraph".to_string().into()]).into(),
+                Highlight::new(
+                    Some("Highlight"),
+                    Some("warning"),
+                    vec![Paragraph::new(vec!["body".to_string().into()])],
+                )
+                .into(),
+                Collapsible::new(
+                    "Or collapsible",
+                    vec![Paragraph::new(vec!["body".to_string().into()]).into()],
+                )
+                .into(),
+            ],
+        );
+
+        assert_eq!(
+            yamd.to_string(),
+            "---\ntitle: \"Yamd\"\n---\n\nparagraph\n\n!! Highlight\n! warning\nbody\n!!\n\n{% Or collapsible\nbody\n%}"
+        );
     }
 }

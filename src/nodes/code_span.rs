@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::Serialize;
 
 /// # Code span
@@ -24,5 +26,50 @@ pub struct CodeSpan(pub String);
 impl CodeSpan {
     pub fn new<Body: Into<String>>(body: Body) -> Self {
         CodeSpan(body.into())
+    }
+}
+
+impl Display for CodeSpan {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "`{}`",
+            self.0.replace("`", "\\`").replace("\n\n", "\\\n\n")
+        )
+    }
+}
+
+impl From<String> for CodeSpan {
+    fn from(value: String) -> Self {
+        CodeSpan(value)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn code_span() {
+        let code_span = CodeSpan::new("anything even EOL\ncan be it");
+        assert_eq!(code_span.to_string(), "`anything even EOL\ncan be it`");
+    }
+
+    #[test]
+    fn code_span_with_backtick() {
+        let code_span = CodeSpan::new("anything even EOL\ncan `be` it");
+        assert_eq!(
+            code_span.to_string(),
+            "`anything even EOL\ncan \\`be\\` it`"
+        );
+    }
+
+    #[test]
+    fn code_span_with_terminator() {
+        let code_span = CodeSpan::new("anything even EOL\n\ncan be it\n");
+        assert_eq!(
+            code_span.to_string(),
+            "`anything even EOL\\\n\ncan be it\n`"
+        );
     }
 }

@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::Serialize;
 
 use super::Paragraph;
@@ -65,5 +67,82 @@ impl Highlight {
             icon: icon.map(|icon| icon.into()),
             body,
         }
+    }
+}
+
+impl Display for Highlight {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let title = self
+            .title
+            .as_ref()
+            .map_or("".to_string(), |t| format!(" {}", t));
+        let icon = self
+            .icon
+            .as_ref()
+            .map_or("".to_string(), |i| format!("! {}\n", i));
+        write!(
+            f,
+            "!!{}\n{}{}\n!!",
+            title,
+            icon,
+            self.body
+                .iter()
+                .map(|paragraph| paragraph.to_string())
+                .collect::<Vec<_>>()
+                .join("\n\n")
+                .replace("!!", "\\!!")
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::nodes::Paragraph;
+
+    #[test]
+    fn highlight() {
+        let highlight = Highlight::new(
+            Some("title"),
+            Some("icon"),
+            vec![Paragraph::new(vec!["body".to_string().into()])],
+        );
+        assert_eq!(highlight.to_string(), "!! title\n! icon\nbody\n!!");
+    }
+
+    #[test]
+    fn highlight_without_title() {
+        let highlight = Highlight::new::<&str, &str>(
+            None,
+            Some("icon"),
+            vec![Paragraph::new(vec!["body".to_string().into()])],
+        );
+        assert_eq!(highlight.to_string(), "!!\n! icon\nbody\n!!");
+    }
+
+    #[test]
+    fn highlight_without_icon() {
+        let highlight = Highlight::new::<&str, &str>(
+            Some("title"),
+            None,
+            vec![Paragraph::new(vec!["body".to_string().into()])],
+        );
+        assert_eq!(highlight.to_string(), "!! title\nbody\n!!");
+    }
+
+    #[test]
+    fn highlight_with_double_bang_in_the_middle() {
+        let highlight = Highlight::new::<&str, &str>(
+            Some("title"),
+            Some("icon"),
+            vec![
+                Paragraph::new(vec!["body".to_string().into()]),
+                Paragraph::new(vec!["a\n!!".to_string().into()]),
+            ],
+        );
+        assert_eq!(
+            highlight.to_string(),
+            "!! title\n! icon\nbody\n\na\n\\!!\n!!"
+        );
     }
 }

@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::Serialize;
 
 use super::Image;
@@ -31,5 +33,31 @@ pub struct Images {
 impl Images {
     pub fn new(body: Vec<Image>) -> Self {
         Self { body }
+    }
+}
+
+impl Display for Images {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.body
+                .iter()
+                .map(|image| image.to_string())
+                .collect::<Vec<_>>()
+                .join("\n")
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::nodes::Image;
+
+    #[test]
+    fn images() {
+        let images = Images::new(vec![Image::new("alt", "src"), Image::new("alt", "src")]);
+        assert_eq!(images.to_string(), "![alt](src)\n![alt](src)");
     }
 }
