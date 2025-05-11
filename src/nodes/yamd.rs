@@ -279,7 +279,10 @@ impl Display for Yamd {
 
 #[cfg(test)]
 mod tests {
-    use crate::nodes::{Collapsible, Highlight, Paragraph, Yamd};
+    use crate::nodes::{
+        Code, Collapsible, Embed, Heading, Highlight, Image, Images, List, ListItem, ListTypes,
+        Paragraph, ThematicBreak, Yamd, YamdNodes,
+    };
 
     #[test]
     fn test_yamd() {
@@ -305,5 +308,132 @@ mod tests {
             yamd.to_string(),
             "---\ntitle: \"Yamd\"\n---\n\nparagraph\n\n!! Highlight\n! warning\nbody\n!!\n\n{% Or collapsible\nbody\n%}"
         );
+    }
+
+    #[test]
+    fn test_yamd_without_metadata() {
+        let yamd = Yamd::new(
+            None,
+            vec![
+                Paragraph::new(vec!["paragraph".to_string().into()]).into(),
+                Highlight::new(
+                    Some("Highlight"),
+                    Some("warning"),
+                    vec![Paragraph::new(vec!["body".to_string().into()])],
+                )
+                .into(),
+                Collapsible::new(
+                    "Or collapsible",
+                    vec![Paragraph::new(vec!["body".to_string().into()]).into()],
+                )
+                .into(),
+            ],
+        );
+
+        assert_eq!(
+            yamd.to_string(),
+            "paragraph\n\n!! Highlight\n! warning\nbody\n!!\n\n{% Or collapsible\nbody\n%}"
+        );
+    }
+
+    #[test]
+    fn test_yamd_with_empty_body() {
+        let yamd = Yamd::new(None, vec![]);
+
+        assert_eq!(yamd.to_string(), "");
+    }
+
+    #[test]
+    fn test_yamd_with_empty_metadata() {
+        let yamd = Yamd::new(Some("".to_string()), vec![]);
+
+        assert_eq!(yamd.to_string(), "---\n---\n\n");
+    }
+
+    #[test]
+    fn paragraph_node() {
+        let node = YamdNodes::Pargargaph(Paragraph::new(vec!["Paragraph".to_string().into()]));
+
+        assert_eq!(node.to_string(), "Paragraph");
+    }
+
+    #[test]
+    fn heading_node() {
+        let node = YamdNodes::Heading(Heading::new(1, vec!["Heading".to_string().into()]));
+
+        assert_eq!(node.to_string(), "# Heading");
+    }
+
+    #[test]
+    fn image_node() {
+        let node = YamdNodes::Image(Image::new("alt", "src"));
+
+        assert_eq!(node.to_string(), "![alt](src)");
+    }
+
+    #[test]
+    fn images_node() {
+        let node = YamdNodes::Images(Images::new(vec![
+            Image::new("alt1", "src1"),
+            Image::new("alt2", "src2"),
+        ]));
+
+        assert_eq!(node.to_string(), "![alt1](src1)\n![alt2](src2)");
+    }
+
+    #[test]
+    fn code_node() {
+        let node = YamdNodes::Code(Code::new("rust", "code"));
+
+        assert_eq!(node.to_string(), "```rust\ncode\n```");
+    }
+
+    #[test]
+    fn list_node() {
+        let node = YamdNodes::List(List::new(
+            ListTypes::Unordered,
+            0,
+            vec![
+                ListItem::new(vec!["Item 1".to_string().into()], None),
+                ListItem::new(vec!["Item 2".to_string().into()], None),
+            ],
+        ));
+
+        assert_eq!(node.to_string(), "- Item 1\n- Item 2");
+    }
+
+    #[test]
+    fn highlight_node() {
+        let node = YamdNodes::Highlight(Highlight::new(
+            Some("Highlight"),
+            Some("warning"),
+            vec![Paragraph::new(vec!["body".to_string().into()])],
+        ));
+
+        assert_eq!(node.to_string(), "!! Highlight\n! warning\nbody\n!!");
+    }
+
+    #[test]
+    fn thematic_break_node() {
+        let node = YamdNodes::ThematicBreak(ThematicBreak::new());
+
+        assert_eq!(node.to_string(), "-----");
+    }
+
+    #[test]
+    fn embed_node() {
+        let node = YamdNodes::Embed(Embed::new("youtube", "url"));
+
+        assert_eq!(node.to_string(), "{{youtube|url}}");
+    }
+
+    #[test]
+    fn collapsible_node() {
+        let node = YamdNodes::Collapsible(Collapsible::new(
+            "Or collapsible",
+            vec![Paragraph::new(vec!["body".to_string().into()]).into()],
+        ));
+
+        assert_eq!(node.to_string(), "{% Or collapsible\nbody\n%}");
     }
 }
