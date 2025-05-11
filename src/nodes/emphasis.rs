@@ -5,7 +5,7 @@ use serde::Serialize;
 /// # Emphasis
 ///
 /// Any token except [Terminator](type@crate::lexer::TokenKind::Terminator) surrounded by
-/// [Start](type@crate::lexer::TokenKind::Star).
+/// [Star](type@crate::lexer::TokenKind::Star).
 ///
 /// Example:
 ///
