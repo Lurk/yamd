@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn italic() {
-        let italic = Italic::new("Italic can contain any token even \n");
+        let italic: Italic = "Italic can contain any token even \n".to_string().into();
         assert_eq!(italic.to_string(), "_Italic can contain any token even \n_");
     }
 

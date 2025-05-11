@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn code_span() {
-        let code_span = CodeSpan::new("anything even EOL\ncan be it");
+        let code_span: CodeSpan = "anything even EOL\ncan be it".to_string().into();
         assert_eq!(code_span.to_string(), "`anything even EOL\ncan be it`");
     }
 

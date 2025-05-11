@@ -52,7 +52,9 @@ mod tests {
 
     #[test]
     fn strikethrough() {
-        let strikethrough = Strikethrough::new("Strikethrough can contain any token even \n");
+        let strikethrough: Strikethrough = "Strikethrough can contain any token even \n"
+            .to_string()
+            .into();
         assert_eq!(
             strikethrough.to_string(),
             "~~Strikethrough can contain any token even \n~~"

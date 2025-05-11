@@ -182,4 +182,31 @@ mod tests {
         );
         assert_eq!(list.to_string(), "- test\n- test");
     }
+
+    #[test]
+    fn ordered() {
+        assert_eq!(ListTypes::Ordered.to_string(), "+");
+    }
+
+    #[test]
+    fn unordered() {
+        assert_eq!(ListTypes::Unordered.to_string(), "-");
+    }
+
+    #[test]
+    fn nested_list() {
+        let list = super::List::new(
+            ListTypes::Unordered,
+            0,
+            vec![ListItem::new(
+                vec!["test".to_string().into()],
+                Some(super::List::new(
+                    ListTypes::Ordered,
+                    1,
+                    vec![ListItem::new(vec!["test".to_string().into()], None)],
+                )),
+            )],
+        );
+        assert_eq!(list.to_string(), "- test\n + test");
+    }
 }

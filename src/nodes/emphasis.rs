@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn emphasis() {
-        let emphasis = Emphasis::new("Emphasis can contain any token even \n");
+        let emphasis: Emphasis = "Emphasis can contain any token even \n".to_string().into();
         assert_eq!(
             emphasis.to_string(),
             "*Emphasis can contain any token even \n*"
