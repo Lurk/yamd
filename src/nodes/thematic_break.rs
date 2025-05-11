@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::Serialize;
 
 /// # Thematic Break
@@ -20,5 +22,22 @@ pub struct ThematicBreak {}
 impl ThematicBreak {
     pub fn new() -> Self {
         Self {}
+    }
+}
+
+impl Display for ThematicBreak {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "-----")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn thematic_break() {
+        let thematic_break = ThematicBreak::new();
+        assert_eq!(thematic_break.to_string(), "-----");
     }
 }

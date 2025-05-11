@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::Serialize;
 
 /// # Image
@@ -42,5 +44,45 @@ impl Image {
             alt: alt.into(),
             src: src.into(),
         }
+    }
+}
+
+impl Display for Image {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "![{}]({})",
+            self.alt.replace("]", "\\]").replace("\n\n", "\\\n\n"),
+            self.src.replace("\n\n", "\\\n\n")
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn image() {
+        let image = Image::new("alt", "src");
+        assert_eq!(image.to_string(), "![alt](src)");
+    }
+
+    #[test]
+    fn image_with_nested_squares() {
+        let image = Image::new("alt [nested squares]", "src");
+        assert_eq!(image.to_string(), "![alt [nested squares\\]](src)");
+    }
+
+    #[test]
+    fn image_with_nested_parentheses() {
+        let image = Image::new("alt", "src(with nested)parentheses");
+        assert_eq!(image.to_string(), "![alt](src(with nested)parentheses)");
+    }
+
+    #[test]
+    fn image_with_terminator() {
+        let image = Image::new("alt\n\n", "src\n\n");
+        assert_eq!(image.to_string(), "![alt\\\n\n](src\\\n\n)");
     }
 }

@@ -69,6 +69,8 @@ jobs:
       - name: cargo test
         run: cargo test --locked --all-features --all-targets
   coverage:
+    permissions:
+      pull-requests: write
     runs-on: ubuntu-latest
     name: ubuntu / stable / coverage
     steps:
@@ -89,6 +91,8 @@ jobs:
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./lcov.info
           fail_ci_if_error: true
+          files: ./lcov.info
+          flags: unittests
+          token: ${{ secrets.CODECOV_TOKEN }}
+          env_vars: OS,RUST

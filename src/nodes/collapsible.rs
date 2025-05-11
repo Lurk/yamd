@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::Serialize;
 
 use super::YamdNodes;
@@ -44,5 +46,41 @@ impl Collapsible {
             body,
             title: title.into(),
         }
+    }
+}
+
+impl Display for Collapsible {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{{% {}\n{}\n%}}",
+            self.title,
+            self.body
+                .iter()
+                .map(|node| node.to_string())
+                .collect::<Vec<_>>()
+                .join("\n\n")
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::nodes::Paragraph;
+
+    use super::*;
+
+    #[test]
+    fn test_collapsible() {
+        let collapsible = Collapsible::new(
+            "Collapsible title",
+            vec![YamdNodes::Pargargaph(Paragraph::new(vec![
+                "Collapsible body".to_string().into(),
+            ]))],
+        );
+        assert_eq!(
+            collapsible.to_string(),
+            "{% Collapsible title\nCollapsible body\n%}"
+        );
     }
 }

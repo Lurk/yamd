@@ -56,7 +56,8 @@
 //! # MSRV
 //!
 //! YAMD minimal supported Rust version is 1.80.0 due to [Option::take_if] usage
-//!
+
+#[deny(missing_docs, rustdoc::broken_intra_doc_links)]
 pub mod lexer;
 pub mod nodes;
 mod parser;

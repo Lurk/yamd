@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::Serialize;
 
 use super::ListItem;
@@ -10,6 +12,15 @@ pub enum ListTypes {
     /// List item starts with `+` ([Plus](type@crate::lexer::TokenKind::Plus) of length 1) followed by space
     /// [Space](type@crate::lexer::TokenKind::Space). Must be rendered as numeric list.
     Ordered,
+}
+
+impl Display for ListTypes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ListTypes::Unordered => write!(f, "-"),
+            ListTypes::Ordered => write!(f, "+"),
+        }
+    }
 }
 
 /// # List
@@ -133,5 +144,69 @@ impl List {
             level,
             body,
         }
+    }
+}
+
+impl Display for List {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.body
+                .iter()
+                .map(|list_item| format!(
+                    "{}{} {}",
+                    " ".repeat(self.level),
+                    self.list_type,
+                    list_item
+                ))
+                .collect::<Vec<_>>()
+                .join("\n")
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::nodes::{ListItem, ListTypes};
+
+    #[test]
+    fn list() {
+        let list = super::List::new(
+            ListTypes::Unordered,
+            0,
+            vec![
+                ListItem::new(vec!["test".to_string().into()], None),
+                ListItem::new(vec!["test".to_string().into()], None),
+            ],
+        );
+        assert_eq!(list.to_string(), "- test\n- test");
+    }
+
+    #[test]
+    fn ordered() {
+        assert_eq!(ListTypes::Ordered.to_string(), "+");
+    }
+
+    #[test]
+    fn unordered() {
+        assert_eq!(ListTypes::Unordered.to_string(), "-");
+    }
+
+    #[test]
+    fn nested_list() {
+        let list = super::List::new(
+            ListTypes::Unordered,
+            0,
+            vec![ListItem::new(
+                vec!["test".to_string().into()],
+                Some(super::List::new(
+                    ListTypes::Ordered,
+                    1,
+                    vec![ListItem::new(vec!["test".to_string().into()], None)],
+                )),
+            )],
+        );
+        assert_eq!(list.to_string(), "- test\n + test");
     }
 }
