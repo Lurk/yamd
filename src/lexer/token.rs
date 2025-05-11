@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 
+/// The `TokenKind` enum represents the different types of tokens that can be found in the input.
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum TokenKind {
     /// Two consecutive [TokenKind::Eol]
@@ -48,22 +49,32 @@ pub enum TokenKind {
     Literal,
 }
 
+/// The `Position` struct represents the position of a token in the input.
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct Position {
+    /// The byte index of the token in the input string.
     pub byte_index: usize,
+    /// The column number of the token in the input string.
     pub column: usize,
+    /// The line number of the token in the input string.
     pub row: usize,
 }
 
+/// The `Token` struct represents a token in the input string.
 #[derive(Debug, PartialEq)]
 pub struct Token<'input> {
+    /// The kind of the token.
     pub kind: TokenKind,
+    /// The slice of the input string that corresponds to this token.
     pub slice: &'input str,
+    /// The position of the token in the input string.
     pub position: Position,
+    /// Indicates if the token is escaped.
     pub escaped: bool,
 }
 
 impl<'input> Token<'input> {
+    /// Creates a new `Token` instance.
     pub fn new(kind: TokenKind, slice: &'input str, position: Position) -> Self {
         Self {
             kind,

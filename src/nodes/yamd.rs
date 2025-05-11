@@ -261,7 +261,7 @@ impl Display for Yamd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(metadata) = &self.metadata {
             writeln!(f, "---")?;
-            writeln!(f, "{}", metadata)?;
+            write!(f, "{}", metadata)?;
             write!(f, "---\n\n")?;
         }
 
@@ -284,7 +284,7 @@ mod tests {
     #[test]
     fn test_yamd() {
         let yamd = Yamd::new(
-            Some("title: \"Yamd\"".to_string()),
+            Some("title: \"Yamd\"\n".to_string()),
             vec![
                 Paragraph::new(vec!["paragraph".to_string().into()]).into(),
                 Highlight::new(

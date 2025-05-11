@@ -1,3 +1,13 @@
+//! # Lexer module for YAMD
+//! This module provides a lexer for the YAMD format. It tokenizes the input string into various
+//! tokens such as literals, EOLs, and special characters.
+
+mod token;
+
+use std::{char, collections::VecDeque, iter::Peekable, str::CharIndices};
+
+pub use token::{Position, Token, TokenKind};
+
 /// # Lexer for YAMD.
 ///
 /// ## Usage:
@@ -9,12 +19,6 @@
 ///     print!("{}", slice);
 /// }
 /// ```
-mod token;
-
-use std::{char, collections::VecDeque, iter::Peekable, str::CharIndices};
-
-pub use token::{Position, Token, TokenKind};
-
 pub struct Lexer<'input> {
     literal_start: Option<Position>,
     escaped: bool,
@@ -26,6 +30,7 @@ pub struct Lexer<'input> {
 }
 
 impl<'input> Lexer<'input> {
+    /// Creates a new lexer instance.
     pub fn new(input: &'input str) -> Self {
         Self {
             input,
