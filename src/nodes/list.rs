@@ -1,10 +1,12 @@
 use std::fmt::Display;
 
-use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use super::ListItem;
 
-#[derive(Debug, PartialEq, Clone, Serialize, Eq)]
+#[derive(Debug, PartialEq, Clone, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum ListTypes {
     /// List item starts with `-` ([Minus](type@crate::lexer::TokenKind::Minus) of length 1) followed by space
     /// [Space](type@crate::lexer::TokenKind::Space). Must be rendered as bullet marked list.
@@ -130,7 +132,8 @@ impl Display for ListTypes {
 ///   + this will be part of level 0 (notice two spaces before `+`)</li></ol>
 /// ```
 ///
-#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
+#[derive(Debug, PartialEq, Clone, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct List {
     pub list_type: ListTypes,
     pub level: usize,

@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
-use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use super::Paragraph;
 
@@ -49,7 +50,8 @@ use super::Paragraph;
 /// !!
 /// ```
 ///
-#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
+#[derive(Debug, PartialEq, Clone, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Highlight {
     pub title: Option<String>,
     pub icon: Option<String>,

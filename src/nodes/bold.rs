@@ -1,11 +1,13 @@
 use std::fmt::Display;
 
-use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use super::{Italic, Strikethrough};
 
-#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
-#[serde(tag = "type", content = "value")]
+#[derive(Debug, PartialEq, Clone, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(tag = "type", content = "value"))]
 pub enum BoldNodes {
     Italic(Italic),
     Strikethrough(Strikethrough),
@@ -68,7 +70,8 @@ impl Display for BoldNodes {
 ///     , or regular text
 /// </b>
 /// ```
-#[derive(Debug, PartialEq, Serialize, Clone, Default, Eq)]
+#[derive(Debug, PartialEq, Clone, Default, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Bold {
     pub body: Vec<BoldNodes>,
 }

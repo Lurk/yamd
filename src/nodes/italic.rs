@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
-use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 /// # Italic
 ///
@@ -20,7 +21,8 @@ use serde::Serialize;
 /// <i>Italic can contain any token
 /// even EOL</i>
 /// ```
-#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
+#[derive(Debug, PartialEq, Clone, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Italic(pub String);
 
 impl Italic {

@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
-use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 /// # Code span
 ///
@@ -20,7 +21,8 @@ use serde::Serialize;
 /// <code>anything even EOL
 /// can be it</code>
 /// ```
-#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
+#[derive(Debug, PartialEq, Clone, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CodeSpan(pub String);
 
 impl CodeSpan {

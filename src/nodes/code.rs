@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
-use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 /// # Code
 ///
@@ -27,7 +28,8 @@ use serde::Serialize;
 /// <pre><code class="rust">let a = 42;</code></pre>
 /// ```
 
-#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
+#[derive(Debug, PartialEq, Clone, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Code {
     pub lang: String,
     pub code: String,

@@ -1,11 +1,13 @@
 use std::fmt::Display;
 
-use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use super::{Anchor, Bold, CodeSpan, Emphasis, Italic, Strikethrough};
 
-#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
-#[serde(tag = "type", content = "value")]
+#[derive(Debug, PartialEq, Clone, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(tag = "type", content = "value"))]
 pub enum ParagraphNodes {
     Anchor(Anchor),
     Bold(Bold),
@@ -112,7 +114,8 @@ impl Display for ParagraphNodes {
 /// </p>
 /// ```
 ///
-#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
+#[derive(Debug, PartialEq, Clone, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Paragraph {
     pub body: Vec<ParagraphNodes>,
 }
