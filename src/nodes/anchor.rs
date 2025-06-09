@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
-use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 /// # Anchor
 ///
@@ -31,7 +32,8 @@ use serde::Serialize;
 /// | `[link]`                              | `<p>[link]</p>`                               |
 /// | `[link](url with unclosed paren`      | `<p>[link](url with unclosed paren</p>`       |
 ///
-#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
+#[derive(Debug, PartialEq, Clone, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Anchor {
     pub text: String,
     pub url: String,

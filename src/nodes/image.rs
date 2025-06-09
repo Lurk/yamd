@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
-use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 /// # Image
 ///
@@ -32,7 +33,8 @@ use serde::Serialize;
 /// | `![alt](src with unclosed paren`      | `<p>![alt](src with unclosed paren</p>`       |
 ///
 
-#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
+#[derive(Debug, PartialEq, Clone, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Image {
     pub alt: String,
     pub src: String,

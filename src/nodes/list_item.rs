@@ -1,10 +1,12 @@
 use std::fmt::Display;
 
-use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use super::{List, ParagraphNodes};
 
-#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
+#[derive(Debug, PartialEq, Clone, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ListItem {
     pub text: Vec<ParagraphNodes>,
     pub nested_list: Option<List>,

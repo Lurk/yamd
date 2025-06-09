@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
-use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 /// # Embed
 ///
@@ -23,7 +24,8 @@ use serde::Serialize;
 /// ```html
 /// <iframe class="youtube" src="https://www.youtube.com/embed/dQw4w9WgXcQ"></iframe>
 /// ```
-#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
+#[derive(Debug, PartialEq, Clone, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Embed {
     pub kind: String,
     pub args: String,

@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
-use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 /// # Emphasis
 ///
@@ -20,7 +21,8 @@ use serde::Serialize;
 /// <em>Emphasis can contain any token
 /// even EOL</em>
 /// ```
-#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
+#[derive(Debug, PartialEq, Clone, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Emphasis(pub String);
 
 impl Emphasis {

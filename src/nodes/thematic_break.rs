@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
-use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 /// # Thematic Break
 ///
@@ -16,7 +17,8 @@ use serde::Serialize;
 /// ```html
 /// <hr />
 /// ```
-#[derive(Debug, PartialEq, Serialize, Clone, Default, Eq)]
+#[derive(Debug, PartialEq, Clone, Default, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ThematicBreak {}
 
 impl ThematicBreak {

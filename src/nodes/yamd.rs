@@ -1,13 +1,15 @@
 use std::fmt::Display;
 
-use serde::Serialize;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 use super::{
     Code, Collapsible, Embed, Heading, Highlight, Image, Images, List, Paragraph, ThematicBreak,
 };
 
-#[derive(Debug, PartialEq, Serialize, Clone, Eq)]
-#[serde(tag = "type", content = "value")]
+#[derive(Debug, PartialEq, Clone, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(tag = "type", content = "value"))]
 pub enum YamdNodes {
     Pargargaph(Paragraph),
     Heading(Heading),
@@ -245,7 +247,8 @@ impl Display for YamdNodes {
 /// ```
 ///
 
-#[derive(Debug, PartialEq, Serialize, Clone, Default, Eq)]
+#[derive(Debug, PartialEq, Default, Eq, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Yamd {
     pub metadata: Option<String>,
     pub body: Vec<YamdNodes>,
