@@ -5,14 +5,14 @@ use serde::{Deserialize, Serialize};
 
 /// # Code
 ///
-/// Starts with [Backtick](type@crate::lexer::TokenKind::Backtick) of length < 3.
+/// Starts with [Backtick](type@crate::lexer::TokenKind::Backtick) of length 3.
 ///
 /// [Lang](Code::lang) is every token except [Terminator](type@crate::lexer::TokenKind::Terminator)
-/// between [Backtick](type@crate::lexer::TokenKind::Backtick) of length < 3 and
+/// between [Backtick](type@crate::lexer::TokenKind::Backtick) of length 3 and
 /// [EOL](type@crate::lexer::TokenKind::Eol).
 ///
 /// [Code](Code::code) is every token until [Backtick](type@crate::lexer::TokenKind::Backtick) of
-/// length < 3.
+/// length 3.
 ///
 /// Example:
 ///
