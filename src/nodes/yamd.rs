@@ -158,6 +158,7 @@ impl Display for YamdNodes {
 ///  - Level 1
 ///
 /// Or ordered list:
+///
 /// + Level 0
 /// + Level 0
 ///  + Level 1
