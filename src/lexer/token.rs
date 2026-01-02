@@ -49,6 +49,35 @@ pub enum TokenKind {
     Literal,
 }
 
+impl Display for TokenKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TokenKind::Terminator => f.write_str("Terminator"),
+            TokenKind::Eol => f.write_str("Eol"),
+            TokenKind::LeftCurlyBrace => f.write_str("LeftCurlyBrace"),
+            TokenKind::RightCurlyBrace => f.write_str("RightCurlyBrace"),
+            TokenKind::CollapsibleStart => f.write_str("CollapsibleStart"),
+            TokenKind::CollapsibleEnd => f.write_str("CollapsibleEnd"),
+            TokenKind::Tilde => f.write_str("Tilde"),
+            TokenKind::Star => f.write_str("Star"),
+            TokenKind::Space => f.write_str("Space"),
+            TokenKind::Minus => f.write_str("Minus"),
+            TokenKind::Hash => f.write_str("Hash"),
+            TokenKind::GreaterThan => f.write_str("GreaterThan"),
+            TokenKind::Bang => f.write_str("Bang"),
+            TokenKind::Backtick => f.write_str("Backtick"),
+            TokenKind::Plus => f.write_str("Plus"),
+            TokenKind::LeftSquareBracket => f.write_str("LeftSquareBracket"),
+            TokenKind::RightSquareBracket => f.write_str("RightSquareBracket"),
+            TokenKind::LeftParenthesis => f.write_str("LeftParenthesis"),
+            TokenKind::RightParenthesis => f.write_str("RightParenthesis"),
+            TokenKind::Underscore => f.write_str("Underscore"),
+            TokenKind::Pipe => f.write_str("Pipe"),
+            TokenKind::Literal => f.write_str("Literal"),
+        }
+    }
+}
+
 /// The `Position` struct represents the position of a token in the input.
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct Position {
