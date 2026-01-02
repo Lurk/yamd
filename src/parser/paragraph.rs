@@ -3,7 +3,7 @@ use crate::{
     nodes::Paragraph,
 };
 
-use super::{anchor, bold, code_span, emphasis, italic, strikethrough, BranchBuilder, Parser};
+use super::{BranchBuilder, Parser, anchor, bold, code_span, emphasis, italic, strikethrough};
 
 pub(crate) fn paragraph<Callback>(p: &mut Parser<'_>, new_line_check: Callback) -> Option<Paragraph>
 where
@@ -46,7 +46,7 @@ mod tests {
     use crate::{
         lexer::{Position, Token, TokenKind},
         nodes::{Anchor, Bold, CodeSpan, Emphasis, Italic, Paragraph, Strikethrough},
-        parser::{paragraph, Parser},
+        parser::{Parser, paragraph},
     };
 
     #[test]

@@ -3,7 +3,7 @@ use crate::{
     nodes::{List, ListItem, ListTypes},
 };
 
-use super::{paragraph, Parser};
+use super::{Parser, paragraph};
 
 pub(crate) fn list(p: &mut Parser, list_type: &ListTypes) -> Option<List> {
     parse_list(p, list_type, 0)
@@ -160,7 +160,7 @@ mod tests {
     use crate::{
         lexer::{Position, Token, TokenKind},
         nodes::{List, ListItem, ListTypes},
-        parser::{list, Parser},
+        parser::{Parser, list},
     };
 
     #[test]
@@ -308,7 +308,7 @@ something"#;
     #[test]
     fn multiple_levels_unordered() {
         let mut p = Parser::new(
-            "- Level 0\n - Level 1\n  - Level 2\n - Level 1\n- Level 0\n - Level 1\n  - Level 2\n- Level 0"
+            "- Level 0\n - Level 1\n  - Level 2\n - Level 1\n- Level 0\n - Level 1\n  - Level 2\n- Level 0",
         );
 
         assert_eq!(
@@ -362,7 +362,7 @@ something"#;
     #[test]
     fn multiple_levels_ordered() {
         let mut p = Parser::new(
-            "+ Level 0\n + Level 1\n  + Level 2\n + Level 1\n+ Level 0\n + Level 1\n  + Level 2\n+ Level 0"
+            "+ Level 0\n + Level 1\n  + Level 2\n + Level 1\n+ Level 0\n + Level 1\n  + Level 2\n+ Level 0",
         );
 
         assert_eq!(

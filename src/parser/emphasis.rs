@@ -13,7 +13,7 @@ mod tests {
     use crate::{
         lexer::{Position, Token, TokenKind},
         nodes::Emphasis,
-        parser::{emphasis, Parser},
+        parser::{Parser, emphasis},
     };
 
     #[test]

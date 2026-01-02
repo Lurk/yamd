@@ -39,7 +39,7 @@ mod tests {
 
     use crate::{
         lexer::{Position, Token, TokenKind},
-        parser::{metadata, Parser},
+        parser::{Parser, metadata},
     };
 
     #[test]

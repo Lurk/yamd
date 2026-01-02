@@ -14,7 +14,7 @@ mod tests {
     use crate::{
         lexer::{Position, Token, TokenKind},
         nodes::Strikethrough,
-        parser::{strikethrough, Parser},
+        parser::{Parser, strikethrough},
     };
 
     #[test]

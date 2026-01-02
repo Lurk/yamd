@@ -3,7 +3,7 @@ use crate::{
     nodes::{Image, Images},
 };
 
-use super::{anchor, Parser};
+use super::{Parser, anchor};
 
 #[derive(PartialEq)]
 enum State {
@@ -69,7 +69,7 @@ mod tests {
     use crate::{
         lexer::{Position, Token, TokenKind},
         nodes::{Image, Images},
-        parser::{images, Parser},
+        parser::{Parser, images},
     };
 
     #[test]

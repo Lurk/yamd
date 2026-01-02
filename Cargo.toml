@@ -2,12 +2,12 @@
 name = "yamd"
 description = "Yet Another Markdown Document (flavour)"
 version = "0.16.2"
-edition = "2021"
+edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/Lurk/yamd"
 readme = "README.md"
 keywords = ["markdown", "parser"]
-rust-version = "1.80"
+rust-version = "1.87"
 
 [dependencies]
 serde = { version = "1.0.219", features = ["derive"], optional = true }

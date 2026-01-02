@@ -64,7 +64,7 @@ mod parser;
 
 #[doc(inline)]
 pub use nodes::Yamd;
-use parser::{yamd, Parser};
+use parser::{Parser, yamd};
 
 /// Deserialize a string into a Yamd struct
 /// # Example

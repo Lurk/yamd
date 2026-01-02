@@ -1,6 +1,6 @@
 use crate::{lexer::TokenKind, nodes::Bold};
 
-use super::{italic, strikethrough, BranchBuilder, Parser};
+use super::{BranchBuilder, Parser, italic, strikethrough};
 
 pub(crate) fn bold(p: &mut Parser<'_>) -> Option<Bold> {
     let mut b = BranchBuilder::new();
@@ -35,7 +35,7 @@ mod tests {
     use crate::{
         lexer::{Position, Token, TokenKind},
         nodes::{Bold, Italic, Strikethrough},
-        parser::{bold, Parser},
+        parser::{Parser, bold},
     };
 
     #[test]

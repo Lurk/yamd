@@ -5,7 +5,7 @@ use crate::{
     nodes::{Collapsible, YamdNodes},
 };
 
-use super::{yamd, Parser};
+use super::{Parser, yamd};
 
 pub(crate) fn collapsible(p: &mut Parser) -> Option<Collapsible> {
     let start = p.pos();
@@ -50,7 +50,7 @@ mod tests {
     use crate::{
         lexer::{Position, Token, TokenKind},
         nodes::{Collapsible, Heading, Image, Paragraph},
-        parser::{collapsible, Parser},
+        parser::{Parser, collapsible},
     };
 
     #[test]

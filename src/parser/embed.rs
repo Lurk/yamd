@@ -40,7 +40,7 @@ mod tests {
     use crate::{
         lexer::{Position, Token, TokenKind},
         nodes::Embed,
-        parser::{embed, Parser},
+        parser::{Parser, embed},
     };
 
     #[test]

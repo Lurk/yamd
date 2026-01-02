@@ -3,7 +3,7 @@ use crate::{
     nodes::Heading,
 };
 
-use super::{anchor, Parser};
+use super::{Parser, anchor};
 
 pub(crate) fn heading<Callback>(p: &mut Parser<'_>, new_line_check: Callback) -> Option<Heading>
 where
@@ -80,7 +80,7 @@ mod tests {
     use crate::{
         lexer::{Position, Token, TokenKind},
         nodes::{Anchor, Heading},
-        parser::{heading, Parser},
+        parser::{Parser, heading},
     };
 
     #[test]

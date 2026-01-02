@@ -5,7 +5,7 @@ use crate::{
     nodes::{Highlight, Paragraph},
 };
 
-use super::{paragraph, Parser};
+use super::{Parser, paragraph};
 
 #[derive(PartialEq)]
 enum State {
@@ -87,7 +87,7 @@ mod tests {
     use crate::{
         lexer::{Position, Token, TokenKind},
         nodes::{Bold, Highlight, Italic, Paragraph, Strikethrough},
-        parser::{highlight, Parser},
+        parser::{Parser, highlight},
     };
 
     #[test]

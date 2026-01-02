@@ -69,7 +69,7 @@ mod tests {
     use crate::{
         lexer::{Position, Token, TokenKind},
         nodes::Anchor,
-        parser::{anchor, Parser},
+        parser::{Parser, anchor},
     };
 
     #[test]

@@ -179,7 +179,7 @@ mod tests {
 
     use crate::{
         lexer::{Position, Token, TokenKind},
-        parser::{try_range, Parser},
+        parser::{Parser, try_range},
     };
 
     #[test]

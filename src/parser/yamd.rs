@@ -4,7 +4,7 @@ use crate::{
 };
 
 use super::{
-    code, collapsible, embed, heading, highlight, images, list, metadata, paragraph, Parser,
+    Parser, code, collapsible, embed, heading, highlight, images, list, metadata, paragraph,
 };
 
 pub(crate) fn yamd<Callback>(p: &mut Parser, f: Callback) -> Yamd
@@ -90,7 +90,7 @@ mod tests {
             Bold, Code, Collapsible, Embed, Heading, Highlight, Image, Images, Italic, List,
             ListItem, ListTypes, Paragraph, Strikethrough, ThematicBreak, Yamd,
         },
-        parser::{yamd, Parser},
+        parser::{Parser, yamd},
     };
 
     const TEST_CASE: &str = r#"---
@@ -162,73 +162,63 @@ end"#;
                 Some(String::from(
                     "title: test\ndate: 2022-01-01T00:00:00+02:00\nimage: image\npreview: preview\ntags:\n- tag1\n- tag2"
                 )),
-                    vec![
-                        Heading::new(1, vec![String::from("hello").into()]).into(),
-                        Code::new("rust", "let a=1;").into(),
-                        Paragraph::new(vec![
-                            String::from("t").into(),
-                            Bold::new(vec![String::from("b").into()]).into()
-                        ])
-                        .into(),
-                        Image::new('a', 'u').into(),
-                        Images::new(vec![
-                            Image::new("a", "u"),
-                            Image::new("a2", "u2")
-                        ],)
-                        .into(),
-                        Highlight::new(
-                            Some("H"),
-                            Some("I"),
-                            vec![
-                                Paragraph::new(vec![Strikethrough::new("s").into()]),
-                                Paragraph::new(vec![Italic::new("I").into()])
-                            ]
-                        )
-                        .into(),
-                        ThematicBreak::new().into(),
-                        List::new(
-                            ListTypes::Unordered,
-                            0,
-                            vec![ListItem::new(
-                                vec![String::from("one").into()],
-                                Some(List::new(
-                                    ListTypes::Unordered,
-                                    1,
-                                    vec![ListItem::new(
-                                    vec![String::from("two").into()],
-                                        None
-                                    )]
-                                ))
-                            )]
-                        )
-                        .into(),
-                        List::new(
-                            ListTypes::Ordered,
-                            0,
-                            vec![ListItem::new(
-                                vec![String::from("first").into()],
-                                Some(List::new(
-                                    ListTypes::Ordered,
-                                    1,
-                                    vec![ListItem::new(
-                                    vec![String::from("second").into()],
-                                        None
-                                    )]
-                                ))
-                            )]
-                        )
-                        .into(),
-                        Embed::new("youtube", "123",).into(),
-                        Embed::new("cloudinary_gallery", "cloud_name&tag",).into(),
-                        Collapsible::new("collapsible", vec![]).into(),
-                        Collapsible::new("one more collapsible", vec![]).into(),
-                        Paragraph::new(vec![String::from("+").into()]).into(),
-                        Paragraph::new(vec![String::from("-").into()]).into(),
-                        Paragraph::new(vec![String::from("![](").into()]).into(),
-                        Paragraph::new(vec![String::from("```").into()]).into(),
-                        Paragraph::new(vec![String::from("end").into()]).into()
-                    ]
-                ),
+                vec![
+                    Heading::new(1, vec![String::from("hello").into()]).into(),
+                    Code::new("rust", "let a=1;").into(),
+                    Paragraph::new(vec![
+                        String::from("t").into(),
+                        Bold::new(vec![String::from("b").into()]).into()
+                    ])
+                    .into(),
+                    Image::new('a', 'u').into(),
+                    Images::new(vec![Image::new("a", "u"), Image::new("a2", "u2")],).into(),
+                    Highlight::new(
+                        Some("H"),
+                        Some("I"),
+                        vec![
+                            Paragraph::new(vec![Strikethrough::new("s").into()]),
+                            Paragraph::new(vec![Italic::new("I").into()])
+                        ]
+                    )
+                    .into(),
+                    ThematicBreak::new().into(),
+                    List::new(
+                        ListTypes::Unordered,
+                        0,
+                        vec![ListItem::new(
+                            vec![String::from("one").into()],
+                            Some(List::new(
+                                ListTypes::Unordered,
+                                1,
+                                vec![ListItem::new(vec![String::from("two").into()], None)]
+                            ))
+                        )]
+                    )
+                    .into(),
+                    List::new(
+                        ListTypes::Ordered,
+                        0,
+                        vec![ListItem::new(
+                            vec![String::from("first").into()],
+                            Some(List::new(
+                                ListTypes::Ordered,
+                                1,
+                                vec![ListItem::new(vec![String::from("second").into()], None)]
+                            ))
+                        )]
+                    )
+                    .into(),
+                    Embed::new("youtube", "123",).into(),
+                    Embed::new("cloudinary_gallery", "cloud_name&tag",).into(),
+                    Collapsible::new("collapsible", vec![]).into(),
+                    Collapsible::new("one more collapsible", vec![]).into(),
+                    Paragraph::new(vec![String::from("+").into()]).into(),
+                    Paragraph::new(vec![String::from("-").into()]).into(),
+                    Paragraph::new(vec![String::from("![](").into()]).into(),
+                    Paragraph::new(vec![String::from("```").into()]).into(),
+                    Paragraph::new(vec![String::from("end").into()]).into()
+                ]
+            ),
         );
     }
 
