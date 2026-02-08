@@ -18,39 +18,39 @@ where
             TokenKind::Terminator => {
                 p.next_token();
             }
-            TokenKind::LeftCurlyBrace if t.slice.len() == 2 => {
+            TokenKind::LeftCurlyBrace if t.range.len() == 2 => {
                 if let Some(e) = embed(p) {
                     yamd.body.push(e.into());
                 }
             }
-            TokenKind::Minus if t.slice.len() == 1 => {
+            TokenKind::Minus if t.range.len() == 1 => {
                 if let Some(l) = list(p, &ListTypes::Unordered) {
                     yamd.body.push(l.into())
                 }
             }
-            TokenKind::Plus if t.slice.len() == 1 => {
+            TokenKind::Plus if t.range.len() == 1 => {
                 if let Some(l) = list(p, &ListTypes::Ordered) {
                     yamd.body.push(l.into())
                 }
             }
-            TokenKind::Minus if t.slice.len() == 3 && pos == 0 => {
+            TokenKind::Minus if t.range.len() == 3 && pos == 0 => {
                 yamd.metadata = metadata(p);
             }
-            TokenKind::Minus if t.slice.len() == 5 => {
+            TokenKind::Minus if t.range.len() == 5 => {
                 yamd.body.push(ThematicBreak::new().into());
                 p.next_token();
             }
-            TokenKind::Hash if t.slice.len() < 7 => {
+            TokenKind::Hash if t.range.len() < 7 => {
                 if let Some(h) = heading(p, &f) {
                     yamd.body.push(h.into());
                 }
             }
-            TokenKind::Bang if t.slice.len() == 2 => {
+            TokenKind::Bang if t.range.len() == 2 => {
                 if let Some(h) = highlight(p) {
                     yamd.body.push(h.into());
                 }
             }
-            TokenKind::Bang if t.slice.len() == 1 => {
+            TokenKind::Bang if t.range.len() == 1 => {
                 if let Some(mut i) = images(p, &f) {
                     if i.body.len() == 1 {
                         yamd.body.push(i.body.swap_remove(0).into());
@@ -59,7 +59,7 @@ where
                     }
                 }
             }
-            TokenKind::Backtick if t.slice.len() == 3 => {
+            TokenKind::Backtick if t.range.len() == 3 => {
                 if let Some(c) = code(p) {
                     yamd.body.push(c.into())
                 }

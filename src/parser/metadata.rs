@@ -11,7 +11,7 @@ pub(crate) fn metadata(p: &mut Parser) -> Option<String> {
         if t.kind == TokenKind::Eol {
             while let Some((t, pos)) = p.peek() {
                 match t.kind {
-                    TokenKind::Minus if t.slice.len() == 3 && t.position.column == 0 => {
+                    TokenKind::Minus if t.range.len() == 3 && t.position.column == 0 => {
                         p.next_token();
                         if (start + 2) > (pos - 1) {
                             return Some(String::from(""));
@@ -58,7 +58,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "---", Position::default()),
+                &Token::new(TokenKind::Literal, 0..3, Position::default()),
                 0
             ))
         )
@@ -71,7 +71,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "---", Position::default()),
+                &Token::new(TokenKind::Literal, 0..3, Position::default()),
                 0
             ))
         )
@@ -84,7 +84,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "---", Position::default()),
+                &Token::new(TokenKind::Literal, 0..3, Position::default()),
                 0
             ))
         )

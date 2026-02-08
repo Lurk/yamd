@@ -32,45 +32,45 @@ fn parse_list(p: &mut Parser<'_>, list_type: &ListTypes, level: usize) -> Option
     while let Some((t, pos)) = p.peek() {
         match t.kind {
             TokenKind::Terminator => break,
-            TokenKind::Space if t.position.column == 0 && t.slice.len() < level => {
+            TokenKind::Space if t.position.column == 0 && t.range.len() < level => {
                 state = State::PreviousLevel;
                 p.next_token();
             }
-            TokenKind::Space if t.position.column == 0 && t.slice.len() == level => {
+            TokenKind::Space if t.position.column == 0 && t.range.len() == level => {
                 state = State::SameLevel;
                 p.next_token();
             }
-            TokenKind::Space if t.position.column == 0 && t.slice.len() == level + 1 => {
+            TokenKind::Space if t.position.column == 0 && t.range.len() == level + 1 => {
                 state = State::NextLevel;
                 p.next_token();
             }
-            TokenKind::Minus if t.slice.len() == 1 && state == State::NextLevel => {
+            TokenKind::Minus if t.range.len() == 1 && state == State::NextLevel => {
                 state = State::NextLevelUnordered;
                 p.next_token();
             }
-            TokenKind::Plus if t.slice.len() == 1 && state == State::NextLevel => {
+            TokenKind::Plus if t.range.len() == 1 && state == State::NextLevel => {
                 state = State::NextLevelOrdered;
                 p.next_token();
             }
-            TokenKind::Minus if t.slice.len() == 1 && state == State::PreviousLevel => {
+            TokenKind::Minus if t.range.len() == 1 && state == State::PreviousLevel => {
                 state = State::PreviousLevelCommit;
                 p.next_token();
             }
-            TokenKind::Plus if t.slice.len() == 1 && state == State::PreviousLevel => {
+            TokenKind::Plus if t.range.len() == 1 && state == State::PreviousLevel => {
                 state = State::PreviousLevelCommit;
                 p.next_token();
             }
-            TokenKind::Minus if t.slice.len() == 1 && state == State::SameLevel => {
+            TokenKind::Minus if t.range.len() == 1 && state == State::SameLevel => {
                 state = State::SameLevelCommit;
                 p.next_token();
             }
-            TokenKind::Plus if t.slice.len() == 1 && state == State::SameLevel => {
+            TokenKind::Plus if t.range.len() == 1 && state == State::SameLevel => {
                 state = State::SameLevelCommit;
                 p.next_token();
             }
 
             TokenKind::Minus
-                if t.slice.len() == 1
+                if t.range.len() == 1
                     && t.position.column == 0
                     && list_type == &ListTypes::Unordered =>
             {
@@ -82,7 +82,7 @@ fn parse_list(p: &mut Parser<'_>, list_type: &ListTypes, level: usize) -> Option
                 p.next_token();
             }
             TokenKind::Plus
-                if t.slice.len() == 1
+                if t.range.len() == 1
                     && t.position.column == 0
                     && list_type == &ListTypes::Ordered =>
             {
@@ -420,7 +420,10 @@ something"#;
         assert_eq!(list(&mut p, &ListTypes::Unordered), None);
         assert_eq!(
             p.peek(),
-            Some((&Token::new(TokenKind::Literal, "-", Position::default()), 0))
+            Some((
+                &Token::new(TokenKind::Literal, 0..1, Position::default()),
+                0
+            ))
         );
     }
 

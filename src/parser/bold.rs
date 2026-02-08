@@ -10,9 +10,9 @@ pub(crate) fn bold(p: &mut Parser<'_>) -> Option<Bold> {
     while let Some((t, pos)) = p.peek() {
         match t.kind {
             TokenKind::Terminator => break,
-            TokenKind::Tilde if t.slice.len() == 2 => b.push(strikethrough(p), p, pos),
-            TokenKind::Underscore if t.slice.len() == 1 => b.push(italic(p), p, pos),
-            TokenKind::Star if t.slice.len() == 2 => {
+            TokenKind::Tilde if t.range.len() == 2 => b.push(strikethrough(p), p, pos),
+            TokenKind::Underscore if t.range.len() == 1 => b.push(italic(p), p, pos),
+            TokenKind::Star if t.range.len() == 2 => {
                 b.consume_text(p, pos);
                 p.next_token();
                 return b.build();
@@ -58,7 +58,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "**", Position::default()),
+                &Token::new(TokenKind::Literal, 0..2, Position::default()),
                 0
             ))
         )
@@ -71,7 +71,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "**", Position::default()),
+                &Token::new(TokenKind::Literal, 0..2, Position::default()),
                 0
             ))
         )
@@ -84,7 +84,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "**", Position::default()),
+                &Token::new(TokenKind::Literal, 0..2, Position::default()),
                 0
             ))
         );

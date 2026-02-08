@@ -3,7 +3,7 @@ use crate::{lexer::TokenKind, nodes::Strikethrough};
 use super::Parser;
 
 pub(crate) fn strikethrough(p: &mut Parser) -> Option<Strikethrough> {
-    p.advance_or_backtrack(|t| t.kind == TokenKind::Tilde && t.slice.len() == 2)
+    p.advance_or_backtrack(|t| t.kind == TokenKind::Tilde && t.range.len() == 2)
         .map(|(start, end)| Strikethrough::new(p.range_to_string(start + 1..end)))
 }
 
@@ -30,7 +30,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "~~", Position::default()),
+                &Token::new(TokenKind::Literal, 0..2, Position::default()),
                 0
             ))
         )
@@ -43,7 +43,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "~~", Position::default()),
+                &Token::new(TokenKind::Literal, 0..2, Position::default()),
                 0
             ))
         )
