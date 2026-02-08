@@ -40,7 +40,7 @@ pub(crate) fn highlight(p: &mut Parser) -> Option<Highlight> {
                     break;
                 }
             }
-            TokenKind::Bang if t.slice.len() == 1 && state == State::Icon && icon.is_none() => {
+            TokenKind::Bang if t.range.len() == 1 && state == State::Icon && icon.is_none() => {
                 state = State::IconCommit;
                 p.next_token();
             }
@@ -56,7 +56,7 @@ pub(crate) fn highlight(p: &mut Parser) -> Option<Highlight> {
                 state = State::Icon;
                 p.next_token();
             }
-            TokenKind::Bang if t.slice.len() == 2 => {
+            TokenKind::Bang if t.range.len() == 2 => {
                 p.next_token();
                 return Some(Highlight::new(
                     title.map(|r| p.range_to_string(r)),
@@ -66,7 +66,7 @@ pub(crate) fn highlight(p: &mut Parser) -> Option<Highlight> {
             }
             _ if state == State::Body || state == State::Icon => {
                 state = State::Body;
-                if let Some(n) = paragraph(p, |t| t.kind == TokenKind::Bang && t.slice.len() == 2) {
+                if let Some(n) = paragraph(p, |t| t.kind == TokenKind::Bang && t.range.len() == 2) {
                     nodes.push(n);
                 }
             }
@@ -169,7 +169,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "!!", Position::default()),
+                &Token::new(TokenKind::Literal, 0..2, Position::default()),
                 0
             ))
         );
@@ -182,7 +182,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "!!", Position::default()),
+                &Token::new(TokenKind::Literal, 0..2, Position::default()),
                 0
             ))
         );
@@ -195,7 +195,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "!!", Position::default()),
+                &Token::new(TokenKind::Literal, 0..2, Position::default()),
                 0
             ))
         );
@@ -208,7 +208,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "!!", Position::default()),
+                &Token::new(TokenKind::Literal, 0..2, Position::default()),
                 0
             ))
         );
@@ -221,7 +221,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "!!", Position::default()),
+                &Token::new(TokenKind::Literal, 0..2, Position::default()),
                 0
             ))
         );
@@ -234,7 +234,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "!!", Position::default()),
+                &Token::new(TokenKind::Literal, 0..2, Position::default()),
                 0
             ))
         );

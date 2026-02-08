@@ -9,7 +9,7 @@ pub(crate) fn code(p: &mut Parser<'_>) -> Option<Code> {
         .map(|(_, end)| end)?;
 
     let Some((start, end)) = p.advance_until(
-        |t| t.kind == TokenKind::Backtick && t.position.column == 0 && t.slice.len() == 3,
+        |t| t.kind == TokenKind::Backtick && t.position.column == 0 && t.range.len() == 3,
         true,
     ) else {
         p.backtrack(start_pos);
@@ -58,7 +58,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "```", Position::default()),
+                &Token::new(TokenKind::Literal, 0..3, Position::default()),
                 0
             ))
         )
@@ -71,7 +71,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "```", Position::default()),
+                &Token::new(TokenKind::Literal, 0..3, Position::default()),
                 0
             ))
         );
@@ -84,7 +84,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "```", Position::default()),
+                &Token::new(TokenKind::Literal, 0..3, Position::default()),
                 0
             ))
         );

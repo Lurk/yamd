@@ -16,7 +16,7 @@ where
     let mut heading = Heading::new(
         p.next_token()
             .expect("to have token")
-            .slice
+            .range
             .len()
             .try_into()
             .expect("to be < 7"),
@@ -142,7 +142,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "##", Position::default()),
+                &Token::new(TokenKind::Literal, 0..2, Position::default()),
                 0
             ))
         );
@@ -171,7 +171,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "##", Position::default()),
+                &Token::new(TokenKind::Literal, 0..2, Position::default()),
                 0
             ))
         );

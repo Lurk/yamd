@@ -14,27 +14,28 @@ pub use token::{Position, Token, TokenKind};
 ///
 /// ```rust
 /// use yamd::lexer::Lexer;
-/// let lexer = Lexer::new("string");
-/// for slice in lexer.map(|t|t.slice){
-///     print!("{}", slice);
+/// let input = "hello world";
+/// let lexer = Lexer::new(input);
+/// for range in lexer.map(|t|t.range){
+///     print!("{}", &input[range]);
 /// }
 /// ```
 pub struct Lexer<'input> {
     literal_start: Option<Position>,
+    len: usize,
     escaped: bool,
     position: Position,
-    input: &'input str,
     iter: Peekable<CharIndices<'input>>,
-    queue: VecDeque<Token<'input>>,
-    token: Option<Token<'input>>,
+    queue: VecDeque<Token>,
+    token: Option<Token>,
 }
 
 impl<'input> Lexer<'input> {
     /// Creates a new lexer instance.
     pub fn new(input: &'input str) -> Self {
         Self {
-            input,
             position: Position::default(),
+            len: input.len(),
             iter: input.char_indices().peekable(),
             literal_start: None,
             escaped: false,
@@ -47,7 +48,7 @@ impl<'input> Lexer<'input> {
         if let Some(start_position) = self.literal_start.take() {
             if let Some(token) = self.token.replace(Token {
                 kind: TokenKind::Literal,
-                slice: &self.input[start_position.byte_index..end_byte_index],
+                range: start_position.byte_index..end_byte_index,
                 position: start_position,
                 escaped: self.escaped,
             }) {
@@ -71,14 +72,14 @@ impl<'input> Lexer<'input> {
             self.token.replace(self.to_token(
                 TokenKind::Terminator,
                 t.position,
-                t.slice.len() + len_in_bytes,
+                t.range.len() + len_in_bytes,
             ));
             return;
         }
         self.queue.push_back(t);
     }
 
-    fn emit(&mut self, token: Token<'input>) {
+    fn emit(&mut self, token: Token) {
         self.emit_literal_if_started(token.position.byte_index);
         if let Some(l) = self.token.replace(token) {
             self.queue.push_back(l);
@@ -108,10 +109,10 @@ impl<'input> Lexer<'input> {
         None
     }
 
-    fn to_token(&self, kind: TokenKind, position: Position, len_in_bytes: usize) -> Token<'input> {
+    fn to_token(&self, kind: TokenKind, position: Position, len_in_bytes: usize) -> Token {
         Token::new(
             kind,
-            &self.input[position.byte_index..position.byte_index + len_in_bytes],
+            position.byte_index..position.byte_index + len_in_bytes,
             position,
         )
     }
@@ -120,7 +121,7 @@ impl<'input> Lexer<'input> {
         while self.next_is(c) {}
         self.emit(Token::new(
             kind,
-            &self.input[start.byte_index..self.position.byte_index + 1],
+            start.byte_index..self.position.byte_index + 1,
             start,
         ))
     }
@@ -170,7 +171,7 @@ impl<'input> Lexer<'input> {
             if let Some((position, char)) = self.next_char(false) {
                 self.parse(position, char);
             } else {
-                self.position.byte_index = self.input.len();
+                self.position.byte_index = self.len;
                 self.emit_literal_if_started(self.position.byte_index);
                 if let Some(token) = self.token.take() {
                     self.queue.push_back(token)
@@ -182,7 +183,7 @@ impl<'input> Lexer<'input> {
 }
 
 impl<'input> Iterator for Lexer<'input> {
-    type Item = Token<'input>;
+    type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.advance();
@@ -202,7 +203,7 @@ mod tests {
             Lexer::new("[").collect::<Vec<_>>(),
             vec![Token::new(
                 TokenKind::LeftSquareBracket,
-                "[",
+                0..1,
                 Position::default()
             )],
         );
@@ -213,10 +214,10 @@ mod tests {
         assert_eq!(
             Lexer::new("!![").collect::<Vec<_>>(),
             vec![
-                Token::new(TokenKind::Bang, "!!", Position::default()),
+                Token::new(TokenKind::Bang, 0..2, Position::default()),
                 Token::new(
                     TokenKind::LeftSquareBracket,
-                    "[",
+                    2..3,
                     Position {
                         byte_index: 2,
                         column: 2,
@@ -232,10 +233,10 @@ mod tests {
         assert_eq!(
             Lexer::new("!!g").collect::<Vec<_>>(),
             vec![
-                Token::new(TokenKind::Bang, "!!", Position::default()),
+                Token::new(TokenKind::Bang, 0..2, Position::default()),
                 Token::new(
                     TokenKind::Literal,
-                    "g",
+                    2..3,
                     Position {
                         byte_index: 2,
                         column: 2,
@@ -253,7 +254,7 @@ mod tests {
             vec![
                 Token {
                     kind: TokenKind::Literal,
-                    slice: "!",
+                    range: 1..2,
                     position: Position {
                         byte_index: 1,
                         column: 0,
@@ -263,7 +264,7 @@ mod tests {
                 },
                 Token::new(
                     TokenKind::LeftSquareBracket,
-                    "[",
+                    2..3,
                     Position {
                         byte_index: 2,
                         column: 1,
@@ -279,10 +280,10 @@ mod tests {
         assert_eq!(
             Lexer::new("![").collect::<Vec<_>>(),
             vec![
-                Token::new(TokenKind::Bang, "!", Position::default()),
+                Token::new(TokenKind::Bang, 0..1, Position::default()),
                 Token::new(
                     TokenKind::LeftSquareBracket,
-                    "[",
+                    1..2,
                     Position {
                         byte_index: 1,
                         column: 1,
@@ -297,7 +298,7 @@ mod tests {
     fn triple_bang() {
         assert_eq!(
             Lexer::new("!!!").collect::<Vec<_>>(),
-            vec![Token::new(TokenKind::Bang, "!!!", Position::default())]
+            vec![Token::new(TokenKind::Bang, 0..3, Position::default())]
         );
     }
 
@@ -306,10 +307,10 @@ mod tests {
         assert_eq!(
             Lexer::new("[#####").collect::<Vec<_>>(),
             vec![
-                Token::new(TokenKind::LeftSquareBracket, "[", Position::default()),
+                Token::new(TokenKind::LeftSquareBracket, 0..1, Position::default()),
                 Token::new(
                     TokenKind::Hash,
-                    "#####",
+                    1..6,
                     Position {
                         byte_index: 1,
                         column: 1,
@@ -325,10 +326,10 @@ mod tests {
         assert_eq!(
             Lexer::new("###\\   ").collect::<Vec<_>>(),
             vec![
-                Token::new(TokenKind::Hash, "###", Position::default()),
+                Token::new(TokenKind::Hash, 0..3, Position::default()),
                 Token {
                     kind: TokenKind::Literal,
-                    slice: "   ",
+                    range: 4..7,
                     position: Position {
                         byte_index: 4,
                         column: 3,
@@ -347,7 +348,7 @@ mod tests {
             vec![
                 Token {
                     kind: TokenKind::Literal,
-                    slice: " ",
+                    range: 1..2,
                     position: Position {
                         byte_index: 1,
                         column: 0,
@@ -357,7 +358,7 @@ mod tests {
                 },
                 Token {
                     kind: TokenKind::Literal,
-                    slice: "  ",
+                    range: 3..5,
                     position: Position {
                         byte_index: 3,
                         column: 1,
@@ -373,7 +374,7 @@ mod tests {
     fn eol() {
         assert_eq!(
             Lexer::new("\n").collect::<Vec<_>>(),
-            vec![Token::new(TokenKind::Eol, "\n", Position::default())]
+            vec![Token::new(TokenKind::Eol, 0..1, Position::default())]
         );
     }
 
@@ -381,11 +382,7 @@ mod tests {
     fn double_eol() {
         assert_eq!(
             Lexer::new("\n\n").collect::<Vec<_>>(),
-            vec![Token::new(
-                TokenKind::Terminator,
-                "\n\n",
-                Position::default()
-            )]
+            vec![Token::new(TokenKind::Terminator, 0..2, Position::default())]
         );
     }
 
@@ -394,10 +391,10 @@ mod tests {
         assert_eq!(
             Lexer::new("\n\n\n").collect::<Vec<_>>(),
             vec![
-                Token::new(TokenKind::Terminator, "\n\n", Position::default()),
+                Token::new(TokenKind::Terminator, 0..2, Position::default()),
                 Token::new(
                     TokenKind::Eol,
-                    "\n",
+                    2..3,
                     Position {
                         byte_index: 2,
                         column: 0,
@@ -412,7 +409,7 @@ mod tests {
     fn windows_eol() {
         assert_eq!(
             Lexer::new("\r\n").collect::<Vec<_>>(),
-            vec![Token::new(TokenKind::Eol, "\r\n", Position::default())]
+            vec![Token::new(TokenKind::Eol, 0..2, Position::default())]
         );
     }
 
@@ -420,11 +417,7 @@ mod tests {
     fn windows_double_eol() {
         assert_eq!(
             Lexer::new("\r\n\r\n").collect::<Vec<_>>(),
-            vec![Token::new(
-                TokenKind::Terminator,
-                "\r\n\r\n",
-                Position::default()
-            )]
+            vec![Token::new(TokenKind::Terminator, 0..4, Position::default())]
         );
     }
 
@@ -432,11 +425,7 @@ mod tests {
     fn blob_that_ends_with_emoji() {
         assert_eq!(
             Lexer::new("hello blob😉").collect::<Vec<_>>(),
-            vec![Token::new(
-                TokenKind::Literal,
-                "hello blob😉",
-                Position::default()
-            ),]
+            vec![Token::new(TokenKind::Literal, 0..14, Position::default()),]
         )
     }
 
@@ -445,10 +434,10 @@ mod tests {
         assert_eq!(
             Lexer::new("blob😉-").collect::<Vec<_>>(),
             vec![
-                Token::new(TokenKind::Literal, "blob😉", Position::default()),
+                Token::new(TokenKind::Literal, 0..8, Position::default()),
                 Token::new(
                     TokenKind::Minus,
-                    "-",
+                    8..9,
                     Position {
                         byte_index: 8,
                         column: 5,
@@ -465,31 +454,31 @@ mod tests {
             Lexer::new("{{").collect::<Vec<_>>(),
             vec![Token::new(
                 TokenKind::LeftCurlyBrace,
-                "{{",
+                0..2,
                 Position::default()
             )]
         )
     }
 
     #[test]
-    fn colapsible_start() {
+    fn collapsible_start() {
         assert_eq!(
             Lexer::new("{%").collect::<Vec<_>>(),
             vec![Token::new(
                 TokenKind::CollapsibleStart,
-                "{%",
+                0..2,
                 Position::default()
             )]
         )
     }
 
     #[test]
-    fn colapsible_end() {
+    fn collapsible_end() {
         assert_eq!(
             Lexer::new("{%").collect::<Vec<_>>(),
             vec![Token::new(
                 TokenKind::CollapsibleStart,
-                "{%",
+                0..2,
                 Position::default()
             )]
         )
@@ -501,7 +490,7 @@ mod tests {
             Lexer::new("]").collect::<Vec<_>>(),
             vec![Token::new(
                 TokenKind::RightSquareBracket,
-                "]",
+                0..1,
                 Position::default()
             )]
         )
@@ -513,7 +502,7 @@ mod tests {
             Lexer::new("(").collect::<Vec<_>>(),
             vec![Token::new(
                 TokenKind::LeftParenthesis,
-                "(",
+                0..1,
                 Position::default()
             )]
         )
@@ -525,7 +514,7 @@ mod tests {
             Lexer::new(")").collect::<Vec<_>>(),
             vec![Token::new(
                 TokenKind::RightParenthesis,
-                ")",
+                0..1,
                 Position::default()
             )]
         );
@@ -542,14 +531,14 @@ mod tests {
             Lexer::new("\\\\").collect::<Vec<_>>(),
             vec![Token {
                 kind: TokenKind::Literal,
-                slice: "\\",
+                range: 1..2,
                 position: Position {
                     byte_index: 1,
                     column: 0,
                     row: 0
                 },
                 escaped: true
-            }]
+            },]
         )
     }
 
@@ -558,10 +547,10 @@ mod tests {
         assert_eq!(
             Lexer::new("literal\\[[").collect::<Vec<_>>(),
             vec![
-                Token::new(TokenKind::Literal, "literal", Position::default()),
+                Token::new(TokenKind::Literal, 0..7, Position::default()),
                 Token {
                     kind: TokenKind::Literal,
-                    slice: "[",
+                    range: 8..9,
                     position: Position {
                         byte_index: 8,
                         column: 7,
@@ -571,7 +560,7 @@ mod tests {
                 },
                 Token::new(
                     TokenKind::LeftSquareBracket,
-                    "[",
+                    9..10,
                     Position {
                         byte_index: 9,
                         column: 8,
@@ -586,15 +575,15 @@ mod tests {
     fn double_star() {
         assert_eq!(
             Lexer::new("**").collect::<Vec<_>>(),
-            vec![Token::new(TokenKind::Star, "**", Position::default()),]
+            vec![Token::new(TokenKind::Star, 0..2, Position::default()),]
         )
     }
 
     #[test]
-    fn tirple_backtick() {
+    fn quadruple_backtick() {
         assert_eq!(
             Lexer::new("````").collect::<Vec<_>>(),
-            vec![Token::new(TokenKind::Backtick, "````", Position::default()),]
+            vec![Token::new(TokenKind::Backtick, 0..4, Position::default()),]
         );
     }
 
@@ -602,7 +591,7 @@ mod tests {
     fn underscore() {
         assert_eq!(
             Lexer::new("_").collect::<Vec<_>>(),
-            vec![Token::new(TokenKind::Underscore, "_", Position::default())]
+            vec![Token::new(TokenKind::Underscore, 0..1, Position::default())]
         )
     }
 
@@ -610,7 +599,7 @@ mod tests {
     fn plus() {
         assert_eq!(
             Lexer::new("+").collect::<Vec<_>>(),
-            vec![Token::new(TokenKind::Plus, "+", Position::default())]
+            vec![Token::new(TokenKind::Plus, 0..1, Position::default())]
         )
     }
 
@@ -618,7 +607,7 @@ mod tests {
     fn minus() {
         assert_eq!(
             Lexer::new("-").collect::<Vec<_>>(),
-            vec![Token::new(TokenKind::Minus, "-", Position::default())]
+            vec![Token::new(TokenKind::Minus, 0..1, Position::default())]
         )
     }
 
@@ -626,7 +615,7 @@ mod tests {
     fn multiple_minus() {
         assert_eq!(
             Lexer::new("----").collect::<Vec<_>>(),
-            vec![Token::new(TokenKind::Minus, "----", Position::default())]
+            vec![Token::new(TokenKind::Minus, 0..4, Position::default())]
         )
     }
 
@@ -635,10 +624,10 @@ mod tests {
         assert_eq!(
             Lexer::new(">>> >>\n>").collect::<Vec<_>>(),
             vec![
-                Token::new(TokenKind::GreaterThan, ">>>", Position::default()),
+                Token::new(TokenKind::GreaterThan, 0..3, Position::default()),
                 Token::new(
                     TokenKind::Space,
-                    " ",
+                    3..4,
                     Position {
                         byte_index: 3,
                         column: 3,
@@ -647,7 +636,7 @@ mod tests {
                 ),
                 Token::new(
                     TokenKind::GreaterThan,
-                    ">>",
+                    4..6,
                     Position {
                         byte_index: 4,
                         column: 4,
@@ -656,7 +645,7 @@ mod tests {
                 ),
                 Token::new(
                     TokenKind::Eol,
-                    "\n",
+                    6..7,
                     Position {
                         byte_index: 6,
                         column: 6,
@@ -665,7 +654,7 @@ mod tests {
                 ),
                 Token::new(
                     TokenKind::GreaterThan,
-                    ">",
+                    7..8,
                     Position {
                         byte_index: 7,
                         column: 0,
@@ -680,7 +669,7 @@ mod tests {
     fn backtick() {
         assert_eq!(
             Lexer::new("``").collect::<Vec<_>>(),
-            vec![Token::new(TokenKind::Backtick, "``", Position::default(),),]
+            vec![Token::new(TokenKind::Backtick, 0..2, Position::default(),),]
         )
     }
 
@@ -688,7 +677,7 @@ mod tests {
     fn strikethrough() {
         assert_eq!(
             Lexer::new("~~").collect::<Vec<_>>(),
-            vec![Token::new(TokenKind::Tilde, "~~", Position::default())]
+            vec![Token::new(TokenKind::Tilde, 0..2, Position::default())]
         )
     }
 
@@ -697,10 +686,10 @@ mod tests {
         assert_eq!(
             Lexer::new("abc~~").collect::<Vec<_>>(),
             vec![
-                Token::new(TokenKind::Literal, "abc", Position::default()),
+                Token::new(TokenKind::Literal, 0..3, Position::default()),
                 Token::new(
                     TokenKind::Tilde,
-                    "~~",
+                    3..5,
                     Position {
                         byte_index: 3,
                         column: 3,
@@ -717,7 +706,7 @@ mod tests {
             Lexer::new("}}").collect::<Vec<_>>(),
             vec![Token::new(
                 TokenKind::RightCurlyBrace,
-                "}}",
+                0..2,
                 Position::default()
             )]
         )
@@ -728,10 +717,10 @@ mod tests {
         assert_eq!(
             Lexer::new("r\n").collect::<Vec<_>>(),
             vec![
-                Token::new(TokenKind::Literal, "r", Position::default()),
+                Token::new(TokenKind::Literal, 0..1, Position::default()),
                 Token::new(
                     TokenKind::Eol,
-                    "\n",
+                    1..2,
                     Position {
                         byte_index: 1,
                         column: 1,
