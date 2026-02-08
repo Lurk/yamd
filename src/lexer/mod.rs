@@ -22,9 +22,9 @@ pub use token::{Position, Token, TokenKind};
 /// ```
 pub struct Lexer<'input> {
     literal_start: Option<Position>,
+    len: usize,
     escaped: bool,
     position: Position,
-    input: &'input str,
     iter: Peekable<CharIndices<'input>>,
     queue: VecDeque<Token>,
     token: Option<Token>,
@@ -34,8 +34,8 @@ impl<'input> Lexer<'input> {
     /// Creates a new lexer instance.
     pub fn new(input: &'input str) -> Self {
         Self {
-            input,
             position: Position::default(),
+            len: input.len(),
             iter: input.char_indices().peekable(),
             literal_start: None,
             escaped: false,
@@ -171,7 +171,7 @@ impl<'input> Lexer<'input> {
             if let Some((position, char)) = self.next_char(false) {
                 self.parse(position, char);
             } else {
-                self.position.byte_index = self.input.len();
+                self.position.byte_index = self.len;
                 self.emit_literal_if_started(self.position.byte_index);
                 if let Some(token) = self.token.take() {
                     self.queue.push_back(token)
