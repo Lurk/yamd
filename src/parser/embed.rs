@@ -10,7 +10,7 @@ pub(crate) fn embed(p: &mut Parser<'_>) -> Option<Embed> {
     while let Some((t, pos)) = p.peek() {
         match t.kind {
             TokenKind::Terminator if kind.is_none() => break,
-            TokenKind::RightCurlyBrace if t.slice.len() == 2 => {
+            TokenKind::RightCurlyBrace if t.range.len() == 2 => {
                 p.next_token();
                 if let Some(kind) = kind {
                     return Some(Embed::new(
@@ -56,7 +56,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "{{", Position::default()),
+                &Token::new(TokenKind::Literal, 0..2, Position::default()),
                 0
             ))
         )
@@ -69,7 +69,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "{{", Position::default()),
+                &Token::new(TokenKind::Literal, 0..2, Position::default()),
                 0
             ))
         );
@@ -82,7 +82,7 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((
-                &Token::new(TokenKind::Literal, "{{", Position::default()),
+                &Token::new(TokenKind::Literal, 0..2, Position::default()),
                 0
             ))
         )

@@ -84,7 +84,10 @@ mod tests {
         assert_eq!(anchor(&mut p), None);
         assert_eq!(
             p.peek(),
-            Some((&Token::new(TokenKind::Literal, "[", Position::default()), 0))
+            Some((
+                &Token::new(TokenKind::Literal, 0..1, Position::default()),
+                0
+            ))
         )
     }
 
@@ -94,7 +97,10 @@ mod tests {
         assert_eq!(anchor(&mut p), None);
         assert_eq!(
             p.peek(),
-            Some((&Token::new(TokenKind::Literal, "[", Position::default()), 0))
+            Some((
+                &Token::new(TokenKind::Literal, 0..1, Position::default()),
+                0
+            ))
         )
     }
 
@@ -122,7 +128,10 @@ mod tests {
         assert_eq!(anchor(&mut p), None);
         assert_eq!(
             p.peek(),
-            Some((&Token::new(TokenKind::Literal, "[", Position::default()), 0))
+            Some((
+                &Token::new(TokenKind::Literal, 0..1, Position::default()),
+                0
+            ))
         )
     }
 
@@ -132,7 +141,10 @@ mod tests {
         assert_eq!(anchor(&mut p), None);
         assert_eq!(
             p.peek(),
-            Some((&Token::new(TokenKind::Literal, "[", Position::default()), 0))
+            Some((
+                &Token::new(TokenKind::Literal, 0..1, Position::default()),
+                0
+            ))
         )
     }
 
@@ -142,7 +154,10 @@ mod tests {
         assert_eq!(anchor(&mut p), None);
         assert_eq!(
             p.peek(),
-            Some((&Token::new(TokenKind::Literal, "[", Position::default()), 0))
+            Some((
+                &Token::new(TokenKind::Literal, 0..1, Position::default()),
+                0
+            ))
         )
     }
 }

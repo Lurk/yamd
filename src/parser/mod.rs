@@ -44,7 +44,8 @@ use crate::lexer::{Lexer, Token, TokenKind};
 
 pub struct Parser<'input> {
     lexer: Peekable<Lexer<'input>>,
-    stack: Vec<Token<'input>>,
+    stack: Vec<Token>,
+    input: &'input str,
     stack_pos: usize,
 }
 
@@ -52,12 +53,13 @@ impl<'input> Parser<'input> {
     pub fn new(input: &'input str) -> Self {
         Self {
             lexer: Lexer::new(input).peekable(),
+            input,
             stack: vec![],
             stack_pos: 0,
         }
     }
 
-    pub fn next_token(&mut self) -> Option<&Token<'input>> {
+    pub fn next_token(&mut self) -> Option<&Token> {
         if self.stack.len() > self.stack_pos {
             let res = self.stack.get(self.stack_pos);
             self.stack_pos += 1;
@@ -69,7 +71,7 @@ impl<'input> Parser<'input> {
         self.stack.get(self.stack_pos - 1)
     }
 
-    pub fn peek(&mut self) -> Option<(&Token<'input>, usize)> {
+    pub fn peek(&mut self) -> Option<(&Token, usize)> {
         if self.stack.len() > self.stack_pos {
             return self.stack.get(self.stack_pos).map(|t| (t, self.stack_pos));
         }
@@ -80,7 +82,7 @@ impl<'input> Parser<'input> {
     pub fn range_to_string<R: RangeBounds<usize> + Debug>(&self, range: R) -> String {
         self.stack[try_range(range, ..self.stack.len()).expect("range to fit")]
             .iter()
-            .map(|t| t.slice)
+            .map(|t| &self.input[t.range.clone()])
             .collect()
     }
 
@@ -201,7 +203,7 @@ mod tests {
         let mut p = Parser::new("test");
         assert_eq!(
             p.next_token(),
-            Some(&Token::new(TokenKind::Literal, "test", Position::default()))
+            Some(&Token::new(TokenKind::Literal, 0..4, Position::default()))
         );
     }
 
@@ -212,7 +214,10 @@ mod tests {
         assert_eq!(p.advance_or_backtrack(|t| t.kind == TokenKind::Space), None);
         assert_eq!(
             p.peek(),
-            Some((&Token::new(TokenKind::Literal, "!", Position::default()), 0))
+            Some((
+                &Token::new(TokenKind::Literal, 0..1, Position::default()),
+                0
+            ))
         )
     }
 
@@ -223,7 +228,7 @@ mod tests {
         p.backtrack(0);
         assert_eq!(
             p.next_token(),
-            Some(&Token::new(TokenKind::Bang, "!", Position::default()))
+            Some(&Token::new(TokenKind::Bang, 0..1, Position::default()))
         );
     }
 }

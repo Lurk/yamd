@@ -1,4 +1,4 @@
-use std::fmt::{Display, Formatter};
+use std::ops::Range;
 
 /// The `TokenKind` enum represents the different types of tokens that can be found in the input.
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
@@ -91,46 +91,25 @@ pub struct Position {
 
 /// The `Token` struct represents a token in the input string.
 #[derive(Debug, PartialEq)]
-pub struct Token<'input> {
+pub struct Token {
     /// The kind of the token.
     pub kind: TokenKind,
-    /// The slice of the input string that corresponds to this token.
-    pub slice: &'input str,
+    /// The range in the input string that corresponds to this token.
+    pub range: Range<usize>,
     /// The position of the token in the input string.
     pub position: Position,
     /// Indicates if the token is escaped.
     pub escaped: bool,
 }
 
-impl<'input> Token<'input> {
-    /// Creates a new `Token` instance.
-    pub fn new(kind: TokenKind, slice: &'input str, position: Position) -> Self {
+impl Token {
+    /// Creates a new non escaped `Token` instance.
+    pub fn new(kind: TokenKind, range: Range<usize>, position: Position) -> Self {
         Self {
             kind,
-            slice,
+            range,
             position,
             escaped: false,
         }
-    }
-}
-
-impl Display for Token<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.slice)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use pretty_assertions::assert_eq;
-
-    use crate::lexer::{Position, Token, TokenKind};
-
-    #[test]
-    fn display() {
-        assert_eq!(
-            Token::new(TokenKind::Literal, "str", Position::default()).to_string(),
-            "str"
-        );
     }
 }

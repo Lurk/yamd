@@ -10,33 +10,33 @@ where
     Callback: Fn(&Token) -> bool,
 {
     let start = p.pos();
-    let mut bulder = BranchBuilder::new();
+    let mut builder = BranchBuilder::new();
     let mut end_modifier = 0;
 
     while let Some((t, pos)) = p.peek() {
         match t.kind {
             TokenKind::Terminator => break,
-            TokenKind::Star if t.slice.len() == 2 => bulder.push(bold(p), p, pos),
-            TokenKind::Star if t.slice.len() == 1 => bulder.push(emphasis(p), p, pos),
-            TokenKind::Underscore if t.slice.len() == 1 => bulder.push(italic(p), p, pos),
-            TokenKind::Tilde if t.slice.len() == 2 => bulder.push(strikethrough(p), p, pos),
-            TokenKind::LeftSquareBracket => bulder.push(anchor(p), p, pos),
-            TokenKind::Backtick if t.slice.len() == 1 => bulder.push(code_span(p), p, pos),
+            TokenKind::Star if t.range.len() == 2 => builder.push(bold(p), p, pos),
+            TokenKind::Star if t.range.len() == 1 => builder.push(emphasis(p), p, pos),
+            TokenKind::Underscore if t.range.len() == 1 => builder.push(italic(p), p, pos),
+            TokenKind::Tilde if t.range.len() == 2 => builder.push(strikethrough(p), p, pos),
+            TokenKind::LeftSquareBracket => builder.push(anchor(p), p, pos),
+            TokenKind::Backtick if t.range.len() == 1 => builder.push(code_span(p), p, pos),
             _ if pos != start && t.position.column == 0 && new_line_check(t) => {
                 end_modifier = 1;
-                bulder.clear_text_if_shorter_than(pos, 2);
+                builder.clear_text_if_shorter_than(pos, 2);
                 break;
             }
             _ => {
-                bulder.start_text(pos);
+                builder.start_text(pos);
                 p.next_token();
             }
         }
     }
 
-    bulder.consume_text(p, p.pos() - end_modifier);
+    builder.consume_text(p, p.pos() - end_modifier);
 
-    bulder.build()
+    builder.build()
 }
 
 #[cfg(test)]
@@ -138,7 +138,7 @@ mod tests {
             Some((
                 &Token::new(
                     TokenKind::CollapsibleEnd,
-                    "%}",
+                    1..3,
                     Position {
                         byte_index: 1,
                         column: 0,

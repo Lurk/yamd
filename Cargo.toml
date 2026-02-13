@@ -1,8 +1,8 @@
 [package]
 name = "yamd"
 description = "Yet Another Markdown Document (flavour)"
-version = "0.16.2"
-edition = "2024"
+version = "0.17.0"
+edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/Lurk/yamd"
 readme = "README.md"
