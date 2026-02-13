@@ -3,13 +3,15 @@ use std::{cell::RefCell, fmt::Display};
 use crate::lexer::{Lexer, Token, TokenKind};
 
 pub struct Parser<'a> {
-    tokens: Vec<Token<'a>>,
+    input: &'a str,
+    tokens: Vec<Token>,
     pos: RefCell<usize>,
 }
 
 impl<'a> From<&'a str> for Parser<'a> {
     fn from(input: &'a str) -> Self {
         Self {
+            input,
             tokens: Lexer::new(input).collect(),
             pos: RefCell::new(0),
         }
@@ -25,7 +27,7 @@ impl<'a> Parser<'a> {
 
     pub fn is<M>(&self, matcher: M) -> bool
     where
-        M: Fn(&Token<'a>) -> bool,
+        M: Fn(&Token) -> bool,
     {
         let pos = self.pos();
         if let Some(token) = self.tokens.get(pos) {
@@ -43,24 +45,24 @@ impl<'a> Parser<'a> {
         *self.pos.borrow()
     }
 
-    pub fn get(&'a self, index: usize) -> Option<&'a Token<'a>> {
+    pub fn get(&'a self, index: usize) -> Option<&'a Token> {
         self.tokens.get(index)
     }
 
-    pub fn peek(&'a self) -> Option<(usize, &'a Token<'a>)> {
+    pub fn peek(&'a self) -> Option<(usize, &'a Token)> {
         let pos = self.pos();
 
         Some((pos, self.tokens.get(pos)?))
     }
 
-    pub fn advance(&'a self) -> Option<(usize, &'a Token<'a>)> {
+    pub fn advance(&'a self) -> Option<(usize, &'a Token)> {
         let pos = self.pos();
         let token = self.tokens.get(pos)?;
         self.replace_position(pos + 1)?;
         Some((pos, token))
     }
 
-    pub fn chain(&'a self, query: &Query, invert: bool) -> Option<&'a [Token<'a>]> {
+    pub fn chain(&'a self, query: &Query, invert: bool) -> Option<&'a [Token]> {
         let start = self.pos();
 
         if (invert && self.check(query)) || (!invert && !self.check(query)) {
@@ -111,11 +113,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    pub fn advance_until(
-        &'a self,
-        matcher: &Query,
-        eof: &Query,
-    ) -> Option<(&'a [Token<'a>], &'a [Token<'a>])> {
+    pub fn advance_until(&self, matcher: &Query, eof: &Query) -> Option<(&[Token], &[Token])> {
         let start = self.pos();
         while self.chain(eof, false).is_none()
             && let Some((pos, _)) = self.peek()
@@ -131,7 +129,7 @@ impl<'a> Parser<'a> {
         None
     }
 
-    pub fn slice(&'a self, range: std::ops::Range<usize>) -> &'a [Token<'a>] {
+    pub fn slice(&self, range: std::ops::Range<usize>) -> &[Token] {
         &self.tokens[range]
     }
 
@@ -162,7 +160,7 @@ pub fn eol(t: &Token) -> bool {
 }
 
 pub fn one_space(t: &Token) -> bool {
-    t.kind == TokenKind::Space && t.slice.len() == 1
+    t.kind == TokenKind::Space && t.range.len() == 1
 }
 
 #[derive(Debug, Clone)]
@@ -293,17 +291,17 @@ impl Condition {
             return false;
         }
         if let Some(exact_len) = &self.exact_len
-            && t.slice.len() != *exact_len
+            && t.range.len() != *exact_len
         {
             return false;
         }
         if let Some(min_len) = &self.min_len
-            && t.slice.len() < *min_len
+            && t.range.len() < *min_len
         {
             return false;
         }
         if let Some(max_len) = &self.max_len
-            && t.slice.len() > *max_len
+            && t.range.len() > *max_len
         {
             return false;
         }

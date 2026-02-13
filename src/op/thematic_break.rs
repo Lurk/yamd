@@ -1,12 +1,8 @@
 use crate::{
     is, join,
-    lexer::{Token, TokenKind},
-    op::{Op, Parser, op::Node, parser::first_column},
+    lexer::TokenKind,
+    op::{Op, Parser, op::Node},
 };
-
-fn five_minus_at_first_column(t: &Token) -> bool {
-    first_column(t) && t.kind == TokenKind::Minus && t.slice.len() == 5
-}
 
 pub fn thematic_break<'a>(p: &'a Parser) -> Option<Vec<Op<'a>>> {
     let token = p.chain(&join!(is!(t = TokenKind::Minus, c = 0, el = 5,)), false)?;

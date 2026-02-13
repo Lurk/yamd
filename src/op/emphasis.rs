@@ -59,7 +59,7 @@ mod tests {
         assert_eq!(emphasis(&p, &Query::Eof), None);
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Star, "*", Position::default())))
+            Some((0, &Token::new(TokenKind::Star, 0..1, Position::default())))
         )
     }
 
@@ -72,7 +72,7 @@ mod tests {
         );
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Star, "*", Position::default())))
+            Some((0, &Token::new(TokenKind::Star, 0..1, Position::default())))
         );
     }
 }

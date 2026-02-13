@@ -1,9 +1,4 @@
-use crate::op::{
-    Op, Parser,
-    image::image,
-    op::Node,
-    parser::Query,
-};
+use crate::op::{Op, Parser, image::image, op::Node, parser::Query};
 
 pub fn images<'a>(p: &'a Parser<'a>, eof: &Query) -> Option<Vec<Op<'a>>> {
     let start = p.pos();
@@ -78,7 +73,7 @@ mod tests {
         assert_eq!(images(&p, &Query::Eof), None);
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Bang, "!", Position::default())))
+            Some((0, &Token::new(TokenKind::Bang, 0..1, Position::default())))
         );
     }
 
@@ -88,7 +83,7 @@ mod tests {
         assert_eq!(images(&p, &Query::Eof), None);
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Bang, "!", Position::default())))
+            Some((0, &Token::new(TokenKind::Bang, 0..1, Position::default())))
         );
     }
 

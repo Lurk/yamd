@@ -66,7 +66,7 @@ mod tests {
         assert_eq!(strikethrough(&p, &Query::Eof), None);
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Tilde, "~~", Position::default())))
+            Some((0, &Token::new(TokenKind::Tilde, 0..2, Position::default())))
         )
     }
 
@@ -79,7 +79,7 @@ mod tests {
         );
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Tilde, "~~", Position::default()),))
+            Some((0, &Token::new(TokenKind::Tilde, 0..2, Position::default()),))
         )
     }
 }

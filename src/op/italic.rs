@@ -68,7 +68,7 @@ mod tests {
             p.peek(),
             Some((
                 0,
-                &Token::new(TokenKind::Underscore, "_", Position::default()),
+                &Token::new(TokenKind::Underscore, 0..1, Position::default()),
             ))
         )
     }
@@ -84,7 +84,7 @@ mod tests {
             p.peek(),
             Some((
                 0,
-                &Token::new(TokenKind::Underscore, "_", Position::default())
+                &Token::new(TokenKind::Underscore, 0..1, Position::default())
             ))
         );
     }

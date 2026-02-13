@@ -243,7 +243,7 @@ mod tests {
                 1,
                 &Token::new(
                     TokenKind::CollapsibleEnd,
-                    "%}",
+                    1..3,
                     Position {
                         byte_index: 1,
                         column: 0,

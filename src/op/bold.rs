@@ -92,7 +92,7 @@ mod tests {
         assert_eq!(bold(&p, &is!(t = TokenKind::Terminator,)), None);
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Star, "**", Position::default())))
+            Some((0, &Token::new(TokenKind::Star, 0..2, Position::default())))
         )
     }
 
@@ -102,7 +102,7 @@ mod tests {
         assert_eq!(bold(&p, &Query::Eof), None);
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Star, "**", Position::default())))
+            Some((0, &Token::new(TokenKind::Star, 0..2, Position::default())))
         )
     }
 
@@ -112,7 +112,7 @@ mod tests {
         assert_eq!(bold(&p, &Query::Eof), None);
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Star, "**", Position::default())))
+            Some((0, &Token::new(TokenKind::Star, 0..2, Position::default())))
         );
     }
 

@@ -61,7 +61,7 @@ mod tests {
             p.peek(),
             Some((
                 0,
-                &Token::new(TokenKind::Backtick, "`", Position::default())
+                &Token::new(TokenKind::Backtick, 0..1, Position::default())
             ))
         )
     }
@@ -74,7 +74,7 @@ mod tests {
             p.peek(),
             Some((
                 0,
-                &Token::new(TokenKind::Backtick, "`", Position::default())
+                &Token::new(TokenKind::Backtick, 0..1, Position::default())
             ))
         )
     }

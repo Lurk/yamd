@@ -61,7 +61,7 @@ mod tests {
             p.peek(),
             Some((
                 0,
-                &Token::new(TokenKind::LeftSquareBracket, "[", Position::default())
+                &Token::new(TokenKind::LeftSquareBracket, 0..1, Position::default())
             ))
         )
     }
@@ -74,7 +74,7 @@ mod tests {
             p.peek(),
             Some((
                 0,
-                &Token::new(TokenKind::LeftSquareBracket, "[", Position::default())
+                &Token::new(TokenKind::LeftSquareBracket, 0..1, Position::default())
             ))
         )
     }
@@ -141,7 +141,7 @@ mod tests {
             p.peek(),
             Some((
                 0,
-                &Token::new(TokenKind::LeftSquareBracket, "[", Position::default())
+                &Token::new(TokenKind::LeftSquareBracket, 0..1, Position::default())
             ))
         )
     }
@@ -154,7 +154,7 @@ mod tests {
             p.peek(),
             Some((
                 0,
-                &Token::new(TokenKind::LeftSquareBracket, "[", Position::default())
+                &Token::new(TokenKind::LeftSquareBracket, 0..1, Position::default())
             ))
         )
     }
@@ -167,7 +167,7 @@ mod tests {
             p.peek(),
             Some((
                 0,
-                &Token::new(TokenKind::LeftSquareBracket, "[", Position::default())
+                &Token::new(TokenKind::LeftSquareBracket, 0..1, Position::default())
             ))
         )
     }

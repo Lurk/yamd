@@ -202,7 +202,7 @@ mod tests {
         assert_eq!(highlight(&p, &Query::Eof), None);
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Bang, "!!", Position::default()),))
+            Some((0, &Token::new(TokenKind::Bang, 0..2, Position::default()),))
         );
     }
 
@@ -212,7 +212,7 @@ mod tests {
         assert_eq!(highlight(&p, &Query::Eof), None);
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Bang, "!!", Position::default()),))
+            Some((0, &Token::new(TokenKind::Bang, 0..2, Position::default()),))
         );
     }
 
@@ -225,7 +225,7 @@ mod tests {
         );
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Bang, "!!", Position::default()),))
+            Some((0, &Token::new(TokenKind::Bang, 0..2, Position::default()),))
         );
     }
 
@@ -286,7 +286,7 @@ mod tests {
         assert_eq!(highlight(&p, &Query::Eof), None);
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Bang, "!!", Position::default()),))
+            Some((0, &Token::new(TokenKind::Bang, 0..2, Position::default()),))
         );
     }
 }

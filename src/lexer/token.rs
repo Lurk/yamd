@@ -1,4 +1,7 @@
-use std::ops::Range;
+use std::{
+    fmt::{Display, Formatter},
+    ops::Range,
+};
 
 /// The `TokenKind` enum represents the different types of tokens that can be found in the input.
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]

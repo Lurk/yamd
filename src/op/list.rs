@@ -9,18 +9,6 @@ use crate::{
     or,
 };
 
-fn space<'a>(len: usize) -> impl Fn(&'a Token<'a>) -> bool {
-    move |token: &'a Token| token.kind == TokenKind::Space && token.slice.len() == len
-}
-
-fn one_minus(token: &Token) -> bool {
-    token.kind == TokenKind::Minus && token.slice.len() == 1
-}
-
-fn one_plus(token: &Token) -> bool {
-    token.kind == TokenKind::Plus && token.slice.len() == 1
-}
-
 fn list_start(level: usize, query: Query, with_first_column_check: bool) -> Query {
     let q = if level == 0 {
         join!(query, is!(t = TokenKind::Space, el = 1,))
@@ -70,13 +58,13 @@ impl ListKind {
     }
 }
 
-impl TryFrom<&Token<'_>> for ListKind {
+impl TryFrom<&Token> for ListKind {
     type Error = ();
 
     fn try_from(value: &Token) -> Result<Self, Self::Error> {
-        if one_minus(value) {
+        if value.kind == TokenKind::Minus && value.range.len() == 1 {
             Ok(ListKind::Unordered)
-        } else if one_plus(value) {
+        } else if value.kind == TokenKind::Plus && value.range.len() == 1 {
             Ok(ListKind::Ordered)
         } else {
             Err(())

@@ -11,14 +11,6 @@ use crate::{
     or,
 };
 
-fn one_collapsible_start_at_first_column(t: &crate::lexer::Token) -> bool {
-    first_column(t) && t.kind == TokenKind::CollapsibleStart && t.slice.len() == 1
-}
-
-fn one_collapsible_end_at_first_column(t: &crate::lexer::Token) -> bool {
-    first_column(t) && t.kind == TokenKind::CollapsibleEnd && t.slice.len() == 1
-}
-
 pub fn collapsible<'a>(p: &'a Parser<'a>, eof: &Query) -> Option<Vec<Op<'a>>> {
     let start = p.pos();
 

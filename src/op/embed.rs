@@ -80,7 +80,7 @@ mod tests {
             p.peek(),
             Some((
                 0,
-                &Token::new(TokenKind::LeftCurlyBrace, "{{", Position::default()),
+                &Token::new(TokenKind::LeftCurlyBrace, 0..2, Position::default()),
             ))
         )
     }
@@ -93,7 +93,7 @@ mod tests {
             p.peek(),
             Some((
                 0,
-                &Token::new(TokenKind::LeftCurlyBrace, "{{", Position::default()),
+                &Token::new(TokenKind::LeftCurlyBrace, 0..2, Position::default()),
             ))
         );
     }
@@ -106,7 +106,7 @@ mod tests {
             p.peek(),
             Some((
                 0,
-                &Token::new(TokenKind::LeftCurlyBrace, "{{", Position::default()),
+                &Token::new(TokenKind::LeftCurlyBrace, 0..2, Position::default()),
             ))
         )
     }
