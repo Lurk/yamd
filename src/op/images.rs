@@ -1,17 +1,16 @@
-use crate::op::{Op, Parser, image::image, op::Node, parser::Query};
+use crate::op::{Node, Op, Parser, image::image};
 
-pub fn images<'a>(p: &'a Parser<'a>, eof: &Query) -> Option<Vec<Op<'a>>> {
+pub fn images(p: &Parser) -> Option<Vec<Op>> {
     let start = p.pos();
     let mut all_ops = vec![];
     let mut count = 0;
     while p.peek().is_some() {
-        if let Some(ops) = image(p, eof) {
+        if let Some(ops) = image(p) {
             count += 1;
             all_ops.extend(ops);
-        } else if p.chain(eof, true).is_none() {
+        } else if p.at_eof() {
             break;
         } else {
-            println!("breaking on eol check");
             p.replace_position(start);
             return None;
         }
@@ -20,9 +19,9 @@ pub fn images<'a>(p: &'a Parser<'a>, eof: &Query) -> Option<Vec<Op<'a>>> {
     if count == 1 {
         return Some(all_ops);
     } else if count > 1 {
-        let mut res = vec![Op::new_start(Node::Images, vec![])];
+        let mut res = vec![Op::new_start(Node::Images, &[])];
         res.extend(all_ops);
-        res.push(Op::new_end(Node::Images, vec![]));
+        res.push(Op::new_end(Node::Images, &[]));
         return Some(res);
     }
 
@@ -36,33 +35,33 @@ mod tests {
 
     use crate::{
         lexer::{Position, Token, TokenKind},
-        op::{Op, images::images, op::Node, parser::Query},
+        op::{Node, Op, images::images},
     };
 
     #[test]
     fn happy_path() {
         let p = "![a](u)\n![a](u)".into();
         assert_eq!(
-            images(&p, &Query::Eof),
+            images(&p),
             Some(vec![
-                Op::new_start(Node::Images, vec![]),
-                Op::new_start(Node::Image, vec![p.get(0).unwrap()]), // !
-                Op::new_start(Node::Title, vec![p.get(1).unwrap()]), // [
-                Op::new_value(vec![p.get(2).unwrap()]),              // a
-                Op::new_end(Node::Title, vec![p.get(3).unwrap()]),   // ]
-                Op::new_start(Node::Destination, vec![p.get(4).unwrap()]), // (
-                Op::new_value(vec![p.get(5).unwrap()]),              // u
-                Op::new_end(Node::Destination, vec![p.get(6).unwrap()]), // )
-                Op::new_end(Node::Image, vec![p.get(7).unwrap()]),   // \n
-                Op::new_start(Node::Image, vec![p.get(8).unwrap()]), // !
-                Op::new_start(Node::Title, vec![p.get(9).unwrap()]), // [
-                Op::new_value(vec![p.get(10).unwrap()]),             // a
-                Op::new_end(Node::Title, vec![p.get(11).unwrap()]),  // ]
-                Op::new_start(Node::Destination, vec![p.get(12).unwrap()]), // (
-                Op::new_value(vec![p.get(13).unwrap()]),             // u
-                Op::new_end(Node::Destination, vec![p.get(14).unwrap()]), // )
-                Op::new_end(Node::Image, vec![]),
-                Op::new_end(Node::Images, vec![]),
+                Op::new_start(Node::Images, &[]),
+                Op::new_start(Node::Image, p.slice(0..1)), // !
+                Op::new_start(Node::Title, p.slice(1..2)), // [
+                Op::new_value(p.slice(2..3)),              // a
+                Op::new_end(Node::Title, p.slice(3..4)),   // ]
+                Op::new_start(Node::Destination, p.slice(4..5)), // (
+                Op::new_value(p.slice(5..6)),              // u
+                Op::new_end(Node::Destination, p.slice(6..7)), // )
+                Op::new_end(Node::Image, p.slice(7..8)),   // \n
+                Op::new_start(Node::Image, p.slice(8..9)), // !
+                Op::new_start(Node::Title, p.slice(9..10)), // [
+                Op::new_value(p.slice(10..11)),            // a
+                Op::new_end(Node::Title, p.slice(11..12)), // ]
+                Op::new_start(Node::Destination, p.slice(12..13)), // (
+                Op::new_value(p.slice(13..14)),            // u
+                Op::new_end(Node::Destination, p.slice(14..15)), // )
+                Op::new_end(Node::Image, &[]),
+                Op::new_end(Node::Images, &[]),
             ])
         );
     }
@@ -70,7 +69,7 @@ mod tests {
     #[test]
     fn not_an_anchor() {
         let p = "![a](u)\n!!foo".into();
-        assert_eq!(images(&p, &Query::Eof), None);
+        assert_eq!(images(&p), None);
         assert_eq!(
             p.peek(),
             Some((0, &Token::new(TokenKind::Bang, 0..1, Position::default())))
@@ -80,7 +79,7 @@ mod tests {
     #[test]
     fn next_token_can_be_only_terminator() {
         let p = "![a](u)\n![a](u)fasdf".into();
-        assert_eq!(images(&p, &Query::Eof), None);
+        assert_eq!(images(&p), None);
         assert_eq!(
             p.peek(),
             Some((0, &Token::new(TokenKind::Bang, 0..1, Position::default())))
@@ -91,26 +90,26 @@ mod tests {
     fn new_line_check() {
         let p = "![a](u)\n![a](u)\n".into();
         assert_eq!(
-            images(&p, &Query::Eof),
+            images(&p),
             Some(vec![
-                Op::new_start(Node::Images, vec![]),
-                Op::new_start(Node::Image, vec![p.get(0).unwrap()]), // !
-                Op::new_start(Node::Title, vec![p.get(1).unwrap()]), // [
-                Op::new_value(vec![p.get(2).unwrap()]),              // a
-                Op::new_end(Node::Title, vec![p.get(3).unwrap()]),   // ]
-                Op::new_start(Node::Destination, vec![p.get(4).unwrap()]), // (
-                Op::new_value(vec![p.get(5).unwrap()]),              // u
-                Op::new_end(Node::Destination, vec![p.get(6).unwrap()]), // )
-                Op::new_end(Node::Image, vec![p.get(7).unwrap()]),   // \n
-                Op::new_start(Node::Image, vec![p.get(8).unwrap()]), // !
-                Op::new_start(Node::Title, vec![p.get(9).unwrap()]), // [
-                Op::new_value(vec![p.get(10).unwrap()]),             // a
-                Op::new_end(Node::Title, vec![p.get(11).unwrap()]),  // ]
-                Op::new_start(Node::Destination, vec![p.get(12).unwrap()]), // (
-                Op::new_value(vec![p.get(13).unwrap()]),             // u
-                Op::new_end(Node::Destination, vec![p.get(14).unwrap()]), // )
-                Op::new_end(Node::Image, vec![p.get(15).unwrap()]),  // \n
-                Op::new_end(Node::Images, vec![]),
+                Op::new_start(Node::Images, &[]),
+                Op::new_start(Node::Image, p.slice(0..1)), // !
+                Op::new_start(Node::Title, p.slice(1..2)), // [
+                Op::new_value(p.slice(2..3)),              // a
+                Op::new_end(Node::Title, p.slice(3..4)),   // ]
+                Op::new_start(Node::Destination, p.slice(4..5)), // (
+                Op::new_value(p.slice(5..6)),              // u
+                Op::new_end(Node::Destination, p.slice(6..7)), // )
+                Op::new_end(Node::Image, p.slice(7..8)),   // \n
+                Op::new_start(Node::Image, p.slice(8..9)), // !
+                Op::new_start(Node::Title, p.slice(9..10)), // [
+                Op::new_value(p.slice(10..11)),            // a
+                Op::new_end(Node::Title, p.slice(11..12)), // ]
+                Op::new_start(Node::Destination, p.slice(12..13)), // (
+                Op::new_value(p.slice(13..14)),            // u
+                Op::new_end(Node::Destination, p.slice(14..15)), // )
+                Op::new_end(Node::Image, p.slice(15..16)), // \n
+                Op::new_end(Node::Images, &[]),
             ])
         );
     }

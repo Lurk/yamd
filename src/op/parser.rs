@@ -1,40 +1,135 @@
-use std::{cell::RefCell, fmt::Display};
+use std::cell::RefCell;
 
+use crate::eat_seq;
 use crate::lexer::{Lexer, Token, TokenKind};
+use crate::op::Node;
 
-pub struct Parser<'a> {
-    input: &'a str,
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ListKind {
+    Unordered,
+    Ordered,
+}
+
+impl ListKind {
+    pub fn node(&self) -> Node {
+        match self {
+            ListKind::Unordered => Node::UnorderedList,
+            ListKind::Ordered => Node::OrderedList,
+        }
+    }
+}
+
+impl TryFrom<&Token> for ListKind {
+    type Error = ();
+
+    fn try_from(value: &Token) -> Result<Self, Self::Error> {
+        if value.kind == TokenKind::Minus && value.range.len() == 1 {
+            Ok(ListKind::Unordered)
+        } else if value.kind == TokenKind::Plus && value.range.len() == 1 {
+            Ok(ListKind::Ordered)
+        } else {
+            Err(())
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum StopCondition {
+    Terminator,
+    CollapsibleEnd,
+    HighlightEnd,
+    ListBoundary { level: usize, kind: ListKind },
+}
+
+fn is_list_marker(t: &Token, kind: Option<ListKind>) -> bool {
+    match kind {
+        Some(ListKind::Unordered) => t.kind == TokenKind::Minus && t.range.len() == 1,
+        Some(ListKind::Ordered) => t.kind == TokenKind::Plus && t.range.len() == 1,
+        None => (t.kind == TokenKind::Minus || t.kind == TokenKind::Plus) && t.range.len() == 1,
+    }
+}
+
+fn is_space_1(t: &Token) -> bool {
+    t.kind == TokenKind::Space && t.range.len() == 1
+}
+
+fn at_list_boundary(p: &Parser, current_level: usize, max_level: usize, kind: ListKind) -> bool {
+    let start = p.pos();
+    for level in 0..=max_level {
+        let k = if level == current_level {
+            Some(kind)
+        } else {
+            None
+        };
+        let matched = if level == 0 {
+            p.at(|t: &Token| t.position.column == 0)
+                && eat_seq!(p, |t: &Token| is_list_marker(t, k), is_space_1).is_some()
+        } else {
+            p.at(|t: &Token| t.position.column == 0)
+                && eat_seq!(
+                    p,
+                    |t: &Token| t.kind == TokenKind::Space && t.range.len() == level,
+                    |t: &Token| is_list_marker(t, k),
+                    is_space_1
+                )
+                .is_some()
+        };
+        p.replace_position(start);
+        if matched {
+            return true;
+        }
+    }
+    false
+}
+
+impl StopCondition {
+    fn matches(&self, token: &Token, parser: &Parser) -> bool {
+        match self {
+            Self::Terminator => token.kind == TokenKind::Terminator,
+            Self::CollapsibleEnd => {
+                token.kind == TokenKind::CollapsibleEnd && token.position.column == 0
+            }
+            Self::HighlightEnd => {
+                token.kind == TokenKind::Bang
+                    && token.position.column == 0
+                    && token.range.len() == 2
+            }
+            Self::ListBoundary { level, kind } => {
+                token.position.column == 0 && at_list_boundary(parser, *level, *level + 1, *kind)
+            }
+        }
+    }
+}
+
+pub struct EofGuard<'a> {
+    parser: &'a Parser,
+}
+
+impl Drop for EofGuard<'_> {
+    fn drop(&mut self) {
+        self.parser.eof_stack.borrow_mut().pop();
+    }
+}
+
+pub struct Parser {
     tokens: Vec<Token>,
     pos: RefCell<usize>,
+    eof_stack: RefCell<Vec<StopCondition>>,
 }
 
-impl<'a> From<&'a str> for Parser<'a> {
-    fn from(input: &'a str) -> Self {
+impl From<&str> for Parser {
+    fn from(input: &str) -> Self {
         Self {
-            input,
             tokens: Lexer::new(input).collect(),
             pos: RefCell::new(0),
+            eof_stack: RefCell::new(Vec::new()),
         }
     }
 }
 
-impl<'a> Parser<'a> {
+impl Parser {
     pub fn is_eof(&self) -> bool {
-        let pos = self.pos.borrow();
-        println!("Checking EOF at position {} of {}", *pos, self.tokens.len());
-        *pos >= self.tokens.len()
-    }
-
-    pub fn is<M>(&self, matcher: M) -> bool
-    where
-        M: Fn(&Token) -> bool,
-    {
-        let pos = self.pos();
-        if let Some(token) = self.tokens.get(pos) {
-            matcher(token)
-        } else {
-            false
-        }
+        *self.pos.borrow() >= self.tokens.len()
     }
 
     pub fn len(&self) -> usize {
@@ -45,88 +140,20 @@ impl<'a> Parser<'a> {
         *self.pos.borrow()
     }
 
-    pub fn get(&'a self, index: usize) -> Option<&'a Token> {
+    pub fn get(&self, index: usize) -> Option<&Token> {
         self.tokens.get(index)
     }
 
-    pub fn peek(&'a self) -> Option<(usize, &'a Token)> {
+    pub fn peek(&self) -> Option<(usize, &Token)> {
         let pos = self.pos();
-
         Some((pos, self.tokens.get(pos)?))
     }
 
-    pub fn advance(&'a self) -> Option<(usize, &'a Token)> {
+    pub fn advance(&self) -> Option<(usize, &Token)> {
         let pos = self.pos();
         let token = self.tokens.get(pos)?;
         self.replace_position(pos + 1)?;
         Some((pos, token))
-    }
-
-    pub fn chain(&'a self, query: &Query, invert: bool) -> Option<&'a [Token]> {
-        let start = self.pos();
-
-        if (invert && self.check(query)) || (!invert && !self.check(query)) {
-            self.replace_position(start);
-            return None;
-        }
-        Some(self.slice(start..self.pos()))
-    }
-
-    fn check(&self, q: &Query) -> bool {
-        // println!("Query {}\nposition {}", q, self.pos());
-        match q {
-            Query::Is(cond) => match self.peek() {
-                Some((pos, t)) => {
-                    println!("- position {}", pos);
-                    cond.is(t)
-                }
-                None => false,
-            },
-            Query::Or(queries) => {
-                for sub_query in queries.iter() {
-                    if self.check(sub_query) {
-                        return true;
-                    }
-                }
-                false
-            }
-            Query::And(items) => {
-                for sub_query in items.iter() {
-                    if !self.check(sub_query) {
-                        return false;
-                    }
-                }
-                true
-            }
-            Query::Join(items) => {
-                let original_pos = self.pos();
-                for sub_query in items.iter() {
-                    if self.chain(sub_query, false).is_none() {
-                        self.replace_position(original_pos);
-                        return false;
-                    }
-                    self.next();
-                }
-                true
-            }
-            Query::Eof => self.is_eof(),
-        }
-    }
-
-    pub fn advance_until(&self, matcher: &Query, eof: &Query) -> Option<(&[Token], &[Token])> {
-        let start = self.pos();
-        while self.chain(eof, false).is_none()
-            && let Some((pos, _)) = self.peek()
-        {
-            if self.check(matcher) {
-                return Some((self.slice(start..pos), self.slice(pos..self.pos())));
-            } else {
-                self.next();
-            }
-        }
-
-        self.replace_position(start);
-        None
     }
 
     pub fn slice(&self, range: std::ops::Range<usize>) -> &[Token] {
@@ -145,191 +172,226 @@ impl<'a> Parser<'a> {
             Some(self.pos.replace(new_pos))
         }
     }
-}
 
-pub fn terminator(token: &Token) -> bool {
-    token.kind == TokenKind::Terminator
-}
+    pub fn eat(&self, pred: impl Fn(&Token) -> bool) -> Option<&[Token]> {
+        let pos = self.pos();
+        let (_, token) = self.peek()?;
+        if pred(token) {
+            self.next();
+            Some(self.slice(pos..self.pos()))
+        } else {
+            None
+        }
+    }
 
-pub fn first_column(token: &Token) -> bool {
-    token.position.column == 0
+    pub fn at(&self, pred: impl Fn(&Token) -> bool) -> bool {
+        self.peek().is_some_and(|(_, t)| pred(t))
+    }
+
+    pub fn push_eof(&self, cond: StopCondition) -> EofGuard<'_> {
+        self.eof_stack.borrow_mut().push(cond);
+        EofGuard { parser: self }
+    }
+
+    pub fn at_eof(&self) -> bool {
+        let Some((_, token)) = self.peek() else {
+            return true;
+        };
+        self.eof_stack
+            .borrow()
+            .iter()
+            .any(|cond| cond.matches(token, self))
+    }
+
+    /// Like `at_eof()`, but also treats a Terminator token as a block boundary.
+    /// Use this in block-level parsers (code, embed) that need to accept
+    /// terminators as valid end-of-block when called without a Terminator
+    /// stop condition on the stack.
+    pub fn at_block_boundary(&self) -> bool {
+        self.at_eof() || self.at(|t| t.kind == TokenKind::Terminator)
+    }
+
+    pub fn advance_until(&self, matcher: impl Fn(&Token) -> bool) -> Option<(&[Token], &[Token])> {
+        let start = self.pos();
+        while let Some((pos, token)) = self.peek() {
+            if self.at_eof() {
+                break;
+            }
+            if matcher(token) {
+                let before = self.slice(start..pos);
+                self.next();
+                let matched = self.slice(pos..self.pos());
+                return Some((before, matched));
+            }
+            self.next();
+        }
+        self.replace_position(start);
+        None
+    }
 }
 
 pub fn eol(t: &Token) -> bool {
     t.kind == TokenKind::Eol
 }
 
-pub fn one_space(t: &Token) -> bool {
-    t.kind == TokenKind::Space && t.range.len() == 1
-}
-
-#[derive(Debug, Clone)]
-pub enum Query {
-    Is(Condition),
-    Or(Vec<Query>),
-    And(Vec<Query>),
-    Join(Vec<Query>),
-    Eof,
-}
-
 #[macro_export]
-macro_rules! join {
-    ( $( $x:expr ),* ) => {
-        {
-            $crate::op::parser::Query::Join(vec![$( $x ),*])
+macro_rules! eat_seq {
+    ($p:expr, $($pred:expr),+ $(,)?) => {{
+        let start = $p.pos();
+        if $( $p.eat($pred).is_some() )&&+ {
+            Some($p.slice(start..$p.pos()))
+        } else {
+            $p.replace_position(start);
+            None
         }
-    };
-}
-
-#[macro_export]
-macro_rules! and {
-    ( $( $x:expr ),* ) => {
-        {
-            $crate::op::parser::Query::And(vec![$( $x ),*])
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! or {
-    ( $( $x:expr ),* ) => {
-        {
-            $crate::op::parser::Query::Or(vec![$( $x ),*])
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! is {
-    ( $(t=$kind:expr,)? $(c=$column:expr,)? $( el=$exact_len:expr,)? $( maxl=$max_len:expr,)?) => {
-        $crate::op::parser::Query::Is(
-            $crate::op::parser::Condition::new()
-                $( .kind($kind) )?
-                $( .column($column) )?
-                $( .exact_len($exact_len) )?
-                $( .max_len($max_len) )?
-        )
-    };
-}
-
-impl Display for Query {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Query::Is(cond) => write!(f, "Is({})", cond),
-            Query::Or(queries) => {
-                let parts: Vec<String> = queries.iter().map(|q| format!("{}", q)).collect();
-                write!(f, "Or({})", parts.join(", "))
-            }
-            Query::And(queries) => {
-                let parts: Vec<String> = queries.iter().map(|q| format!("{}", q)).collect();
-                write!(f, "And({})", parts.join(", "))
-            }
-            Query::Join(queries) => {
-                let parts: Vec<String> = queries.iter().map(|q| format!("{}", q)).collect();
-                write!(f, "Join({})", parts.join(", "))
-            }
-            Query::Eof => write!(f, "Eof"),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Condition {
-    kind: Option<TokenKind>,
-    column: Option<usize>,
-    exact_len: Option<usize>,
-    min_len: Option<usize>,
-    max_len: Option<usize>,
-}
-
-impl Condition {
-    pub const fn new() -> Self {
-        Self {
-            kind: None,
-            column: None,
-            exact_len: None,
-            min_len: None,
-            max_len: None,
-        }
-    }
-
-    pub const fn kind(mut self, kind: TokenKind) -> Self {
-        self.kind = Some(kind);
-        self
-    }
-
-    pub const fn column(mut self, column: usize) -> Self {
-        self.column = Some(column);
-        self
-    }
-
-    pub const fn exact_len(mut self, len: usize) -> Self {
-        self.exact_len = Some(len);
-        self
-    }
-
-    pub fn min_len(mut self, len: usize) -> Self {
-        self.min_len = Some(len);
-        self
-    }
-
-    pub fn max_len(mut self, len: usize) -> Self {
-        self.max_len = Some(len);
-        self
-    }
-
-    pub fn is(&self, t: &Token) -> bool {
-        println!("˹Is({})\n˻{:?}", self, t);
-        if let Some(kind) = &self.kind
-            && &t.kind != kind
-        {
-            return false;
-        }
-        if let Some(column) = &self.column
-            && &t.position.column != column
-        {
-            return false;
-        }
-        if let Some(exact_len) = &self.exact_len
-            && t.range.len() != *exact_len
-        {
-            return false;
-        }
-        if let Some(min_len) = &self.min_len
-            && t.range.len() < *min_len
-        {
-            return false;
-        }
-        if let Some(max_len) = &self.max_len
-            && t.range.len() > *max_len
-        {
-            return false;
-        }
-        true
-    }
-}
-
-impl Display for Condition {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let mut parts = vec![];
-        if let Some(kind) = &self.kind {
-            parts.push(format!("kind: {}", kind));
-        }
-        if let Some(column) = &self.column {
-            parts.push(format!("column: {}", column));
-        }
-        if let Some(exact_len) = &self.exact_len {
-            parts.push(format!("exact_len: {}", exact_len));
-        }
-        if let Some(min_len) = &self.min_len {
-            parts.push(format!("min_len: {}", min_len));
-        }
-        if let Some(max_len) = &self.max_len {
-            parts.push(format!("max_len: {}", max_len));
-        }
-        write!(f, "{}", parts.join(", "))
-    }
+    }};
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+    use crate::lexer::TokenKind;
+
+    #[test]
+    fn eat_matches_and_consumes() {
+        let p = Parser::from("hello world");
+        let result = p.eat(|t| t.kind == TokenKind::Literal);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().len(), 1);
+        assert_eq!(p.pos(), 1);
+    }
+
+    #[test]
+    fn eat_no_match_does_not_advance() {
+        let p = Parser::from("hello world");
+        let result = p.eat(|t| t.kind == TokenKind::Star);
+        assert!(result.is_none());
+        assert_eq!(p.pos(), 0);
+    }
+
+    #[test]
+    fn eat_at_eof_returns_none() {
+        let p = Parser::from("");
+        let result = p.eat(|t| t.kind == TokenKind::Literal);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn at_matches_without_consuming() {
+        let p = Parser::from("hello");
+        assert!(p.at(|t| t.kind == TokenKind::Literal));
+        assert_eq!(p.pos(), 0);
+    }
+
+    #[test]
+    fn at_no_match() {
+        let p = Parser::from("hello");
+        assert!(!p.at(|t| t.kind == TokenKind::Star));
+        assert_eq!(p.pos(), 0);
+    }
+
+    #[test]
+    fn at_eof_returns_false() {
+        let p = Parser::from("");
+        assert!(!p.at(|t| t.kind == TokenKind::Literal));
+    }
+
+    #[test]
+    fn eat_seq_matches_sequence() {
+        let p = Parser::from("# hello");
+        let result = eat_seq!(p, |t: &Token| t.kind == TokenKind::Hash, |t: &Token| t.kind
+            == TokenKind::Space);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap().len(), 2);
+        assert_eq!(p.pos(), 2);
+    }
+
+    #[test]
+    fn eat_seq_backtracks_on_partial_match() {
+        let p = Parser::from("# hello");
+        let result = eat_seq!(p, |t: &Token| t.kind == TokenKind::Hash, |t: &Token| t.kind
+            == TokenKind::Star);
+        assert!(result.is_none());
+        assert_eq!(p.pos(), 0);
+    }
+
+    #[test]
+    fn eat_seq_single_predicate() {
+        let p = Parser::from("hello");
+        let result = eat_seq!(p, |t: &Token| t.kind == TokenKind::Literal);
+        assert!(result.is_some());
+        assert_eq!(p.pos(), 1);
+    }
+
+    #[test]
+    fn advance_until_finds_match() {
+        let p = Parser::from("hello\nworld");
+        let result = p.advance_until(|t: &Token| t.kind == TokenKind::Eol);
+        assert!(result.is_some());
+        let (before, matched) = result.unwrap();
+        assert_eq!(before.len(), 1);
+        assert_eq!(matched.len(), 1);
+    }
+
+    #[test]
+    fn advance_until_eof_hit() {
+        let p = Parser::from("hello\n\nworld");
+        let _g = p.push_eof(StopCondition::Terminator);
+        let result = p.advance_until(|t: &Token| t.kind == TokenKind::Star);
+        assert!(result.is_none());
+        assert_eq!(p.pos(), 0);
+    }
+
+    #[test]
+    fn advance_until_no_match_at_eof() {
+        let p = Parser::from("hello");
+        let result = p.advance_until(|t: &Token| t.kind == TokenKind::Star);
+        assert!(result.is_none());
+        assert_eq!(p.pos(), 0);
+    }
+
+    #[test]
+    fn at_eof_empty_stack_not_at_end() {
+        let p = Parser::from("hello");
+        assert!(!p.at_eof());
+    }
+
+    #[test]
+    fn at_eof_empty_stack_at_end() {
+        let p = Parser::from("");
+        assert!(p.at_eof());
+    }
+
+    #[test]
+    fn at_eof_terminator_on_stack() {
+        let p = Parser::from("hello\n\nworld");
+        let _g = p.push_eof(StopCondition::Terminator);
+        assert!(!p.at_eof());
+        p.next();
+        assert!(p.at_eof());
+    }
+
+    #[test]
+    fn eof_guard_pops_on_drop() {
+        let p = Parser::from("hello\n\nworld");
+        {
+            let _g = p.push_eof(StopCondition::Terminator);
+            p.next();
+            assert!(p.at_eof());
+        }
+        assert!(!p.at_eof());
+    }
+
+    #[test]
+    fn nested_guards_pop_in_order() {
+        let p = Parser::from("hello\n\nworld");
+        let _outer = p.push_eof(StopCondition::Terminator);
+        p.next();
+        assert!(p.at_eof());
+        {
+            let _inner = p.push_eof(StopCondition::HighlightEnd);
+            assert!(p.at_eof());
+        }
+        assert!(p.at_eof());
+    }
+}

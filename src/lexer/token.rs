@@ -93,7 +93,7 @@ pub struct Position {
 }
 
 /// The `Token` struct represents a token in the input string.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     /// The kind of the token.
     pub kind: TokenKind,

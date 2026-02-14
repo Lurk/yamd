@@ -1,37 +1,24 @@
-use crate::op::{
-    Op, Parser,
-    destination::destination,
-    op::{Node, OpKind},
-    parser::Query,
-    title::title,
-};
+use crate::op::{Node, Op, Parser, destination::destination, title::title};
 
-pub fn anchor<'a>(p: &'a Parser<'a>, eof: &Query) -> Option<Vec<Op<'a>>> {
+pub fn anchor(p: &Parser) -> Option<Vec<Op>> {
     let start = p.pos();
-    let title_ops = title(p, eof)?;
-    let Some(destination_ops) = destination(p, eof) else {
+    let title_ops = title(p)?;
+    let Some(destination_ops) = destination(p) else {
         p.replace_position(start);
         return None;
     };
-    let mut ops = vec![Op {
-        kind: OpKind::Start(Node::Anchor),
-        tokens: vec![],
-    }];
+    let mut ops = vec![Op::new_start(Node::Anchor, &[])];
     ops.extend(title_ops);
     ops.extend(destination_ops);
-    ops.push(Op {
-        kind: OpKind::End(Node::Anchor),
-        tokens: vec![],
-    });
+    ops.push(Op::new_end(Node::Anchor, &[]));
     Some(ops)
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{
-        is,
         lexer::{Position, Token, TokenKind},
-        op::{Op, Parser, anchor::anchor, op::Node, parser::Query},
+        op::{Node, Op, Parser, anchor::anchor, parser::StopCondition},
     };
     use pretty_assertions::assert_eq;
 
@@ -39,16 +26,16 @@ mod tests {
     fn happy_path() {
         let p: Parser = "[a](u)".into();
         assert_eq!(
-            anchor(&p, &Query::Eof),
+            anchor(&p),
             Some(vec![
-                Op::new_start(Node::Anchor, vec![]),
-                Op::new_start(Node::Title, Vec::from_iter(p.slice(0..1))),
-                Op::new_value(Vec::from_iter(p.slice(1..2))),
-                Op::new_end(Node::Title, Vec::from_iter(p.slice(2..3))),
-                Op::new_start(Node::Destination, Vec::from_iter(p.slice(3..4))),
-                Op::new_value(Vec::from_iter(p.slice(4..5))),
-                Op::new_end(Node::Destination, Vec::from_iter(p.slice(5..6))),
-                Op::new_end(Node::Anchor, vec![])
+                Op::new_start(Node::Anchor, &[]),
+                Op::new_start(Node::Title, p.slice(0..1)),
+                Op::new_value(p.slice(1..2)),
+                Op::new_end(Node::Title, p.slice(2..3)),
+                Op::new_start(Node::Destination, p.slice(3..4)),
+                Op::new_value(p.slice(4..5)),
+                Op::new_end(Node::Destination, p.slice(5..6)),
+                Op::new_end(Node::Anchor, &[])
             ])
         );
     }
@@ -56,7 +43,7 @@ mod tests {
     #[test]
     fn title_is_not_closed() {
         let p: Parser = "[a".into();
-        assert_eq!(anchor(&p, &Query::Eof), None);
+        assert_eq!(anchor(&p), None);
         assert_eq!(
             p.peek(),
             Some((
@@ -69,7 +56,7 @@ mod tests {
     #[test]
     fn url_is_not_closed() {
         let p: Parser = "[a](u".into();
-        assert_eq!(anchor(&p, &Query::Eof), None);
+        assert_eq!(anchor(&p), None);
         assert_eq!(
             p.peek(),
             Some((
@@ -83,16 +70,16 @@ mod tests {
     fn has_nested_square_brackets() {
         let p: Parser = "[[a\\]l](u)".into();
         assert_eq!(
-            anchor(&p, &Query::Eof),
+            anchor(&p),
             Some(vec![
-                Op::new_start(Node::Anchor, vec![]),
-                Op::new_start(Node::Title, Vec::from_iter(p.slice(0..1))),
-                Op::new_value(Vec::from_iter(p.slice(1..4))),
-                Op::new_end(Node::Title, Vec::from_iter(p.slice(4..5))),
-                Op::new_start(Node::Destination, Vec::from_iter(p.slice(5..6))),
-                Op::new_value(Vec::from_iter(p.slice(6..7))),
-                Op::new_end(Node::Destination, Vec::from_iter(p.slice(7..8))),
-                Op::new_end(Node::Anchor, vec![])
+                Op::new_start(Node::Anchor, &[]),
+                Op::new_start(Node::Title, p.slice(0..1)),
+                Op::new_value(p.slice(1..4)),
+                Op::new_end(Node::Title, p.slice(4..5)),
+                Op::new_start(Node::Destination, p.slice(5..6)),
+                Op::new_value(p.slice(6..7)),
+                Op::new_end(Node::Destination, p.slice(7..8)),
+                Op::new_end(Node::Anchor, &[])
             ])
         );
     }
@@ -101,16 +88,16 @@ mod tests {
     fn has_nested_paren() {
         let p: Parser = "[a]((u)r)".into();
         assert_eq!(
-            anchor(&p, &Query::Eof),
+            anchor(&p),
             Some(vec![
-                Op::new_start(Node::Anchor, vec![]),
-                Op::new_start(Node::Title, Vec::from_iter(p.slice(0..1))),
-                Op::new_value(Vec::from_iter(p.slice(1..2))),
-                Op::new_end(Node::Title, Vec::from_iter(p.slice(2..3))),
-                Op::new_start(Node::Destination, Vec::from_iter(p.slice(3..4))),
-                Op::new_value(Vec::from_iter(p.slice(4..8))),
-                Op::new_end(Node::Destination, Vec::from_iter(p.slice(8..9))),
-                Op::new_end(Node::Anchor, vec![])
+                Op::new_start(Node::Anchor, &[]),
+                Op::new_start(Node::Title, p.slice(0..1)),
+                Op::new_value(p.slice(1..2)),
+                Op::new_end(Node::Title, p.slice(2..3)),
+                Op::new_start(Node::Destination, p.slice(3..4)),
+                Op::new_value(p.slice(4..8)),
+                Op::new_end(Node::Destination, p.slice(8..9)),
+                Op::new_end(Node::Anchor, &[])
             ])
         );
     }
@@ -119,16 +106,16 @@ mod tests {
     fn has_unclosed_nested_paren() {
         let p: Parser = "[a]((ur)t".into();
         assert_eq!(
-            anchor(&p, &Query::Eof),
+            anchor(&p),
             Some(vec![
-                Op::new_start(Node::Anchor, vec![]),
-                Op::new_start(Node::Title, Vec::from_iter(p.slice(0..1))),
-                Op::new_value(Vec::from_iter(p.slice(1..2))),
-                Op::new_end(Node::Title, Vec::from_iter(p.slice(2..3))),
-                Op::new_start(Node::Destination, Vec::from_iter(p.slice(3..4))),
-                Op::new_value(Vec::from_iter(p.slice(4..6))),
-                Op::new_end(Node::Destination, Vec::from_iter(p.slice(6..7))),
-                Op::new_end(Node::Anchor, vec![])
+                Op::new_start(Node::Anchor, &[]),
+                Op::new_start(Node::Title, p.slice(0..1)),
+                Op::new_value(p.slice(1..2)),
+                Op::new_end(Node::Title, p.slice(2..3)),
+                Op::new_start(Node::Destination, p.slice(3..4)),
+                Op::new_value(p.slice(4..6)),
+                Op::new_end(Node::Destination, p.slice(6..7)),
+                Op::new_end(Node::Anchor, &[])
             ])
         );
     }
@@ -136,7 +123,8 @@ mod tests {
     #[test]
     fn has_terminator() {
         let p: Parser = "[[a]((u\n\n)r)".into();
-        assert_eq!(anchor(&p, &is!(t = TokenKind::Terminator,)), None);
+        let _g = p.push_eof(StopCondition::Terminator);
+        assert_eq!(anchor(&p), None);
         assert_eq!(
             p.peek(),
             Some((
@@ -149,7 +137,7 @@ mod tests {
     #[test]
     fn no_paren() {
         let p: Parser = "[a]".into();
-        assert_eq!(anchor(&p, &Query::Eof), None);
+        assert_eq!(anchor(&p), None);
         assert_eq!(
             p.peek(),
             Some((
@@ -162,7 +150,7 @@ mod tests {
     #[test]
     fn right_paren() {
         let p = "[a])".into();
-        assert_eq!(anchor(&p, &Query::Eof), None);
+        assert_eq!(anchor(&p), None);
         assert_eq!(
             p.peek(),
             Some((

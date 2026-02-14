@@ -1,74 +1,67 @@
 use crate::{
-    is, join,
-    lexer::TokenKind,
-    op::{
-        Op, Parser,
-        modifier::modifier,
-        op::Node,
-        parser::{Query, eol},
-    },
-    or,
+    eat_seq,
+    lexer::{Token, TokenKind},
+    op::{Node, Op, Parser, modifier::modifier, parser::eol},
 };
 
-const CODE_BLOCK_DELIMITER: Query = is!(t = TokenKind::Backtick, c = 0, el = 3,);
+fn is_backtick3(t: &Token) -> bool {
+    t.kind == TokenKind::Backtick && t.position.column == 0 && t.range.len() == 3
+}
 
-pub fn code<'a>(p: &'a Parser<'a>, eof: &Query) -> Option<Vec<Op<'a>>> {
+fn is_eol(t: &Token) -> bool {
+    t.kind == TokenKind::Eol
+}
+
+pub fn code(p: &Parser) -> Option<Vec<Op>> {
     let start_pos = p.pos();
-    let first_token = p.chain(
-        &or!(
-            join!(CODE_BLOCK_DELIMITER, is!(t = TokenKind::Eol,)),
-            join!(CODE_BLOCK_DELIMITER)
-        ),
-        false,
-    )?;
+
+    let first_token = eat_seq!(p, is_backtick3, is_eol).or_else(|| p.eat(is_backtick3))?;
 
     let with_modifier = !first_token.last().is_some_and(eol);
 
-    let mut ops = vec![Op::new_start(Node::Code, Vec::from_iter(first_token))];
+    let mut ops = vec![Op::new_start(Node::Code, first_token)];
 
-    if with_modifier && let Some(modifier_ops) = modifier(p, eof) {
+    if with_modifier && let Some(modifier_ops) = modifier(p) {
         ops.extend(modifier_ops);
     };
 
-    let Some((body, end_token)) = p.advance_until(&join!(CODE_BLOCK_DELIMITER), eof) else {
+    let Some((body, end_token)) = p.advance_until(is_backtick3) else {
         p.replace_position(start_pos);
         return None;
     };
 
-    if p.chain(eof, true).is_some() {
+    if !p.at_block_boundary() {
         p.replace_position(start_pos);
         return None;
     }
 
-    ops.push(Op::new_value(Vec::from_iter(body)));
-    ops.push(Op::new_end(Node::Code, Vec::from_iter(end_token)));
+    ops.push(Op::new_value(body));
+    ops.push(Op::new_end(Node::Code, end_token));
 
     Some(ops)
 }
 
 #[cfg(test)]
 mod tests {
-
     use pretty_assertions::assert_eq;
 
     use crate::{
-        is,
         lexer::{Position, Token, TokenKind},
-        op::{Op, code::code, op::Node, parser::Query},
+        op::{Node, Op, Parser, code::code, parser::StopCondition},
     };
 
     #[test]
     fn happy_path() {
         let p = "```rust\nprintln!(\"hello\");\n```".into();
         assert_eq!(
-            code(&p, &Query::Eof),
+            code(&p),
             Some(vec![
-                Op::new_start(Node::Code, vec![p.get(0).unwrap()]), // ```
-                Op::new_start(Node::Modifier, vec![]),              //
-                Op::new_value(vec![p.get(1).unwrap()]),             // rust
-                Op::new_end(Node::Modifier, vec![p.get(2).unwrap()]), // \n
-                Op::new_value(Vec::from_iter(p.slice(3..10))),      // println!(\"hello\");\n
-                Op::new_end(Node::Code, vec![p.get(10).unwrap()]),  // ```
+                Op::new_start(Node::Code, p.slice(0..1)),   // ```
+                Op::new_start(Node::Modifier, &[]),         //
+                Op::new_value(p.slice(1..2)),               // rust
+                Op::new_end(Node::Modifier, p.slice(2..3)), // \n
+                Op::new_value(p.slice(3..10)),              // println!(\"hello\");\n
+                Op::new_end(Node::Code, p.slice(10..11)),   // ```
             ])
         );
     }
@@ -77,19 +70,20 @@ mod tests {
     fn eol_before_lang() {
         let p = "```\nprintln!(\"hello\");\n```".into();
         assert_eq!(
-            code(&p, &Query::Eof),
+            code(&p),
             Some(vec![
-                Op::new_start(Node::Code, Vec::from_iter(p.slice(0..2))), // ```\n
-                Op::new_value(Vec::from_iter(p.slice(2..9))),             // println!(\"hello\");\n
-                Op::new_end(Node::Code, vec![p.get(9).unwrap()]),         // ```
+                Op::new_start(Node::Code, p.slice(0..2)), // ```\n
+                Op::new_value(p.slice(2..9)),             // println!(\"hello\");\n
+                Op::new_end(Node::Code, p.slice(9..10)),  // ```
             ])
         );
     }
 
     #[test]
     fn terminator_before_lang() {
-        let p = "```\n\nprintln!(\"hello\");\n```".into();
-        assert_eq!(code(&p, &is!(t = TokenKind::Terminator,)), None);
+        let p: Parser = "```\n\nprintln!(\"hello\");\n```".into();
+        let _g = p.push_eof(StopCondition::Terminator);
+        assert_eq!(code(&p), None);
         assert_eq!(
             p.peek(),
             Some((
@@ -102,7 +96,7 @@ mod tests {
     #[test]
     fn do_not_have_closing_token() {
         let p = "```\nprintln!(\"hello\");\n``".into();
-        assert_eq!(code(&p, &Query::Eof), None);
+        assert_eq!(code(&p), None);
         assert_eq!(
             p.peek(),
             Some((
@@ -115,7 +109,7 @@ mod tests {
     #[test]
     fn terminator_in_the_middle_and_do_not_have_closing_token() {
         let p = "```\nprintln!(\"hello\");\n\n\n``".into();
-        assert_eq!(code(&p, &Query::Eof), None);
+        assert_eq!(code(&p), None);
         assert_eq!(
             p.peek(),
             Some((

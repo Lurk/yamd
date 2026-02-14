@@ -1,69 +1,54 @@
 use crate::{
-    is, join,
-    lexer::TokenKind,
-    op::{
-        Op, Parser,
-        document::document,
-        modifier::modifier,
-        op::Node,
-        parser::{Query, first_column},
-    },
-    or,
+    eat_seq,
+    lexer::{Token, TokenKind},
+    op::{Node, Op, Parser, document::document, modifier::modifier, parser::StopCondition},
 };
 
-pub fn collapsible<'a>(p: &'a Parser<'a>, eof: &Query) -> Option<Vec<Op<'a>>> {
+fn is_collapsible_start(t: &Token) -> bool {
+    t.kind == TokenKind::CollapsibleStart && t.position.column == 0
+}
+
+fn is_collapsible_end(t: &Token) -> bool {
+    t.kind == TokenKind::CollapsibleEnd && t.position.column == 0
+}
+
+fn is_space_or_eol(t: &Token) -> bool {
+    t.kind == TokenKind::Space || t.kind == TokenKind::Eol
+}
+
+fn is_eol(t: &Token) -> bool {
+    t.kind == TokenKind::Eol
+}
+
+pub fn collapsible(p: &Parser) -> Option<Vec<Op>> {
     let start = p.pos();
 
-    println!("parsing collapsible at position {}", start);
-    let collapsible_start = p.chain(
-        &join!(
-            is!(t = TokenKind::CollapsibleStart, c = 0,),
-            or!(is!(t = TokenKind::Space,), is!(t = TokenKind::Eol,))
-        ),
-        false,
-    )?;
+    let collapsible_start = eat_seq!(p, is_collapsible_start, is_space_or_eol)?;
 
-    let mut ops = vec![Op::new_start(
-        Node::Collapsible,
-        Vec::from_iter(collapsible_start),
-    )];
+    let mut ops = vec![Op::new_start(Node::Collapsible, collapsible_start)];
 
-    if let Some(heading) = modifier(p, eof) {
+    if let Some(heading) = modifier(p) {
         ops.extend(heading);
     }
 
-    if !p.is(first_column) {
+    if !p.at(|t: &Token| t.position.column == 0) {
         p.replace_position(start);
         return None;
     }
 
-    println!("document at: {}", p.pos());
-    ops.extend(document(
-        p,
-        &or!(eof.clone(), is!(t = TokenKind::CollapsibleEnd, c = 0,)),
-    ));
+    {
+        let _g = p.push_eof(StopCondition::CollapsibleEnd);
+        ops.extend(document(p));
+    }
 
-    println!("parsed document inside collapsible");
+    let end = eat_seq!(p, is_collapsible_end, is_eol).or_else(|| p.eat(is_collapsible_end));
 
-    println!("position before searching for end: {}", p.pos());
-    let Some(end) = p.chain(
-        &or!(
-            join!(
-                is!(t = TokenKind::CollapsibleEnd, c = 0,),
-                is!(t = TokenKind::Eol,)
-            ),
-            join!(is!(t = TokenKind::CollapsibleEnd, c = 0,))
-        ),
-        false,
-    ) else {
-        println!("Failed to find collapsible end");
+    let Some(end) = end else {
         p.replace_position(start);
         return None;
     };
 
-    println!("found collapsible end at position {}", p.pos());
-
-    ops.push(Op::new_end(Node::Collapsible, Vec::from_iter(end)));
+    ops.push(Op::new_end(Node::Collapsible, end));
     Some(ops)
 }
 
@@ -71,102 +56,107 @@ pub fn collapsible<'a>(p: &'a Parser<'a>, eof: &Query) -> Option<Vec<Op<'a>>> {
 mod tests {
     use pretty_assertions::assert_eq;
 
-    use crate::op::{Op, collapsible::collapsible, op::Node, parser::Query};
+    use crate::{
+        lexer::{Position, Token, TokenKind},
+        op::{Node, Op, collapsible::collapsible},
+    };
 
     #[test]
     fn happy_path() {
         let p = "{% Title\n# Heading\n\ntext\n\n{% nested\n![a](u)\n%}\n%}".into();
         assert_eq!(
-            collapsible(&p, &Query::Eof),
+            collapsible(&p),
             Some(vec![
-                Op::new_start(Node::Collapsible, Vec::from_iter(p.slice(0..2)),), // {%
-                Op::new_start(Node::Modifier, vec![],),                           //
-                Op::new_value(vec![p.get(2).unwrap()]),                           // Title
-                Op::new_end(Node::Modifier, vec![p.get(3).unwrap()]),             // \n
-                Op::new_start(Node::Document, vec![],),                           //
-                Op::new_start(Node::Heading, Vec::from_iter(p.slice(4..6)),),     // #
-                Op::new_value(vec![p.get(6).unwrap()]),                           // Heading
-                Op::new_end(Node::Heading, vec![]),                               //
-                Op::new_value(vec![p.get(7).unwrap()]),                           // \n\n
-                Op::new_start(Node::Paragraph, vec![]),                           //
-                Op::new_value(vec![p.get(8).unwrap()]),                           // text
-                Op::new_end(Node::Paragraph, vec![]),                             //
-                Op::new_value(vec![p.get(9).unwrap()]),                           // \n\n
-                Op::new_start(Node::Collapsible, Vec::from_iter(p.slice(10..12)),), // {%
-                Op::new_start(Node::Modifier, vec![],),                           //
-                Op::new_value(vec![p.get(12).unwrap()]),                          // nested
-                Op::new_end(Node::Modifier, vec![p.get(13).unwrap()]),            // \n
-                Op::new_start(Node::Document, vec![],),                           //
-                Op::new_start(Node::Image, vec![p.get(14).unwrap()]),             // !
-                Op::new_start(Node::Title, vec![p.get(15).unwrap()]),             // [
-                Op::new_value(vec![p.get(16).unwrap()]),                          // a
-                Op::new_end(Node::Title, vec![p.get(17).unwrap()]),               // ]
-                Op::new_start(Node::Destination, vec![p.get(18).unwrap()]),       // (
-                Op::new_value(vec![p.get(19).unwrap()]),                          // u
-                Op::new_end(Node::Destination, vec![p.get(20).unwrap()]),         // )
-                Op::new_end(Node::Image, vec![p.get(21).unwrap()]),               // \n
-                Op::new_end(Node::Document, vec![]),                              //
-                Op::new_end(Node::Collapsible, Vec::from_iter(p.slice(22..24))),  // %}\n
-                Op::new_end(Node::Document, vec![]),                              //
-                Op::new_end(Node::Collapsible, vec![p.get(24).unwrap()]),         // %}
+                Op::new_start(Node::Collapsible, p.slice(0..2)), // {%
+                Op::new_start(Node::Modifier, &[]),              //
+                Op::new_value(p.slice(2..3)),                    // Title
+                Op::new_end(Node::Modifier, p.slice(3..4)),      // \n
+                Op::new_start(Node::Document, &[]),              //
+                Op::new_start(Node::Heading, p.slice(4..6)),     // #
+                Op::new_value(p.slice(6..7)),                    // Heading
+                Op::new_end(Node::Heading, &[]),                 //
+                Op::new_value(p.slice(7..8)),                    // \n\n
+                Op::new_start(Node::Paragraph, &[]),             //
+                Op::new_value(p.slice(8..9)),                    // text
+                Op::new_end(Node::Paragraph, &[]),               //
+                Op::new_value(p.slice(9..10)),                   // \n\n
+                Op::new_start(Node::Collapsible, p.slice(10..12)), // {%
+                Op::new_start(Node::Modifier, &[]),              //
+                Op::new_value(p.slice(12..13)),                  // nested
+                Op::new_end(Node::Modifier, p.slice(13..14)),    // \n
+                Op::new_start(Node::Document, &[]),              //
+                Op::new_start(Node::Image, p.slice(14..15)),     // !
+                Op::new_start(Node::Title, p.slice(15..16)),     // [
+                Op::new_value(p.slice(16..17)),                  // a
+                Op::new_end(Node::Title, p.slice(17..18)),       // ]
+                Op::new_start(Node::Destination, p.slice(18..19)), // (
+                Op::new_value(p.slice(19..20)),                  // u
+                Op::new_end(Node::Destination, p.slice(20..21)), // )
+                Op::new_end(Node::Image, p.slice(21..22)),       // \n
+                Op::new_end(Node::Document, &[]),                //
+                Op::new_end(Node::Collapsible, p.slice(22..24)), // %}\n
+                Op::new_end(Node::Document, &[]),                //
+                Op::new_end(Node::Collapsible, p.slice(24..25)), // %}
             ])
         );
     }
 
-    // #[test]
-    // fn no_title() {
-    //     let mut p = Parser::new("{%\ntext%}");
-    //     assert_eq!(collapsible(&mut p), None);
-    //     assert_eq!(
-    //         p.peek(),
-    //         Some((
-    //             &Token::new(TokenKind::Literal, "{%", Position::default()),
-    //             0
-    //         ))
-    //     );
-    // }
-    //
-    // #[test]
-    // fn parse_empty() {
-    //     let mut p = Parser::new("{% Title\n\n%}");
-    //     assert_eq!(collapsible(&mut p), Some(Collapsible::new("Title", vec![])));
-    // }
-    //
-    // #[test]
-    // fn no_end_token() {
-    //     let mut p = Parser::new("{% Title\n# Heading\n\ntext\n\n{% nested\n![a](u)\n%}\n");
-    //     assert_eq!(collapsible(&mut p), None);
-    //     assert_eq!(
-    //         p.peek(),
-    //         Some((
-    //             &Token::new(TokenKind::Literal, "{%", Position::default()),
-    //             0
-    //         ))
-    //     );
-    // }
-    //
-    // #[test]
-    // fn just_heading() {
-    //     let mut p = Parser::new("{% Title\n# Heading\n%}");
-    //     assert_eq!(
-    //         collapsible(&mut p),
-    //         Some(Collapsible::new(
-    //             "Title",
-    //             vec![Heading::new(1, vec![String::from("Heading").into()]).into(),]
-    //         ))
-    //     );
-    // }
-    //
-    // #[test]
-    // fn only_two_tokens() {
-    //     let mut p = Parser::new("{% ");
-    //     assert_eq!(collapsible(&mut p), None);
-    //     assert_eq!(
-    //         p.peek(),
-    //         Some((
-    //             &Token::new(TokenKind::Literal, "{%", Position::default()),
-    //             0
-    //         ))
-    //     );
-    // }
+    #[test]
+    fn no_title() {
+        let p = "{%\ntext%}".into();
+        assert_eq!(collapsible(&p), None);
+        assert_eq!(
+            p.peek(),
+            Some((
+                0,
+                &Token::new(TokenKind::CollapsibleStart, 0..2, Position::default()),
+            ))
+        );
+    }
+
+    #[test]
+    fn no_end_token() {
+        let p = "{% Title\n# Heading\n\ntext\n\n{% nested\n![a](u)\n%}\n".into();
+        assert_eq!(collapsible(&p), None);
+        assert_eq!(
+            p.peek(),
+            Some((
+                0,
+                &Token::new(TokenKind::CollapsibleStart, 0..2, Position::default()),
+            ))
+        );
+    }
+
+    #[test]
+    fn just_heading() {
+        let p = "{% Title\n# Heading\n%}".into();
+        assert_eq!(
+            collapsible(&p),
+            Some(vec![
+                Op::new_start(Node::Collapsible, p.slice(0..2)), // {%
+                Op::new_start(Node::Modifier, &[]),              //
+                Op::new_value(p.slice(2..3)),                    // Title
+                Op::new_end(Node::Modifier, p.slice(3..4)),      // \n
+                Op::new_start(Node::Document, &[]),              //
+                Op::new_start(Node::Heading, p.slice(4..6)),     // #
+                Op::new_value(p.slice(6..8)),                    // Heading\n
+                Op::new_end(Node::Heading, &[]),                 //
+                Op::new_end(Node::Document, &[]),                //
+                Op::new_end(Node::Collapsible, p.slice(8..9)),   // %}
+            ])
+        );
+    }
+
+    #[test]
+    fn only_two_tokens() {
+        let p = "{% ".into();
+        assert_eq!(collapsible(&p), None);
+        assert_eq!(
+            p.peek(),
+            Some((
+                0,
+                &Token::new(TokenKind::CollapsibleStart, 0..2, Position::default()),
+            ))
+        );
+    }
 }

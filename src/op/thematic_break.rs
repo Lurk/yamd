@@ -1,22 +1,25 @@
 use crate::{
-    is, join,
-    lexer::TokenKind,
-    op::{Op, Parser, op::Node},
+    lexer::{Token, TokenKind},
+    op::{Node, Op, Parser},
 };
 
-pub fn thematic_break<'a>(p: &'a Parser) -> Option<Vec<Op<'a>>> {
-    let token = p.chain(&join!(is!(t = TokenKind::Minus, c = 0, el = 5,)), false)?;
+fn is_dash(t: &Token) -> bool {
+    t.kind == TokenKind::Minus && t.position.column == 0 && t.range.len() == 5
+}
+
+pub fn thematic_break(p: &Parser) -> Option<Vec<Op>> {
+    let token = p.eat(is_dash)?;
 
     Some(vec![
-        Op::new_start(Node::ThematicBreak, vec![]),
-        Op::new_value(Vec::from_iter(token)),
-        Op::new_end(Node::ThematicBreak, vec![]),
+        Op::new_start(Node::ThematicBreak, &[]),
+        Op::new_value(token),
+        Op::new_end(Node::ThematicBreak, &[]),
     ])
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::op::{Op, op::Node, thematic_break::thematic_break};
+    use crate::op::{Node, Op, thematic_break::thematic_break};
     use pretty_assertions::assert_eq;
     #[test]
     fn happy_path() {
@@ -24,9 +27,9 @@ mod tests {
         assert_eq!(
             thematic_break(&p),
             Some(vec![
-                Op::new_start(Node::ThematicBreak, vec![]), //
-                Op::new_value(vec![p.get(0).unwrap()]),     // -----
-                Op::new_end(Node::ThematicBreak, vec![]),   //
+                Op::new_start(Node::ThematicBreak, &[]), //
+                Op::new_value(p.slice(0..1)),            // -----
+                Op::new_end(Node::ThematicBreak, &[]),   //
             ])
         );
     }

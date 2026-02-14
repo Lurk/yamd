@@ -1,51 +1,44 @@
 use crate::{
-    is, join,
-    lexer::TokenKind,
-    op::{Op, Parser, op::Node, parser::Query},
+    lexer::{Token, TokenKind},
+    op::{Node, Op, Parser},
 };
 
-pub fn code_span<'a>(p: &'a Parser<'a>, eof: &Query) -> Option<Vec<Op<'a>>> {
+fn is_backtick(t: &Token) -> bool {
+    t.kind == TokenKind::Backtick && t.range.len() == 1
+}
+
+pub fn code_span(p: &Parser) -> Option<Vec<Op>> {
     let start = p.pos();
-    let query = join!(is!(t = TokenKind::Backtick, el = 1,));
-    let start_token = p.chain(&query, false)?;
-    let Some((body, end_token)) = p.advance_until(&query, eof) else {
+    let start_token = p.eat(is_backtick)?;
+    let Some((body, end_token)) = p.advance_until(is_backtick) else {
         p.replace_position(start);
         return None;
     };
-
-    let ops = vec![
-        Op::new_start(Node::CodeSpan, Vec::from_iter(start_token)),
-        Op::new_value(Vec::from_iter(body)),
-        Op::new_end(Node::CodeSpan, Vec::from_iter(end_token)),
-    ];
-
-    Some(ops)
+    Some(vec![
+        Op::new_start(Node::CodeSpan, start_token),
+        Op::new_value(body),
+        Op::new_end(Node::CodeSpan, end_token),
+    ])
 }
 
 #[cfg(test)]
 mod tests {
-
     use pretty_assertions::assert_eq;
 
     use crate::{
         lexer::{Position, Token, TokenKind},
-        op::{
-            Op, Parser,
-            code_span::code_span,
-            op::Node,
-            parser::{Condition, Query},
-        },
+        op::{Node, Op, Parser, code_span::code_span, parser::StopCondition},
     };
 
     #[test]
     fn happy_path() {
         let p: Parser = "`happy path`".into();
         assert_eq!(
-            code_span(&p, &Query::Eof),
+            code_span(&p),
             Some(vec![
-                Op::new_start(Node::CodeSpan, vec![p.get(0).unwrap()]),
-                Op::new_value(vec![p.get(1).unwrap(),]),
-                Op::new_end(Node::CodeSpan, vec![p.get(2).unwrap()]),
+                Op::new_start(Node::CodeSpan, p.slice(0..1)),
+                Op::new_value(p.slice(1..2)),
+                Op::new_end(Node::CodeSpan, p.slice(2..3)),
             ])
         );
     }
@@ -53,10 +46,8 @@ mod tests {
     #[test]
     fn terminator() {
         let p: Parser = "`happy\n\npath`".into();
-        assert_eq!(
-            code_span(&p, &Query::Is(Condition::new().kind(TokenKind::Terminator))),
-            None
-        );
+        let _g = p.push_eof(StopCondition::Terminator);
+        assert_eq!(code_span(&p), None);
         assert_eq!(
             p.peek(),
             Some((
@@ -69,7 +60,7 @@ mod tests {
     #[test]
     fn no_rhs() {
         let p: Parser = "`happy path".into();
-        assert_eq!(code_span(&p, &Query::Eof), None);
+        assert_eq!(code_span(&p), None);
         assert_eq!(
             p.peek(),
             Some((

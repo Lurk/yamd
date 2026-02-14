@@ -1,36 +1,24 @@
-use crate::op::parser::Parser;
 use crate::{
-    is, join,
-    lexer::TokenKind,
-    op::{
-        op::{Node, Op, OpKind},
-        parser::Query,
-    },
+    lexer::{Token, TokenKind},
+    op::{Node, Op, Parser},
 };
 
-pub fn strikethrough<'a>(p: &'a Parser<'a>, eof: &Query) -> Option<Vec<Op<'a>>> {
+fn is_tilde(t: &Token) -> bool {
+    t.kind == TokenKind::Tilde && t.range.len() == 2
+}
+
+pub fn strikethrough(p: &Parser) -> Option<Vec<Op>> {
     let start = p.pos();
-    let start_token = p.chain(&join!(is!(t = TokenKind::Tilde, el = 2,)), false)?;
-    let Some((body, end_token)) = p.advance_until(&join!(is!(t = TokenKind::Tilde, el = 2,)), eof)
-    else {
+    let start_token = p.eat(is_tilde)?;
+    let Some((body, end_token)) = p.advance_until(is_tilde) else {
         p.replace_position(start);
         return None;
     };
-    let ops = vec![
-        Op {
-            kind: OpKind::Start(Node::Strikethrough),
-            tokens: Vec::from_iter(start_token),
-        },
-        Op {
-            kind: OpKind::Value,
-            tokens: Vec::from_iter(body),
-        },
-        Op {
-            kind: OpKind::End(Node::Strikethrough),
-            tokens: Vec::from_iter(end_token),
-        },
-    ];
-    Some(ops)
+    Some(vec![
+        Op::new_start(Node::Strikethrough, start_token),
+        Op::new_value(body),
+        Op::new_end(Node::Strikethrough, end_token),
+    ])
 }
 
 #[cfg(test)]
@@ -39,23 +27,18 @@ mod tests {
 
     use crate::{
         lexer::{Position, Token, TokenKind},
-        op::{
-            Op,
-            op::Node,
-            parser::{Condition, Query},
-            strikethrough::strikethrough,
-        },
+        op::{Node, Op, Parser, parser::StopCondition, strikethrough::strikethrough},
     };
 
     #[test]
     fn happy_path() {
         let p = "~~happy~~".into();
         assert_eq!(
-            strikethrough(&p, &Query::Eof),
+            strikethrough(&p),
             Some(vec![
-                Op::new_start(Node::Strikethrough, vec![p.get(0).unwrap()]),
-                Op::new_value(vec![p.get(1).unwrap(),]),
-                Op::new_end(Node::Strikethrough, vec![p.get(2).unwrap()])
+                Op::new_start(Node::Strikethrough, p.slice(0..1)),
+                Op::new_value(p.slice(1..2)),
+                Op::new_end(Node::Strikethrough, p.slice(2..3)),
             ])
         );
     }
@@ -63,7 +46,7 @@ mod tests {
     #[test]
     fn no_closing_token() {
         let p = "~~happy".into();
-        assert_eq!(strikethrough(&p, &Query::Eof), None);
+        assert_eq!(strikethrough(&p), None);
         assert_eq!(
             p.peek(),
             Some((0, &Token::new(TokenKind::Tilde, 0..2, Position::default())))
@@ -72,14 +55,12 @@ mod tests {
 
     #[test]
     fn terminator() {
-        let p = "~~ha\n\nppy~~".into();
-        assert_eq!(
-            strikethrough(&p, &Query::Is(Condition::new().kind(TokenKind::Terminator))),
-            None
-        );
+        let p: Parser = "~~ha\n\nppy~~".into();
+        let _g = p.push_eof(StopCondition::Terminator);
+        assert_eq!(strikethrough(&p), None);
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Tilde, 0..2, Position::default()),))
+            Some((0, &Token::new(TokenKind::Tilde, 0..2, Position::default())))
         )
     }
 }

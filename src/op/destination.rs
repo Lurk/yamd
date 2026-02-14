@@ -1,17 +1,20 @@
 use crate::{
-    is, join,
-    lexer::TokenKind,
-    op::{Op, Parser, op::Node, parser::Query},
+    lexer::{Token, TokenKind},
+    op::{Node, Op, Parser},
 };
 
-pub fn destination<'a>(p: &'a Parser<'a>, eof: &Query) -> Option<Vec<Op<'a>>> {
+fn is_left_paren(t: &Token) -> bool {
+    t.kind == TokenKind::LeftParenthesis && t.range.len() == 1
+}
+
+pub fn destination(p: &Parser) -> Option<Vec<Op>> {
     let start = p.pos();
-    let start_token = p.chain(&join!(is!(t = TokenKind::LeftParenthesis, el = 1,)), false)?;
+    let start_token = p.eat(is_left_paren)?;
 
     let mut paren_count = 1;
     let mut end_pos = start;
     while let Some((i, token)) = p.peek() {
-        if p.chain(eof, true).is_none() {
+        if p.at_eof() {
             break;
         }
         match token.kind {
@@ -38,15 +41,15 @@ pub fn destination<'a>(p: &'a Parser<'a>, eof: &Query) -> Option<Vec<Op<'a>>> {
         return None;
     }
 
-    let Some(end_token) = p.get(end_pos) else {
+    let Some(_end_token) = p.get(end_pos) else {
         p.replace_position(start);
         return None;
     };
 
     let ops = vec![
-        Op::new_start(Node::Destination, Vec::from_iter(start_token)),
-        Op::new_value(Vec::from_iter(p.slice(start + 1..end_pos))),
-        Op::new_end(Node::Destination, vec![end_token]),
+        Op::new_start(Node::Destination, start_token),
+        Op::new_value(p.slice(start + 1..end_pos)),
+        Op::new_end(Node::Destination, p.slice(end_pos..end_pos + 1)),
     ];
 
     p.replace_position(end_pos + 1);

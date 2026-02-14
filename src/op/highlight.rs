@@ -1,82 +1,85 @@
 use crate::{
-    is, join,
-    lexer::TokenKind,
+    eat_seq,
+    lexer::{Token, TokenKind},
     op::{
-        Op, Parser,
+        Node, Op, Parser,
         modifier::modifier,
-        op::Node,
         paragraph::paragraph,
-        parser::{Query, eol},
+        parser::{StopCondition, eol},
     },
-    or,
 };
 
-fn icon<'a>(p: &'a Parser<'a>, eof: &Query) -> Option<Vec<Op<'a>>> {
-    let start = p.pos();
-    let start_token = p.chain(
-        &join!(
-            is!(t = TokenKind::Bang, c = 0, el = 1,),
-            is!(t = TokenKind::Space, el = 1,)
-        ),
-        false,
-    )?;
+fn is_two_bangs(t: &Token) -> bool {
+    t.kind == TokenKind::Bang && t.position.column == 0 && t.range.len() == 2
+}
 
-    let Some((body, end_token)) = p.advance_until(&join!(is!(t = TokenKind::Eol,)), eof) else {
+fn is_one_bang(t: &Token) -> bool {
+    t.kind == TokenKind::Bang && t.position.column == 0 && t.range.len() == 1
+}
+
+fn is_space(t: &Token) -> bool {
+    t.kind == TokenKind::Space && t.range.len() == 1
+}
+
+fn is_eol(t: &Token) -> bool {
+    t.kind == TokenKind::Eol
+}
+
+fn is_terminator(t: &Token) -> bool {
+    t.kind == TokenKind::Terminator
+}
+
+fn icon(p: &Parser) -> Option<Vec<Op>> {
+    let start = p.pos();
+    let start_token = eat_seq!(p, is_one_bang, is_space)?;
+
+    let Some((body, end_token)) = p.advance_until(is_eol) else {
         p.replace_position(start);
         return None;
     };
 
-    let ops = vec![
-        Op::new_start(Node::Icon, Vec::from_iter(start_token)),
-        Op::new_value(Vec::from_iter(body)),
-        Op::new_end(Node::Icon, Vec::from_iter(end_token)),
-    ];
-
-    Some(ops)
+    Some(vec![
+        Op::new_start(Node::Icon, start_token),
+        Op::new_value(body),
+        Op::new_end(Node::Icon, end_token),
+    ])
 }
 
-pub fn highlight<'a>(p: &'a Parser<'a>, eof: &Query) -> Option<Vec<Op<'a>>> {
+pub fn highlight(p: &Parser) -> Option<Vec<Op>> {
     let start = p.pos();
-    let start_token = p.chain(
-        &join!(
-            is!(t = TokenKind::Bang, c = 0, el = 2,),
-            or!(is!(t = TokenKind::Space, el = 1,), is!(t = TokenKind::Eol,))
-        ),
-        false,
-    )?;
+
+    let start_token = eat_seq!(p, is_two_bangs, |t: &Token| is_space(t) || is_eol(t))?;
 
     let skip_title = start_token.last().is_some_and(eol);
 
-    let mut ops = vec![Op::new_start(Node::Highlight, Vec::from_iter(start_token))];
+    let mut ops = vec![Op::new_start(Node::Highlight, start_token)];
 
-    if !skip_title && let Some(heading) = modifier(p, eof) {
+    if !skip_title && let Some(heading) = modifier(p) {
         ops.extend(heading);
     }
 
-    if let Some(icon_ops) = icon(p, &or!(is!(t = TokenKind::Terminator,), eof.clone())) {
-        ops.extend(icon_ops);
+    {
+        let _g = p.push_eof(StopCondition::Terminator);
+        if let Some(icon_ops) = icon(p) {
+            ops.extend(icon_ops);
+        }
     }
 
-    if p.chain(&is!(c = 0,), false).is_none() {
+    if !p.at(|t: &Token| t.position.column == 0) {
         p.replace_position(start);
         return None;
     }
 
-    while p.chain(eof, true).is_some() {
-        if let Some(token) = p.chain(&join!(is!(t = TokenKind::Bang, c = 0, el = 2,)), false) {
-            ops.push(Op::new_end(Node::Highlight, Vec::from_iter(token)));
+    while !p.at_eof() {
+        if let Some(token) = p.eat(is_two_bangs) {
+            ops.push(Op::new_end(Node::Highlight, token));
             return Some(ops);
-        } else if let Some(token) = p.chain(&join!(is!(t = TokenKind::Terminator,)), false) {
-            ops.push(Op::new_value(Vec::from_iter(token)));
+        } else if let Some(token) = p.eat(is_terminator) {
+            ops.push(Op::new_value(token));
         }
-        ops.extend(paragraph(
-            p,
-            &or!(
-                is!(t = TokenKind::Bang, c = 0, el = 2,),
-                is!(t = TokenKind::Terminator,),
-                eof.clone()
-            ),
-        ));
+        let _g1 = p.push_eof(StopCondition::HighlightEnd);
+        let _g2 = p.push_eof(StopCondition::Terminator);
+        ops.extend(paragraph(p));
     }
 
     p.replace_position(start);
@@ -89,45 +92,40 @@ mod tests {
 
     use crate::{
         lexer::{Position, Token, TokenKind},
-        op::{
-            Op,
-            highlight::highlight,
-            op::Node,
-            parser::{Condition, Query},
-        },
+        op::{Node, Op, Parser, highlight::highlight, parser::StopCondition},
     };
 
     #[test]
     fn happy_path() {
         let p = "!! Title\n! Icon\n_i_ **b**\n\nt~~s~~t\n!!".into();
         assert_eq!(
-            highlight(&p, &Query::Eof),
+            highlight(&p),
             Some(vec![
-                Op::new_start(Node::Highlight, Vec::from_iter(p.slice(0..2))), // !!
-                Op::new_start(Node::Modifier, vec![]),                         //
-                Op::new_value(vec![p.get(2).unwrap()]),                        // Title
-                Op::new_end(Node::Modifier, vec![p.get(3).unwrap()]),          // \n
-                Op::new_start(Node::Icon, Vec::from_iter(p.slice(4..6))),      // !
-                Op::new_value(vec![p.get(6).unwrap()]),                        // Icon
-                Op::new_end(Node::Icon, vec![p.get(7).unwrap()]),              // \n
-                Op::new_start(Node::Paragraph, vec![]),                        //
-                Op::new_start(Node::Italic, vec![p.get(8).unwrap()]),          // _
-                Op::new_value(vec![p.get(9).unwrap()]),                        // i
-                Op::new_end(Node::Italic, vec![p.get(10).unwrap()]),           // _
-                Op::new_value(vec![p.get(11).unwrap()]),                       // ' '
-                Op::new_start(Node::Bold, vec![p.get(12).unwrap()]),           // **
-                Op::new_value(vec![p.get(13).unwrap()]),                       // b
-                Op::new_end(Node::Bold, vec![p.get(14).unwrap()]),             // **
-                Op::new_end(Node::Paragraph, vec![]),                          //
-                Op::new_value(vec![p.get(15).unwrap()]),                       // \n\n
-                Op::new_start(Node::Paragraph, vec![]),                        //
-                Op::new_value(vec![p.get(16).unwrap()]),                       // t
-                Op::new_start(Node::Strikethrough, vec![p.get(17).unwrap()]),  // ~~
-                Op::new_value(vec![p.get(18).unwrap()]),                       // s
-                Op::new_end(Node::Strikethrough, vec![p.get(19).unwrap()]),    // ~~
-                Op::new_value(Vec::from_iter(p.slice(20..22))),                // t\n
-                Op::new_end(Node::Paragraph, vec![]),                          //
-                Op::new_end(Node::Highlight, vec![p.get(22).unwrap()]),        // !!
+                Op::new_start(Node::Highlight, p.slice(0..2)), // !!
+                Op::new_start(Node::Modifier, &[]),            //
+                Op::new_value(p.slice(2..3)),                  // Title
+                Op::new_end(Node::Modifier, p.slice(3..4)),    // \n
+                Op::new_start(Node::Icon, p.slice(4..6)),      // !
+                Op::new_value(p.slice(6..7)),                  // Icon
+                Op::new_end(Node::Icon, p.slice(7..8)),        // \n
+                Op::new_start(Node::Paragraph, &[]),           //
+                Op::new_start(Node::Italic, p.slice(8..9)),    // _
+                Op::new_value(p.slice(9..10)),                 // i
+                Op::new_end(Node::Italic, p.slice(10..11)),    // _
+                Op::new_value(p.slice(11..12)),                // ' '
+                Op::new_start(Node::Bold, p.slice(12..13)),    // **
+                Op::new_value(p.slice(13..14)),                // b
+                Op::new_end(Node::Bold, p.slice(14..15)),      // **
+                Op::new_end(Node::Paragraph, &[]),             //
+                Op::new_value(p.slice(15..16)),                // \n\n
+                Op::new_start(Node::Paragraph, &[]),           //
+                Op::new_value(p.slice(16..17)),                // t
+                Op::new_start(Node::Strikethrough, p.slice(17..18)), // ~~
+                Op::new_value(p.slice(18..19)),                // s
+                Op::new_end(Node::Strikethrough, p.slice(19..20)), // ~~
+                Op::new_value(p.slice(20..22)),                // t\n
+                Op::new_end(Node::Paragraph, &[]),             //
+                Op::new_end(Node::Highlight, p.slice(22..23)), // !!
             ])
         );
     }
@@ -136,30 +134,30 @@ mod tests {
     fn no_title() {
         let p = "!!\n! Icon\n_i_ **b**\n\nt~~s~~t\n!!".into();
         assert_eq!(
-            highlight(&p, &Query::Eof),
+            highlight(&p),
             Some(vec![
-                Op::new_start(Node::Highlight, Vec::from_iter(p.slice(0..2))), // !!\n
-                Op::new_start(Node::Icon, Vec::from_iter(p.slice(2..4))),      // !
-                Op::new_value(vec![p.get(4).unwrap()]),                        // Icon
-                Op::new_end(Node::Icon, vec![p.get(5).unwrap()]),              // \n
-                Op::new_start(Node::Paragraph, vec![]),                        //
-                Op::new_start(Node::Italic, vec![p.get(6).unwrap()]),          // _
-                Op::new_value(vec![p.get(7).unwrap()]),                        // i
-                Op::new_end(Node::Italic, vec![p.get(8).unwrap()]),            // _
-                Op::new_value(vec![p.get(9).unwrap()]),                        // ' '
-                Op::new_start(Node::Bold, vec![p.get(10).unwrap()]),           // **
-                Op::new_value(vec![p.get(11).unwrap()]),                       // b
-                Op::new_end(Node::Bold, vec![p.get(12).unwrap()]),             // **
-                Op::new_end(Node::Paragraph, vec![]),                          //
-                Op::new_value(vec![p.get(13).unwrap()]),                       // \n\n
-                Op::new_start(Node::Paragraph, vec![]),                        //
-                Op::new_value(vec![p.get(14).unwrap()]),                       // t
-                Op::new_start(Node::Strikethrough, vec![p.get(15).unwrap()]),  // ~~
-                Op::new_value(vec![p.get(16).unwrap()]),                       // s
-                Op::new_end(Node::Strikethrough, vec![p.get(17).unwrap()]),    // ~~
-                Op::new_value(Vec::from_iter(p.slice(18..20))),                // t\n
-                Op::new_end(Node::Paragraph, vec![]),                          //
-                Op::new_end(Node::Highlight, vec![p.get(20).unwrap()]),        // !!
+                Op::new_start(Node::Highlight, p.slice(0..2)), // !!\n
+                Op::new_start(Node::Icon, p.slice(2..4)),      // !
+                Op::new_value(p.slice(4..5)),                  // Icon
+                Op::new_end(Node::Icon, p.slice(5..6)),        // \n
+                Op::new_start(Node::Paragraph, &[]),           //
+                Op::new_start(Node::Italic, p.slice(6..7)),    // _
+                Op::new_value(p.slice(7..8)),                  // i
+                Op::new_end(Node::Italic, p.slice(8..9)),      // _
+                Op::new_value(p.slice(9..10)),                 // ' '
+                Op::new_start(Node::Bold, p.slice(10..11)),    // **
+                Op::new_value(p.slice(11..12)),                // b
+                Op::new_end(Node::Bold, p.slice(12..13)),      // **
+                Op::new_end(Node::Paragraph, &[]),             //
+                Op::new_value(p.slice(13..14)),                // \n\n
+                Op::new_start(Node::Paragraph, &[]),           //
+                Op::new_value(p.slice(14..15)),                // t
+                Op::new_start(Node::Strikethrough, p.slice(15..16)), // ~~
+                Op::new_value(p.slice(16..17)),                // s
+                Op::new_end(Node::Strikethrough, p.slice(17..18)), // ~~
+                Op::new_value(p.slice(18..20)),                // t\n
+                Op::new_end(Node::Paragraph, &[]),             //
+                Op::new_end(Node::Highlight, p.slice(20..21)), // !!
             ])
         )
     }
@@ -168,30 +166,30 @@ mod tests {
     fn no_icon() {
         let p = "!! Title\n_i_ **b**\n\nt~~s~~t\n!!".into();
         assert_eq!(
-            highlight(&p, &Query::Eof),
+            highlight(&p),
             Some(vec![
-                Op::new_start(Node::Highlight, Vec::from_iter(p.slice(0..2))), // !!
-                Op::new_start(Node::Modifier, vec![]),                         //
-                Op::new_value(vec![p.get(2).unwrap()]),                        // Title
-                Op::new_end(Node::Modifier, vec![p.get(3).unwrap()]),          // \n
-                Op::new_start(Node::Paragraph, vec![]),                        //
-                Op::new_start(Node::Italic, vec![p.get(4).unwrap()]),          // _
-                Op::new_value(vec![p.get(5).unwrap()]),                        // i
-                Op::new_end(Node::Italic, vec![p.get(6).unwrap()]),            // _
-                Op::new_value(vec![p.get(7).unwrap()]),                        // ' '
-                Op::new_start(Node::Bold, vec![p.get(8).unwrap()]),            // **
-                Op::new_value(vec![p.get(9).unwrap()]),                        // b
-                Op::new_end(Node::Bold, vec![p.get(10).unwrap()]),             // **
-                Op::new_end(Node::Paragraph, vec![]),                          //
-                Op::new_value(vec![p.get(11).unwrap()]),                       // \n\n
-                Op::new_start(Node::Paragraph, vec![]),                        //
-                Op::new_value(vec![p.get(12).unwrap()]),                       // t
-                Op::new_start(Node::Strikethrough, vec![p.get(13).unwrap()]),  // ~~
-                Op::new_value(vec![p.get(14).unwrap()]),                       // s
-                Op::new_end(Node::Strikethrough, vec![p.get(15).unwrap()]),    // ~~
-                Op::new_value(Vec::from_iter(p.slice(16..18))),                // t\n
-                Op::new_end(Node::Paragraph, vec![]),                          //
-                Op::new_end(Node::Highlight, vec![p.get(18).unwrap()]),        // !!
+                Op::new_start(Node::Highlight, p.slice(0..2)), // !!
+                Op::new_start(Node::Modifier, &[]),            //
+                Op::new_value(p.slice(2..3)),                  // Title
+                Op::new_end(Node::Modifier, p.slice(3..4)),    // \n
+                Op::new_start(Node::Paragraph, &[]),           //
+                Op::new_start(Node::Italic, p.slice(4..5)),    // _
+                Op::new_value(p.slice(5..6)),                  // i
+                Op::new_end(Node::Italic, p.slice(6..7)),      // _
+                Op::new_value(p.slice(7..8)),                  // ' '
+                Op::new_start(Node::Bold, p.slice(8..9)),      // **
+                Op::new_value(p.slice(9..10)),                 // b
+                Op::new_end(Node::Bold, p.slice(10..11)),      // **
+                Op::new_end(Node::Paragraph, &[]),             //
+                Op::new_value(p.slice(11..12)),                // \n\n
+                Op::new_start(Node::Paragraph, &[]),           //
+                Op::new_value(p.slice(12..13)),                // t
+                Op::new_start(Node::Strikethrough, p.slice(13..14)), // ~~
+                Op::new_value(p.slice(14..15)),                // s
+                Op::new_end(Node::Strikethrough, p.slice(15..16)), // ~~
+                Op::new_value(p.slice(16..18)),                // t\n
+                Op::new_end(Node::Paragraph, &[]),             //
+                Op::new_end(Node::Highlight, p.slice(18..19)), // !!
             ])
         )
     }
@@ -199,33 +197,31 @@ mod tests {
     #[test]
     fn no_closing_token() {
         let p = "!! Title\n_i_ **b**\n\nt~~s~~t!!".into();
-        assert_eq!(highlight(&p, &Query::Eof), None);
+        assert_eq!(highlight(&p), None);
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Bang, 0..2, Position::default()),))
+            Some((0, &Token::new(TokenKind::Bang, 0..2, Position::default())))
         );
     }
 
     #[test]
     fn no_space_between_start_and_title() {
         let p = "!!Title\n_i_ **b**\n\nt~~s~~t\n!!".into();
-        assert_eq!(highlight(&p, &Query::Eof), None);
+        assert_eq!(highlight(&p), None);
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Bang, 0..2, Position::default()),))
+            Some((0, &Token::new(TokenKind::Bang, 0..2, Position::default())))
         );
     }
 
     #[test]
     fn terminator_in_title() {
-        let p = "!! Title\n\n_i_ **b**\n\nt~~s~~t\n!!".into();
-        assert_eq!(
-            highlight(&p, &Query::Is(Condition::new().kind(TokenKind::Terminator))),
-            None
-        );
+        let p: Parser = "!! Title\n\n_i_ **b**\n\nt~~s~~t\n!!".into();
+        let _g = p.push_eof(StopCondition::Terminator);
+        assert_eq!(highlight(&p), None);
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Bang, 0..2, Position::default()),))
+            Some((0, &Token::new(TokenKind::Bang, 0..2, Position::default())))
         );
     }
 
@@ -233,31 +229,31 @@ mod tests {
     fn terminator_in_icon() {
         let p = "!!\n! icon\n\n_i_ **b**\n\nt~~s~~t\n!!".into();
         assert_eq!(
-            highlight(&p, &Query::Eof),
+            highlight(&p),
             Some(vec![
-                Op::new_start(Node::Highlight, Vec::from_iter(p.slice(0..2))), // !!\n
-                Op::new_start(Node::Paragraph, vec![]),                        //
-                Op::new_value(Vec::from_iter(p.slice(2..5))),                  // ! icon
-                Op::new_end(Node::Paragraph, vec![]),                          //
-                Op::new_value(vec![p.get(5).unwrap()]),                        // \n\n
-                Op::new_start(Node::Paragraph, vec![]),                        //
-                Op::new_start(Node::Italic, vec![p.get(6).unwrap()]),          // _
-                Op::new_value(vec![p.get(7).unwrap()]),                        // i
-                Op::new_end(Node::Italic, vec![p.get(8).unwrap()]),            // _
-                Op::new_value(vec![p.get(9).unwrap()]),                        // ' '
-                Op::new_start(Node::Bold, vec![p.get(10).unwrap()]),           // **
-                Op::new_value(vec![p.get(11).unwrap()]),                       // b
-                Op::new_end(Node::Bold, vec![p.get(12).unwrap()]),             // **
-                Op::new_end(Node::Paragraph, vec![]),                          //
-                Op::new_value(vec![p.get(13).unwrap()]),                       // \n\n
-                Op::new_start(Node::Paragraph, vec![]),                        //
-                Op::new_value(vec![p.get(14).unwrap()]),                       // t
-                Op::new_start(Node::Strikethrough, vec![p.get(15).unwrap()]),  // ~~
-                Op::new_value(vec![p.get(16).unwrap()]),                       // s
-                Op::new_end(Node::Strikethrough, vec![p.get(17).unwrap()]),    // ~~
-                Op::new_value(Vec::from_iter(p.slice(18..20))),                // t\n
-                Op::new_end(Node::Paragraph, vec![]),                          //
-                Op::new_end(Node::Highlight, vec![p.get(20).unwrap()]),        // !!
+                Op::new_start(Node::Highlight, p.slice(0..2)), // !!\n
+                Op::new_start(Node::Paragraph, &[]),           //
+                Op::new_value(p.slice(2..5)),                  // ! icon
+                Op::new_end(Node::Paragraph, &[]),             //
+                Op::new_value(p.slice(5..6)),                  // \n\n
+                Op::new_start(Node::Paragraph, &[]),           //
+                Op::new_start(Node::Italic, p.slice(6..7)),    // _
+                Op::new_value(p.slice(7..8)),                  // i
+                Op::new_end(Node::Italic, p.slice(8..9)),      // _
+                Op::new_value(p.slice(9..10)),                 // ' '
+                Op::new_start(Node::Bold, p.slice(10..11)),    // **
+                Op::new_value(p.slice(11..12)),                // b
+                Op::new_end(Node::Bold, p.slice(12..13)),      // **
+                Op::new_end(Node::Paragraph, &[]),             //
+                Op::new_value(p.slice(13..14)),                // \n\n
+                Op::new_start(Node::Paragraph, &[]),           //
+                Op::new_value(p.slice(14..15)),                // t
+                Op::new_start(Node::Strikethrough, p.slice(15..16)), // ~~
+                Op::new_value(p.slice(16..17)),                // s
+                Op::new_end(Node::Strikethrough, p.slice(17..18)), // ~~
+                Op::new_value(p.slice(18..20)),                // t\n
+                Op::new_end(Node::Paragraph, &[]),             //
+                Op::new_end(Node::Highlight, p.slice(20..21)), // !!
             ])
         );
     }
@@ -266,16 +262,16 @@ mod tests {
     fn no_space_before_icon() {
         let p = "!! Title\n!Icon\n!!".into();
         assert_eq!(
-            highlight(&p, &Query::Eof),
+            highlight(&p),
             Some(vec![
-                Op::new_start(Node::Highlight, Vec::from_iter(p.slice(0..2))), // !!
-                Op::new_start(Node::Modifier, vec![]),                         //
-                Op::new_value(vec![p.get(2).unwrap()]),                        // Title
-                Op::new_end(Node::Modifier, vec![p.get(3).unwrap()]),          // \n
-                Op::new_start(Node::Paragraph, vec![]),                        //
-                Op::new_value(Vec::from_iter(p.slice(4..7))),                  // !Icon\n
-                Op::new_end(Node::Paragraph, vec![]),                          //
-                Op::new_end(Node::Highlight, vec![p.get(7).unwrap()]),         // !!
+                Op::new_start(Node::Highlight, p.slice(0..2)), // !!
+                Op::new_start(Node::Modifier, &[]),            //
+                Op::new_value(p.slice(2..3)),                  // Title
+                Op::new_end(Node::Modifier, p.slice(3..4)),    // \n
+                Op::new_start(Node::Paragraph, &[]),           //
+                Op::new_value(p.slice(4..7)),                  // !Icon\n
+                Op::new_end(Node::Paragraph, &[]),             //
+                Op::new_end(Node::Highlight, p.slice(7..8)),   // !!
             ])
         );
     }
@@ -283,10 +279,10 @@ mod tests {
     #[test]
     fn only_one_token() {
         let p = "!!".into();
-        assert_eq!(highlight(&p, &Query::Eof), None);
+        assert_eq!(highlight(&p), None);
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Bang, 0..2, Position::default()),))
+            Some((0, &Token::new(TokenKind::Bang, 0..2, Position::default())))
         );
     }
 }

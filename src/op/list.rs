@@ -1,88 +1,23 @@
 use crate::{
-    and, is, join,
+    eat_seq,
     lexer::{Token, TokenKind},
     op::{
-        op::{Node, Op, OpKind},
+        Node, Op, OpKind,
         paragraph::paragraph,
-        parser::{Condition, Parser, Query},
+        parser::{ListKind, Parser, StopCondition},
     },
-    or,
 };
 
-fn list_start(level: usize, query: Query, with_first_column_check: bool) -> Query {
-    let q = if level == 0 {
-        join!(query, is!(t = TokenKind::Space, el = 1,))
-    } else {
-        join!(
-            is!(t = TokenKind::Space, el = level,),
-            query,
-            is!(t = TokenKind::Space, el = 1,)
-        )
-    };
-
-    if with_first_column_check {
-        and!(is!(c = 0,), q)
-    } else {
-        q
+fn is_list_marker(t: &Token, kind: Option<ListKind>) -> bool {
+    match kind {
+        Some(ListKind::Unordered) => t.kind == TokenKind::Minus && t.range.len() == 1,
+        Some(ListKind::Ordered) => t.kind == TokenKind::Plus && t.range.len() == 1,
+        None => (t.kind == TokenKind::Minus || t.kind == TokenKind::Plus) && t.range.len() == 1,
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-enum ListKind {
-    Unordered,
-    Ordered,
-}
-
-impl ListKind {
-    fn node(&self) -> Node {
-        match self {
-            ListKind::Unordered => Node::UnorderedList,
-            ListKind::Ordered => Node::OrderedList,
-        }
-    }
-
-    fn query_is(&self) -> Query {
-        let c = match self {
-            ListKind::Unordered => Condition::new().kind(TokenKind::Minus),
-            ListKind::Ordered => Condition::new().kind(TokenKind::Plus),
-        };
-
-        Query::Is(c.exact_len(1))
-    }
-
-    fn query_or() -> Query {
-        let unordered = Condition::new().kind(TokenKind::Minus).exact_len(1);
-        let ordered = Condition::new().kind(TokenKind::Plus).exact_len(1);
-
-        or!(Query::Is(unordered), Query::Is(ordered))
-    }
-}
-
-impl TryFrom<&Token> for ListKind {
-    type Error = ();
-
-    fn try_from(value: &Token) -> Result<Self, Self::Error> {
-        if value.kind == TokenKind::Minus && value.range.len() == 1 {
-            Ok(ListKind::Unordered)
-        } else if value.kind == TokenKind::Plus && value.range.len() == 1 {
-            Ok(ListKind::Ordered)
-        } else {
-            Err(())
-        }
-    }
-}
-
-fn is_one_of_allowed_list_levels(current_level: usize, max_level: usize, kind: ListKind) -> Query {
-    let q = (0..=max_level).fold(vec![], |mut acc, i| {
-        if current_level == i {
-            acc.push(list_start(i, kind.query_is(), false));
-        } else {
-            acc.push(list_start(i, ListKind::query_or(), false));
-        }
-        acc
-    });
-
-    Query::And(vec![Query::Is(Condition::new().column(0)), Query::Or(q)])
+fn is_space(t: &Token) -> bool {
+    t.kind == TokenKind::Space && t.range.len() == 1
 }
 
 fn try_get_list_kind(ops: &[Op]) -> Option<ListKind> {
@@ -90,103 +25,78 @@ fn try_get_list_kind(ops: &[Op]) -> Option<ListKind> {
     if start_op.kind != OpKind::Start(Node::ListItem) {
         return None;
     }
-
     let token = start_op
         .tokens
         .get(if start_op.tokens.len() == 2 { 0 } else { 1 })?;
-
-    ListKind::try_from(*token).ok()
+    ListKind::try_from(token).ok()
 }
 
-fn list_item<'a>(
-    p: &'a Parser<'a>,
-    level: usize,
-    kind: Option<ListKind>,
-    eof: &Query,
-) -> Option<Vec<Op<'a>>> {
-    let start = p.pos();
-    let query = match kind {
-        Some(k) => k.query_is(),
-        None => ListKind::query_or(),
+fn list_item(p: &Parser, level: usize, kind: Option<ListKind>) -> Option<Vec<Op>> {
+    let _start = p.pos();
+
+    if !p.at(|t: &Token| t.position.column == 0) {
+        return None;
+    }
+
+    let start_tokens = if level == 0 {
+        eat_seq!(p, |t: &Token| is_list_marker(t, kind), is_space)?
+    } else {
+        eat_seq!(
+            p,
+            |t: &Token| t.kind == TokenKind::Space && t.range.len() == level,
+            |t: &Token| is_list_marker(t, kind),
+            is_space
+        )?
     };
 
-    let mut ops = vec![Op {
-        kind: OpKind::Start(Node::ListItem),
-        tokens: Vec::from_iter(p.chain(&list_start(level, query, true), false)?),
-    }];
+    let mut ops = vec![Op::new_start(Node::ListItem, start_tokens)];
 
     let kind: ListKind = match kind {
         Some(k) => k,
         None => try_get_list_kind(&ops).expect("List kind should be determined here"),
     };
 
-    let paragraph_ops = paragraph(
-        p,
-        &or!(
-            eof.clone(),
-            is_one_of_allowed_list_levels(level, level + 1, kind)
-        ),
-    );
-
-    ops.extend(paragraph_ops);
-
-    if p.chain(eof, false).is_some() {
-        ops.push(Op {
-            kind: OpKind::End(Node::ListItem),
-            tokens: vec![],
-        });
-        return Some(ops);
-    } else if let Some(nested_ops) = list(p, level + 1, eof) {
-        ops.extend(nested_ops);
-        ops.push(Op {
-            kind: OpKind::End(Node::ListItem),
-            tokens: vec![],
-        });
-        return Some(ops);
-    } else if p
-        .chain(&is_one_of_allowed_list_levels(level, level, kind), true)
-        .is_none()
     {
-        ops.push(Op {
-            kind: OpKind::End(Node::ListItem),
-            tokens: vec![],
-        });
+        let _g = p.push_eof(StopCondition::ListBoundary { level, kind });
+        let paragraph_ops = paragraph(p);
+        ops.extend(paragraph_ops);
+    }
+
+    if p.at_eof() {
+        ops.push(Op::new_end(Node::ListItem, &[]));
+        return Some(ops);
+    } else if let Some(nested_ops) = list(p, level + 1) {
+        ops.extend(nested_ops);
+        ops.push(Op::new_end(Node::ListItem, &[]));
         return Some(ops);
     }
-    p.replace_position(start);
-    None
+
+    ops.push(Op::new_end(Node::ListItem, &[]));
+    Some(ops)
 }
 
-pub fn list<'a>(p: &'a Parser<'a>, level: usize, eof: &Query) -> Option<Vec<Op<'a>>> {
+pub fn list(p: &Parser, level: usize) -> Option<Vec<Op>> {
     let start = p.pos();
-    let first_list_item_ops = list_item(p, level, None, eof)?;
+    let first_list_item_ops = list_item(p, level, None)?;
 
     let Some(list_kind) = try_get_list_kind(&first_list_item_ops) else {
         p.replace_position(start);
         return None;
     };
 
-    let mut ops = vec![Op {
-        kind: OpKind::Start(list_kind.node()),
-        tokens: vec![],
-    }];
-
+    let mut ops = vec![Op::new_start(list_kind.node(), &[])];
     ops.extend(first_list_item_ops);
 
-    while let Some(nested_list_item_ops) = list_item(p, level, Some(list_kind), eof) {
+    while let Some(nested_list_item_ops) = list_item(p, level, Some(list_kind)) {
         ops.extend(nested_list_item_ops);
     }
 
-    if level == 0 && p.chain(eof, false).is_none() {
+    if level == 0 && !p.at_eof() {
         p.replace_position(start);
         return None;
     }
 
-    ops.push(Op {
-        kind: OpKind::End(list_kind.node()),
-        tokens: vec![],
-    });
-
+    ops.push(Op::new_end(list_kind.node(), &[]));
     Some(ops)
 }
 
@@ -194,32 +104,27 @@ pub fn list<'a>(p: &'a Parser<'a>, level: usize, eof: &Query) -> Option<Vec<Op<'
 mod tests {
     use pretty_assertions::assert_eq;
 
-    use crate::op::{
-        Op,
-        list::list,
-        op::Node,
-        parser::{Parser, Query},
-    };
+    use crate::op::{Node, Op, list::list, parser::Parser};
 
     #[test]
     fn parse_unordered() {
         let p: Parser = "- level 0\n- level 0".into();
 
         assert_eq!(
-            list(&p, 0, &Query::Eof),
+            list(&p, 0),
             Some(vec![
-                Op::new_start(Node::UnorderedList, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(0..2))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_value(Vec::from_iter(p.slice(2..4))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(4..6))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_value(Vec::from_iter(p.slice(6..7))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::UnorderedList, vec![]),
+                Op::new_start(Node::UnorderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(0..2)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(2..4)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_start(Node::ListItem, p.slice(4..6)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(6..7)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::UnorderedList, &[]),
             ])
         );
     }
@@ -229,20 +134,20 @@ mod tests {
         let p: Parser = "+ level 0\n+ same level".into();
 
         assert_eq!(
-            list(&p, 0, &Query::Eof),
+            list(&p, 0),
             Some(vec![
-                Op::new_start(Node::OrderedList, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(0..2))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_value(Vec::from_iter(p.slice(2..4))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(4..6))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_value(Vec::from_iter(p.slice(6..7))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::OrderedList, vec![]),
+                Op::new_start(Node::OrderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(0..2)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(2..4)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_start(Node::ListItem, p.slice(4..6)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(6..7)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::OrderedList, &[]),
             ])
         );
     }
@@ -252,22 +157,22 @@ mod tests {
         let p: Parser = "+ level 0\n - level 0".into();
 
         assert_eq!(
-            list(&p, 0, &Query::Eof),
+            list(&p, 0),
             Some(vec![
-                Op::new_start(Node::OrderedList, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(0..2))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_value(Vec::from_iter(p.slice(2..4))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_start(Node::UnorderedList, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(4..7))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_value(Vec::from_iter(p.slice(7..8))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::UnorderedList, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::OrderedList, vec![]),
+                Op::new_start(Node::OrderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(0..2)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(2..4)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_start(Node::UnorderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(4..7)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(7..8)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::UnorderedList, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::OrderedList, &[]),
             ])
         );
     }
@@ -277,22 +182,22 @@ mod tests {
         let p: Parser = "- one\n - two".into();
 
         assert_eq!(
-            list(&p, 0, &Query::Eof),
+            list(&p, 0),
             Some(vec![
-                Op::new_start(Node::UnorderedList, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(0..2))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_value(Vec::from_iter(p.slice(2..4))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_start(Node::UnorderedList, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(4..7))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_value(Vec::from_iter(p.slice(7..8))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::UnorderedList, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::UnorderedList, vec![]),
+                Op::new_start(Node::UnorderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(0..2)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(2..4)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_start(Node::UnorderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(4..7)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(7..8)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::UnorderedList, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::UnorderedList, &[]),
             ])
         );
     }
@@ -302,22 +207,22 @@ mod tests {
         let p: Parser = "- one\n - two\n something".into();
 
         assert_eq!(
-            list(&p, 0, &Query::Eof),
+            list(&p, 0),
             Some(vec![
-                Op::new_start(Node::UnorderedList, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(0..2))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_value(Vec::from_iter(p.slice(2..4))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_start(Node::UnorderedList, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(4..7))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_value(Vec::from_iter(p.slice(7..11))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::UnorderedList, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::UnorderedList, vec![]),
+                Op::new_start(Node::UnorderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(0..2)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(2..4)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_start(Node::UnorderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(4..7)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(7..11)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::UnorderedList, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::UnorderedList, &[]),
             ])
         );
     }
@@ -327,15 +232,15 @@ mod tests {
         let p = "+ level 0\n- same level".into();
 
         assert_eq!(
-            list(&p, 0, &Query::Eof),
+            list(&p, 0),
             Some(vec![
-                Op::new_start(Node::OrderedList, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(0..2))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_value(Vec::from_iter(p.slice(2..7))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::OrderedList, vec![]),
+                Op::new_start(Node::OrderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(0..2)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(2..7)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::OrderedList, &[]),
             ])
         );
     }
@@ -345,15 +250,15 @@ mod tests {
         let p: Parser = "- level 0\n+ same level".into();
 
         assert_eq!(
-            list(&p, 0, &Query::Eof),
+            list(&p, 0),
             Some(vec![
-                Op::new_start(Node::UnorderedList, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(0..2))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_value(Vec::from_iter(p.slice(2..7))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::UnorderedList, vec![]),
+                Op::new_start(Node::UnorderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(0..2)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(2..7)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::UnorderedList, &[]),
             ])
         );
     }
@@ -365,74 +270,58 @@ mod tests {
         ;
 
         assert_eq!(
-            list(&p, 0, &Query::Eof),
+            list(&p, 0),
             Some(vec![
-                Op::new_start(Node::UnorderedList, vec![]),
-                // -
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(0..2))),
-                Op::new_start(Node::Paragraph, vec![]),
-                // Level 0\n
-                Op::new_value(Vec::from_iter(p.slice(2..4))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_start(Node::UnorderedList, vec![]),
-                //  -
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(4..7))),
-                Op::new_start(Node::Paragraph, vec![]),
-                // Level 1\n
-                Op::new_value(Vec::from_iter(p.slice(7..9))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_start(Node::UnorderedList, vec![]),
-                //   -
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(9..12))),
-                Op::new_start(Node::Paragraph, vec![]),
-                // Level 2\n
-                Op::new_value(Vec::from_iter(p.slice(12..14))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::UnorderedList, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                //  -
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(14..17))),
-                Op::new_start(Node::Paragraph, vec![]),
-                // Level 1\n
-                Op::new_value(Vec::from_iter(p.slice(17..19))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::UnorderedList, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                // -
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(19..21))),
-                Op::new_start(Node::Paragraph, vec![]),
-                // Level 0\n
-                Op::new_value(Vec::from_iter(p.slice(21..23))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_start(Node::UnorderedList, vec![]),
-                //  -
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(23..26))),
-                Op::new_start(Node::Paragraph, vec![]),
-                // Level 1\n
-                Op::new_value(Vec::from_iter(p.slice(26..28))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_start(Node::UnorderedList, vec![]),
-                //   -
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(28..31))),
-                Op::new_start(Node::Paragraph, vec![]),
-                // Level 2\n
-                Op::new_value(Vec::from_iter(p.slice(31..33))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::UnorderedList, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::UnorderedList, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                // -
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(33..35))),
-                Op::new_start(Node::Paragraph, vec![]),
-                // Level 0
-                Op::new_value(Vec::from_iter(p.slice(35..36))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::UnorderedList, vec![]),
+                Op::new_start(Node::UnorderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(0..2)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(2..4)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_start(Node::UnorderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(4..7)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(7..9)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_start(Node::UnorderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(9..12)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(12..14)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::UnorderedList, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_start(Node::ListItem, p.slice(14..17)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(17..19)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::UnorderedList, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_start(Node::ListItem, p.slice(19..21)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(21..23)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_start(Node::UnorderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(23..26)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(26..28)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_start(Node::UnorderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(28..31)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(31..33)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::UnorderedList, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::UnorderedList, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_start(Node::ListItem, p.slice(33..35)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(35..36)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::UnorderedList, &[]),
             ])
         );
     }
@@ -444,74 +333,58 @@ mod tests {
         ;
 
         assert_eq!(
-            list(&p, 0, &Query::Eof),
+            list(&p, 0),
             Some(vec![
-                Op::new_start(Node::OrderedList, vec![]),
-                // +
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(0..2))),
-                Op::new_start(Node::Paragraph, vec![]),
-                // Level 0\n
-                Op::new_value(Vec::from_iter(p.slice(2..4))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_start(Node::OrderedList, vec![]),
-                //  +
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(4..7))),
-                Op::new_start(Node::Paragraph, vec![]),
-                // Level 1\n
-                Op::new_value(Vec::from_iter(p.slice(7..9))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_start(Node::OrderedList, vec![]),
-                //   +
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(9..12))),
-                Op::new_start(Node::Paragraph, vec![]),
-                // Level 2\n
-                Op::new_value(Vec::from_iter(p.slice(12..14))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::OrderedList, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                //  +
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(14..17))),
-                Op::new_start(Node::Paragraph, vec![]),
-                // Level 1\n
-                Op::new_value(Vec::from_iter(p.slice(17..19))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::OrderedList, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                // +
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(19..21))),
-                Op::new_start(Node::Paragraph, vec![]),
-                // Level 0\n
-                Op::new_value(Vec::from_iter(p.slice(21..23))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_start(Node::OrderedList, vec![]),
-                //  +
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(23..26))),
-                Op::new_start(Node::Paragraph, vec![]),
-                // Level 1\n
-                Op::new_value(Vec::from_iter(p.slice(26..28))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_start(Node::OrderedList, vec![]),
-                //   +
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(28..31))),
-                Op::new_start(Node::Paragraph, vec![]),
-                // Level 2\n
-                Op::new_value(Vec::from_iter(p.slice(31..33))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::OrderedList, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::OrderedList, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                // +
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(33..35))),
-                Op::new_start(Node::Paragraph, vec![]),
-                // Level 0
-                Op::new_value(Vec::from_iter(p.slice(35..36))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::OrderedList, vec![]),
+                Op::new_start(Node::OrderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(0..2)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(2..4)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_start(Node::OrderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(4..7)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(7..9)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_start(Node::OrderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(9..12)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(12..14)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::OrderedList, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_start(Node::ListItem, p.slice(14..17)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(17..19)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::OrderedList, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_start(Node::ListItem, p.slice(19..21)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(21..23)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_start(Node::OrderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(23..26)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(26..28)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_start(Node::OrderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(28..31)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(31..33)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::OrderedList, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::OrderedList, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_start(Node::ListItem, p.slice(33..35)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(35..36)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::OrderedList, &[]),
             ])
         );
     }
@@ -521,14 +394,14 @@ mod tests {
         let p: Parser = "- ".into();
 
         assert_eq!(
-            list(&p, 0, &Query::Eof),
+            list(&p, 0),
             Some(vec![
-                Op::new_start(Node::UnorderedList, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(0..2))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::UnorderedList, vec![]),
+                Op::new_start(Node::UnorderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(0..2)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::UnorderedList, &[]),
             ])
         );
     }
@@ -538,21 +411,21 @@ mod tests {
         let p = "+ level 0\n + ".into();
 
         assert_eq!(
-            list(&p, 0, &Query::Eof),
+            list(&p, 0),
             Some(vec![
-                Op::new_start(Node::OrderedList, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(0..2))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_value(Vec::from_iter(p.slice(2..4))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_start(Node::OrderedList, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(4..7))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::OrderedList, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::OrderedList, vec![]),
+                Op::new_start(Node::OrderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(0..2)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(2..4)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_start(Node::OrderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(4..7)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::OrderedList, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::OrderedList, &[]),
             ])
         );
     }
@@ -562,21 +435,21 @@ mod tests {
         let p: Parser = "+ level 0\n - ".into();
 
         assert_eq!(
-            list(&p, 0, &Query::Eof),
+            list(&p, 0),
             Some(vec![
-                Op::new_start(Node::OrderedList, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(0..2))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_value(Vec::from_iter(p.slice(2..4))),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_start(Node::UnorderedList, vec![]),
-                Op::new_start(Node::ListItem, Vec::from_iter(p.slice(4..7))),
-                Op::new_start(Node::Paragraph, vec![]),
-                Op::new_end(Node::Paragraph, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::UnorderedList, vec![]),
-                Op::new_end(Node::ListItem, vec![]),
-                Op::new_end(Node::OrderedList, vec![]),
+                Op::new_start(Node::OrderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(0..2)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_value(p.slice(2..4)),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_start(Node::UnorderedList, &[]),
+                Op::new_start(Node::ListItem, p.slice(4..7)),
+                Op::new_start(Node::Paragraph, &[]),
+                Op::new_end(Node::Paragraph, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::UnorderedList, &[]),
+                Op::new_end(Node::ListItem, &[]),
+                Op::new_end(Node::OrderedList, &[]),
             ])
         );
     }

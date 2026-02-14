@@ -1,17 +1,22 @@
 use crate::{
-    is, join,
-    lexer::TokenKind,
-    op::{Op, Parser, op::Node, parser::Query},
+    lexer::{Token, TokenKind},
+    op::{Node, Op, Parser},
 };
 
-pub fn modifier<'a>(p: &'a Parser<'a>, eof: &Query) -> Option<Vec<Op<'a>>> {
-    p.chain(&is!(c = 0,), true)?;
+fn is_eol_or_terminator(t: &Token) -> bool {
+    t.kind == TokenKind::Eol || t.kind == TokenKind::Terminator
+}
 
-    let (body, end_token) = p.advance_until(&join!(is!(t = TokenKind::Eol,)), eof)?;
+pub fn modifier(p: &Parser) -> Option<Vec<Op>> {
+    if p.peek().is_some_and(|(_, t)| t.position.column == 0) {
+        return None;
+    }
+
+    let (body, end_token) = p.advance_until(is_eol_or_terminator)?;
 
     Some(vec![
-        Op::new_start(Node::Modifier, vec![]),
-        Op::new_value(Vec::from_iter(body)),
-        Op::new_end(Node::Modifier, Vec::from_iter(end_token)),
+        Op::new_start(Node::Modifier, &[]),
+        Op::new_value(body),
+        Op::new_end(Node::Modifier, end_token),
     ])
 }

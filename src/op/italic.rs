@@ -1,36 +1,24 @@
 use crate::{
-    is, join,
-    lexer::TokenKind,
-    op::{
-        op::{Node, Op, OpKind},
-        parser::{Parser, Query},
-    },
+    lexer::{Token, TokenKind},
+    op::{Node, Op, Parser},
 };
 
-pub fn italic<'a>(p: &'a Parser<'a>, eof: &Query) -> Option<Vec<Op<'a>>> {
+fn is_underscore(t: &Token) -> bool {
+    t.kind == TokenKind::Underscore && t.range.len() == 1
+}
+
+pub fn italic(p: &Parser) -> Option<Vec<Op>> {
     let start = p.pos();
-    let start_token = p.chain(&join!(is!(t = TokenKind::Underscore, el = 1,)), false)?;
-    let Some((body, end_token)) =
-        p.advance_until(&join!(is!(t = TokenKind::Underscore, el = 1,)), eof)
-    else {
+    let start_token = p.eat(is_underscore)?;
+    let Some((body, end_token)) = p.advance_until(is_underscore) else {
         p.replace_position(start);
         return None;
     };
-    let ops = vec![
-        Op {
-            kind: OpKind::Start(Node::Italic),
-            tokens: Vec::from_iter(start_token),
-        },
-        Op {
-            kind: OpKind::Value,
-            tokens: Vec::from_iter(body),
-        },
-        Op {
-            kind: OpKind::End(Node::Italic),
-            tokens: Vec::from_iter(end_token),
-        },
-    ];
-    Some(ops)
+    Some(vec![
+        Op::new_start(Node::Italic, start_token),
+        Op::new_value(body),
+        Op::new_end(Node::Italic, end_token),
+    ])
 }
 
 #[cfg(test)]
@@ -39,23 +27,18 @@ mod tests {
 
     use crate::{
         lexer::{Position, Token, TokenKind},
-        op::{
-            Op, Parser,
-            italic::italic,
-            op::Node,
-            parser::{Condition, Query},
-        },
+        op::{Node, Op, Parser, italic::italic, parser::StopCondition},
     };
 
     #[test]
     fn happy_path() {
         let p: Parser = "_happy_".into();
         assert_eq!(
-            italic(&p, &Query::Eof),
+            italic(&p),
             Some(vec![
-                Op::new_start(Node::Italic, vec![p.get(0).unwrap()]),
-                Op::new_value(vec![p.get(1).unwrap(),]),
-                Op::new_end(Node::Italic, vec![p.get(2).unwrap()])
+                Op::new_start(Node::Italic, p.slice(0..1)),
+                Op::new_value(p.slice(1..2)),
+                Op::new_end(Node::Italic, p.slice(2..3))
             ])
         );
     }
@@ -63,7 +46,7 @@ mod tests {
     #[test]
     fn no_closing_token() {
         let p: Parser = "_happy".into();
-        assert_eq!(italic(&p, &Query::Eof), None);
+        assert_eq!(italic(&p), None);
         assert_eq!(
             p.peek(),
             Some((
@@ -76,10 +59,8 @@ mod tests {
     #[test]
     fn terminator() {
         let p: Parser = "_ha\n\nppy_".into();
-        assert_eq!(
-            italic(&p, &Query::Is(Condition::new().kind(TokenKind::Terminator))),
-            None
-        );
+        let _g = p.push_eof(StopCondition::Terminator);
+        assert_eq!(italic(&p), None);
         assert_eq!(
             p.peek(),
             Some((
