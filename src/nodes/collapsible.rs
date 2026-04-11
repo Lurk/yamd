@@ -76,7 +76,7 @@ mod tests {
     fn test_collapsible() {
         let collapsible = Collapsible::new(
             "Collapsible title",
-            vec![YamdNodes::Pargargaph(Paragraph::new(vec![
+            vec![YamdNodes::Paragraph(Paragraph::new(vec![
                 "Collapsible body".to_string().into(),
             ]))],
         );
