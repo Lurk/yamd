@@ -130,26 +130,32 @@ impl<'a> From<&'a str> for Parser<'a> {
 }
 
 impl Parser<'_> {
+    #[inline]
     pub fn is_eof(&self) -> bool {
         self.pos >= self.tokens.len()
     }
 
+    #[inline]
     pub fn len(&self) -> usize {
         self.tokens.len()
     }
 
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.tokens.is_empty()
     }
 
+    #[inline]
     pub fn get(&self, index: usize) -> Option<&Token> {
         self.tokens.get(index)
     }
 
+    #[inline]
     pub fn peek(&self) -> Option<(usize, &Token)> {
         Some((self.pos, self.tokens.get(self.pos)?))
     }
 
+    #[inline]
     pub fn advance(&mut self) -> Option<usize> {
         if self.pos >= self.tokens.len() {
             return None;
@@ -159,16 +165,19 @@ impl Parser<'_> {
         Some(pos)
     }
 
+    #[inline]
     pub fn slice(&self, range: Range<usize>) -> &[Token] {
         &self.tokens[range]
     }
 
+    #[inline]
     pub fn next(&mut self) {
         if self.pos < self.tokens.len() {
             self.pos += 1;
         }
     }
 
+    #[inline]
     pub fn eat(&mut self, pred: impl Fn(&Token) -> bool) -> Option<Range<usize>> {
         let token = self.tokens.get(self.pos)?;
         if pred(token) {
@@ -180,6 +189,7 @@ impl Parser<'_> {
         }
     }
 
+    #[inline]
     pub fn at(&self, pred: impl Fn(&Token) -> bool) -> bool {
         self.peek().is_some_and(|(_, t)| pred(t))
     }
@@ -202,6 +212,7 @@ impl Parser<'_> {
         result
     }
 
+    #[inline]
     pub fn at_eof(&self) -> bool {
         let Some((_, token)) = self.peek() else {
             return true;
@@ -215,6 +226,7 @@ impl Parser<'_> {
         }
     }
 
+    #[inline]
     pub fn at_block_boundary(&self) -> bool {
         self.at_eof() || self.at(|t| t.kind == TokenKind::Terminator)
     }
@@ -240,6 +252,7 @@ impl Parser<'_> {
         None
     }
 
+    #[inline]
     pub fn span(&self, range: Range<usize>) -> Content {
         if range.is_empty() {
             Content::Span(0..0)
