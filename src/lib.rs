@@ -60,14 +60,12 @@
 #[deny(missing_docs, rustdoc::broken_intra_doc_links)]
 pub mod lexer;
 pub mod nodes;
-mod op;
-mod parser;
+pub mod op;
 
 #[doc(inline)]
 pub use nodes::Yamd;
-use parser::{Parser, yamd};
-
 pub use op::parse;
+pub use op::to_yamd;
 
 /// Deserialize a string into a Yamd struct
 /// # Example
@@ -76,9 +74,9 @@ pub use op::parse;
 /// let input = "# header";
 /// let yamd = deserialize(input);
 /// ```
-pub fn deserialize(str: &str) -> Yamd {
-    let mut p = Parser::new(str);
-    yamd(&mut p, |_| false)
+pub fn deserialize(input: &str) -> Yamd {
+    let ops = op::parse(input);
+    op::to_yamd(&ops, input)
 }
 
 #[cfg(test)]

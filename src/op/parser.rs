@@ -136,6 +136,10 @@ impl Parser {
         self.tokens.len()
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.tokens.is_empty()
+    }
+
     pub fn pos(&self) -> usize {
         *self.pos.borrow()
     }

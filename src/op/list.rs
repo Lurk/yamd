@@ -2,7 +2,7 @@ use crate::{
     eat_seq,
     lexer::{Token, TokenKind},
     op::{
-        Node, Op, OpKind,
+        Content, Node, Op, OpKind,
         paragraph::paragraph,
         parser::{ListKind, Parser, StopCondition},
     },
@@ -25,9 +25,10 @@ fn try_get_list_kind(ops: &[Op]) -> Option<ListKind> {
     if start_op.kind != OpKind::Start(Node::ListItem) {
         return None;
     }
-    let token = start_op
-        .tokens
-        .get(if start_op.tokens.len() == 2 { 0 } else { 1 })?;
+    let Content::Source(tokens) = &start_op.content else {
+        return None;
+    };
+    let token = tokens.get(if tokens.len() == 2 { 0 } else { 1 })?;
     ListKind::try_from(token).ok()
 }
 

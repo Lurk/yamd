@@ -23,6 +23,80 @@ pub mod parser;
 mod strikethrough;
 mod thematic_break;
 mod title;
+mod to_yamd;
+pub use to_yamd::to_yamd;
+
+#[derive(Debug, PartialEq)]
+pub enum Content {
+    Source(Vec<Token>),
+    Materialized(String),
+}
+
+impl Content {
+    pub fn as_str<'a>(&'a self, source: &'a str) -> &'a str {
+        match self {
+            Content::Source(tokens) => {
+                if tokens.is_empty() {
+                    return "";
+                }
+                let start = tokens.first().unwrap().range.start;
+                let end = tokens.last().unwrap().range.end;
+                &source[start..end]
+            }
+            Content::Materialized(s) => s.as_str(),
+        }
+    }
+
+    pub fn to_string(&self, source: &str) -> String {
+        self.as_str(source).to_owned()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        match self {
+            Content::Source(tokens) => tokens.is_empty(),
+            Content::Materialized(s) => s.is_empty(),
+        }
+    }
+
+    pub fn from_tokens(tokens: &[Token], source: &str) -> Self {
+        if tokens.is_empty() {
+            return Content::Source(Vec::new());
+        }
+        let is_contiguous = tokens
+            .windows(2)
+            .all(|w| w[0].range.end == w[1].range.start);
+        if is_contiguous {
+            Content::Source(tokens.to_vec())
+        } else {
+            let s: String = tokens.iter().map(|t| &source[t.range.clone()]).collect();
+            Content::Materialized(s)
+        }
+    }
+}
+
+impl From<&[Token]> for Content {
+    fn from(tokens: &[Token]) -> Self {
+        Content::Source(tokens.to_vec())
+    }
+}
+
+impl<const N: usize> From<&[Token; N]> for Content {
+    fn from(tokens: &[Token; N]) -> Self {
+        Content::Source(tokens.to_vec())
+    }
+}
+
+impl From<Vec<Token>> for Content {
+    fn from(tokens: Vec<Token>) -> Self {
+        Content::Source(tokens)
+    }
+}
+
+impl From<String> for Content {
+    fn from(s: String) -> Self {
+        Content::Materialized(s)
+    }
+}
 
 #[derive(Debug, PartialEq)]
 pub enum Node {
@@ -62,36 +136,29 @@ pub enum OpKind {
 #[derive(Debug, PartialEq)]
 pub struct Op {
     pub kind: OpKind,
-    pub tokens: Vec<Token>,
+    pub content: Content,
 }
 
 impl Op {
-    pub fn new_value<T: Into<Vec<Token>>>(tokens: T) -> Self {
+    pub fn new_value<T: Into<Content>>(tokens: T) -> Self {
         Self {
             kind: OpKind::Value,
-            tokens: tokens.into(),
+            content: tokens.into(),
         }
     }
 
-    pub fn new_start<T: Into<Vec<Token>>>(node: Node, tokens: T) -> Self {
+    pub fn new_start<T: Into<Content>>(node: Node, tokens: T) -> Self {
         Self {
             kind: OpKind::Start(node),
-            tokens: tokens.into(),
+            content: tokens.into(),
         }
     }
 
-    pub fn new_end<T: Into<Vec<Token>>>(node: Node, tokens: T) -> Self {
+    pub fn new_end<T: Into<Content>>(node: Node, tokens: T) -> Self {
         Self {
             kind: OpKind::End(node),
-            tokens: tokens.into(),
+            content: tokens.into(),
         }
-    }
-
-    pub fn materialize(&self, source: &str) -> String {
-        self.tokens
-            .iter()
-            .map(|t| &source[t.range.start..t.range.end])
-            .collect()
     }
 }
 
@@ -108,6 +175,7 @@ pub fn parse<P: Into<Parser>>(parser: P) -> Vec<Op> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lexer::{Position, TokenKind};
 
     const TEST_CASE: &str = r#"---
 title: test
@@ -174,7 +242,10 @@ end"#;
         let ops = parse(TEST_CASE);
         let mut covered = vec![false; TEST_CASE.len()];
         for op in &ops {
-            for token in &op.tokens {
+            let Content::Source(tokens) = &op.content else {
+                continue;
+            };
+            for token in tokens {
                 for i in token.range.start..token.range.end {
                     assert!(
                         !covered[i],
@@ -266,7 +337,7 @@ end"#;
         let ops = parse(TEST_CASE);
 
         assert_eq!(ops[0].kind, OpKind::Start(Node::Metadata));
-        let metadata_value = ops[1].materialize(TEST_CASE);
+        let metadata_value = ops[1].content.as_str(TEST_CASE);
         assert!(
             metadata_value.contains("title: test"),
             "metadata should contain 'title: test', got: {metadata_value}"
@@ -294,7 +365,7 @@ end"#;
                 && ops[i + 1].kind == OpKind::Value
                 && ops[i + 2].kind == OpKind::End(Node::Paragraph)
             {
-                fallback_texts.push(ops[i + 1].materialize(TEST_CASE));
+                fallback_texts.push(ops[i + 1].content.to_string(TEST_CASE));
             }
             i += 1;
         }
@@ -312,5 +383,64 @@ end"#;
             tail.contains(&"end"),
             "should contain 'end' fallback paragraph, got: {tail:?}"
         );
+    }
+
+    #[test]
+    fn content_source_as_str() {
+        let source = "hello world";
+        let token = Token::new(TokenKind::Literal, 0..5, Position::default());
+        let content = Content::Source(vec![token]);
+        assert_eq!(content.as_str(source), "hello");
+    }
+
+    #[test]
+    fn content_materialized_as_str() {
+        let content = Content::Materialized(String::from("hello"));
+        assert_eq!(content.as_str("ignored source"), "hello");
+    }
+
+    #[test]
+    fn content_source_to_string() {
+        let source = "hello world";
+        let token = Token::new(TokenKind::Literal, 0..5, Position::default());
+        let content = Content::Source(vec![token]);
+        assert_eq!(content.to_string(source), "hello");
+    }
+
+    #[test]
+    fn content_from_non_contiguous_tokens_materializes() {
+        let source = "a\\!b";
+        let tokens = vec![
+            Token::new(TokenKind::Literal, 0..1, Position::default()),
+            Token {
+                kind: TokenKind::Literal,
+                range: 2..3,
+                position: Position {
+                    byte_index: 2,
+                    column: 1,
+                    row: 0,
+                },
+                escaped: true,
+            },
+            Token::new(
+                TokenKind::Literal,
+                3..4,
+                Position {
+                    byte_index: 3,
+                    column: 2,
+                    row: 0,
+                },
+            ),
+        ];
+        let content = Content::from_tokens(&tokens, source);
+        assert_eq!(content, Content::Materialized(String::from("a!b")));
+    }
+
+    #[test]
+    fn content_from_contiguous_tokens_stays_source() {
+        let source = "hello";
+        let tokens = vec![Token::new(TokenKind::Literal, 0..5, Position::default())];
+        let content = Content::from_tokens(&tokens, source);
+        assert_eq!(content, Content::Source(tokens));
     }
 }
