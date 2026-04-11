@@ -92,6 +92,37 @@ enum Frame {
     },
 }
 
+impl Frame {
+    fn from_node(node: &Node) -> Self {
+        match node {
+            Node::Document => Frame::Document { children: Vec::new() },
+            Node::Paragraph => Frame::Paragraph { body: Vec::new() },
+            Node::Bold => Frame::Bold { body: Vec::new() },
+            Node::Italic => Frame::Italic { text: String::new() },
+            Node::Strikethrough => Frame::Strikethrough { text: String::new() },
+            Node::CodeSpan => Frame::CodeSpan { text: String::new() },
+            Node::Emphasis => Frame::Emphasis { text: String::new() },
+            Node::Anchor => Frame::Anchor { text: String::new(), url: String::new() },
+            Node::Title => Frame::Title { text: String::new() },
+            Node::Destination => Frame::Destination { text: String::new() },
+            Node::Image => Frame::Image { alt: String::new(), src: String::new() },
+            Node::Images => Frame::Images { images: Vec::new() },
+            Node::Code => Frame::Code { lang: String::new(), code: String::new() },
+            Node::Modifier => Frame::Modifier { text: String::new() },
+            Node::Embed => Frame::Embed { values: Vec::new() },
+            Node::ThematicBreak => Frame::ThematicBreak,
+            Node::Highlight => Frame::Highlight { title: None, icon: None, paragraphs: Vec::new() },
+            Node::Icon => Frame::Icon { text: String::new() },
+            Node::Collapsible => Frame::Collapsible { title: String::new(), body: Vec::new() },
+            Node::ListItem => Frame::ListItem { text: Vec::new(), nested_list: None },
+            Node::Metadata => Frame::Metadata { text: String::new() },
+            Node::Heading | Node::UnorderedList | Node::OrderedList => {
+                unreachable!("use dedicated push logic for {node:?}")
+            }
+        }
+    }
+}
+
 fn count_list_depth(stack: &[Frame]) -> usize {
     stack
         .iter()
@@ -108,101 +139,10 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
     for op in ops {
         match &op.kind {
             OpKind::Start(node) => match node {
-                Node::Document => {
-                    stack.push(Frame::Document {
-                        children: Vec::new(),
-                    });
-                }
                 Node::Heading => {
                     let level = extract_heading_level(&op.content, source);
                     stack.push(Frame::Heading {
                         level,
-                        body: Vec::new(),
-                    });
-                }
-                Node::Paragraph => {
-                    stack.push(Frame::Paragraph { body: Vec::new() });
-                }
-                Node::Bold => {
-                    stack.push(Frame::Bold { body: Vec::new() });
-                }
-                Node::Italic => {
-                    stack.push(Frame::Italic {
-                        text: String::new(),
-                    });
-                }
-                Node::Strikethrough => {
-                    stack.push(Frame::Strikethrough {
-                        text: String::new(),
-                    });
-                }
-                Node::CodeSpan => {
-                    stack.push(Frame::CodeSpan {
-                        text: String::new(),
-                    });
-                }
-                Node::Emphasis => {
-                    stack.push(Frame::Emphasis {
-                        text: String::new(),
-                    });
-                }
-                Node::Anchor => {
-                    stack.push(Frame::Anchor {
-                        text: String::new(),
-                        url: String::new(),
-                    });
-                }
-                Node::Title => {
-                    stack.push(Frame::Title {
-                        text: String::new(),
-                    });
-                }
-                Node::Destination => {
-                    stack.push(Frame::Destination {
-                        text: String::new(),
-                    });
-                }
-                Node::Image => {
-                    stack.push(Frame::Image {
-                        alt: String::new(),
-                        src: String::new(),
-                    });
-                }
-                Node::Images => {
-                    stack.push(Frame::Images { images: Vec::new() });
-                }
-                Node::Code => {
-                    stack.push(Frame::Code {
-                        lang: String::new(),
-                        code: String::new(),
-                    });
-                }
-                Node::Modifier => {
-                    stack.push(Frame::Modifier {
-                        text: String::new(),
-                    });
-                }
-                Node::Embed => {
-                    stack.push(Frame::Embed { values: Vec::new() });
-                }
-                Node::ThematicBreak => {
-                    stack.push(Frame::ThematicBreak);
-                }
-                Node::Highlight => {
-                    stack.push(Frame::Highlight {
-                        title: None,
-                        icon: None,
-                        paragraphs: Vec::new(),
-                    });
-                }
-                Node::Icon => {
-                    stack.push(Frame::Icon {
-                        text: String::new(),
-                    });
-                }
-                Node::Collapsible => {
-                    stack.push(Frame::Collapsible {
-                        title: String::new(),
                         body: Vec::new(),
                     });
                 }
@@ -220,17 +160,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                         items: Vec::new(),
                     });
                 }
-                Node::ListItem => {
-                    stack.push(Frame::ListItem {
-                        text: Vec::new(),
-                        nested_list: None,
-                    });
-                }
-                Node::Metadata => {
-                    stack.push(Frame::Metadata {
-                        text: String::new(),
-                    });
-                }
+                _ => stack.push(Frame::from_node(node)),
             },
             OpKind::Value => {
                 let text = op.content.to_string(source);
@@ -315,15 +245,11 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                         }
                     }
                     (Node::Bold, Frame::Bold { body }) => {
-                        let bold = Bold::new(body);
-                        if let Some(Frame::Paragraph { body }) = stack.last_mut() {
-                            body.push(bold.into());
-                        }
+                        push_into_paragraph(&mut stack, Bold::new(body).into());
                     }
                     (Node::Italic, Frame::Italic { text }) => {
                         let italic = Italic::new(text);
-                        let top = stack.last_mut().expect("stack underflow");
-                        match top {
+                        match stack.last_mut().expect("stack underflow") {
                             Frame::Paragraph { body } => body.push(italic.into()),
                             Frame::Bold { body } => body.push(italic.into()),
                             _ => {}
@@ -331,24 +257,17 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                     }
                     (Node::Strikethrough, Frame::Strikethrough { text }) => {
                         let st = Strikethrough::new(text);
-                        let top = stack.last_mut().expect("stack underflow");
-                        match top {
+                        match stack.last_mut().expect("stack underflow") {
                             Frame::Paragraph { body } => body.push(st.into()),
                             Frame::Bold { body } => body.push(st.into()),
                             _ => {}
                         }
                     }
                     (Node::CodeSpan, Frame::CodeSpan { text }) => {
-                        let cs = CodeSpan::new(text);
-                        if let Some(Frame::Paragraph { body }) = stack.last_mut() {
-                            body.push(cs.into());
-                        }
+                        push_into_paragraph(&mut stack, CodeSpan::new(text).into());
                     }
                     (Node::Emphasis, Frame::Emphasis { text }) => {
-                        let em = Emphasis::new(text);
-                        if let Some(Frame::Paragraph { body }) = stack.last_mut() {
-                            body.push(em.into());
-                        }
+                        push_into_paragraph(&mut stack, Emphasis::new(text).into());
                     }
                     (Node::Title, Frame::Title { text }) => {
                         let top = stack.last_mut().expect("stack underflow");
@@ -430,24 +349,10 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                         push_yamd_node(&mut stack, Collapsible::new(title, body).into());
                     }
                     (Node::UnorderedList, Frame::UnorderedList { level, items }) => {
-                        let list = List::new(ListTypes::Unordered, level, items);
-                        let top = stack.last_mut().expect("stack underflow");
-                        match top {
-                            Frame::ListItem { nested_list, .. } => {
-                                *nested_list = Some(list);
-                            }
-                            _ => push_yamd_node(&mut stack, list.into()),
-                        }
+                        finish_list(&mut stack, List::new(ListTypes::Unordered, level, items));
                     }
                     (Node::OrderedList, Frame::OrderedList { level, items }) => {
-                        let list = List::new(ListTypes::Ordered, level, items);
-                        let top = stack.last_mut().expect("stack underflow");
-                        match top {
-                            Frame::ListItem { nested_list, .. } => {
-                                *nested_list = Some(list);
-                            }
-                            _ => push_yamd_node(&mut stack, list.into()),
-                        }
+                        finish_list(&mut stack, List::new(ListTypes::Ordered, level, items));
                     }
                     (Node::ListItem, Frame::ListItem { text, nested_list }) => {
                         let item = ListItem::new(text, nested_list);
@@ -493,6 +398,19 @@ fn push_yamd_node(stack: &mut [Frame], node: YamdNodes) {
         Frame::Document { children } => children.push(node),
         Frame::Collapsible { body, .. } => body.push(node),
         _ => {}
+    }
+}
+
+fn push_into_paragraph(stack: &mut [Frame], node: ParagraphNodes) {
+    if let Some(Frame::Paragraph { body }) = stack.last_mut() {
+        body.push(node);
+    }
+}
+
+fn finish_list(stack: &mut [Frame], list: List) {
+    match stack.last_mut().expect("stack underflow") {
+        Frame::ListItem { nested_list, .. } => *nested_list = Some(list),
+        _ => push_yamd_node(stack, list.into()),
     }
 }
 
