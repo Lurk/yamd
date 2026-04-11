@@ -1,49 +1,49 @@
-use crate::op::{Node, Op, Parser, destination::destination, title::title};
+use crate::op::{Content, Node, Op, Parser, destination::destination, title::title};
 
-pub fn anchor(p: &Parser) -> Option<Vec<Op>> {
-    let start = p.pos();
-    let title_ops = title(p)?;
-    let Some(destination_ops) = destination(p) else {
-        p.replace_position(start);
-        return None;
-    };
-    let mut ops = vec![Op::new_start(Node::Anchor, &[])];
-    ops.extend(title_ops);
-    ops.extend(destination_ops);
-    ops.push(Op::new_end(Node::Anchor, &[]));
-    Some(ops)
+pub fn anchor(p: &mut Parser) -> bool {
+    let start = p.pos;
+    let snap = p.ops.len();
+    p.ops.push(Op::new_start(Node::Anchor, Content::Span(0..0)));
+    if !title(p) || !destination(p) {
+        p.pos = start;
+        p.ops.truncate(snap);
+        return false;
+    }
+    p.ops.push(Op::new_end(Node::Anchor, Content::Span(0..0)));
+    true
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{
         lexer::{Position, Token, TokenKind},
-        op::{Node, Op, Parser, anchor::anchor, parser::StopCondition},
+        op::{Content, Node, Op, Parser, anchor::anchor, parser::StopCondition},
     };
-    use pretty_assertions::assert_eq;
 
     #[test]
     fn happy_path() {
-        let p: Parser = "[a](u)".into();
+        let mut p: Parser = "[a](u)".into();
+        assert!(anchor(&mut p));
         assert_eq!(
-            anchor(&p),
-            Some(vec![
-                Op::new_start(Node::Anchor, &[]),
-                Op::new_start(Node::Title, p.slice(0..1)),
-                Op::new_value(p.slice(1..2)),
-                Op::new_end(Node::Title, p.slice(2..3)),
-                Op::new_start(Node::Destination, p.slice(3..4)),
-                Op::new_value(p.slice(4..5)),
-                Op::new_end(Node::Destination, p.slice(5..6)),
-                Op::new_end(Node::Anchor, &[])
-            ])
+            p.ops,
+            vec![
+                Op::new_start(Node::Anchor, Content::Span(0..0)),
+                Op::new_start(Node::Title, p.span(0..1)),
+                Op::new_value(p.span(1..2)),
+                Op::new_end(Node::Title, p.span(2..3)),
+                Op::new_start(Node::Destination, p.span(3..4)),
+                Op::new_value(p.span(4..5)),
+                Op::new_end(Node::Destination, p.span(5..6)),
+                Op::new_end(Node::Anchor, Content::Span(0..0))
+            ]
         );
     }
 
     #[test]
     fn title_is_not_closed() {
-        let p: Parser = "[a".into();
-        assert_eq!(anchor(&p), None);
+        let mut p: Parser = "[a".into();
+        assert!(!anchor(&mut p));
+        assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
             Some((
@@ -55,8 +55,9 @@ mod tests {
 
     #[test]
     fn url_is_not_closed() {
-        let p: Parser = "[a](u".into();
-        assert_eq!(anchor(&p), None);
+        let mut p: Parser = "[a](u".into();
+        assert!(!anchor(&mut p));
+        assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
             Some((
@@ -68,76 +69,82 @@ mod tests {
 
     #[test]
     fn has_nested_square_brackets() {
-        let p: Parser = "[[a\\]l](u)".into();
+        let mut p: Parser = "[[a\\]l](u)".into();
+        assert!(anchor(&mut p));
         assert_eq!(
-            anchor(&p),
-            Some(vec![
-                Op::new_start(Node::Anchor, &[]),
-                Op::new_start(Node::Title, p.slice(0..1)),
-                Op::new_value(p.slice(1..4)),
-                Op::new_end(Node::Title, p.slice(4..5)),
-                Op::new_start(Node::Destination, p.slice(5..6)),
-                Op::new_value(p.slice(6..7)),
-                Op::new_end(Node::Destination, p.slice(7..8)),
-                Op::new_end(Node::Anchor, &[])
-            ])
+            p.ops,
+            vec![
+                Op::new_start(Node::Anchor, Content::Span(0..0)),
+                Op::new_start(Node::Title, p.span(0..1)),
+                Op::new_value(p.span(1..4)),
+                Op::new_end(Node::Title, p.span(4..5)),
+                Op::new_start(Node::Destination, p.span(5..6)),
+                Op::new_value(p.span(6..7)),
+                Op::new_end(Node::Destination, p.span(7..8)),
+                Op::new_end(Node::Anchor, Content::Span(0..0))
+            ]
         );
     }
 
     #[test]
     fn has_nested_paren() {
-        let p: Parser = "[a]((u)r)".into();
+        let mut p: Parser = "[a]((u)r)".into();
+        assert!(anchor(&mut p));
         assert_eq!(
-            anchor(&p),
-            Some(vec![
-                Op::new_start(Node::Anchor, &[]),
-                Op::new_start(Node::Title, p.slice(0..1)),
-                Op::new_value(p.slice(1..2)),
-                Op::new_end(Node::Title, p.slice(2..3)),
-                Op::new_start(Node::Destination, p.slice(3..4)),
-                Op::new_value(p.slice(4..8)),
-                Op::new_end(Node::Destination, p.slice(8..9)),
-                Op::new_end(Node::Anchor, &[])
-            ])
+            p.ops,
+            vec![
+                Op::new_start(Node::Anchor, Content::Span(0..0)),
+                Op::new_start(Node::Title, p.span(0..1)),
+                Op::new_value(p.span(1..2)),
+                Op::new_end(Node::Title, p.span(2..3)),
+                Op::new_start(Node::Destination, p.span(3..4)),
+                Op::new_value(p.span(4..8)),
+                Op::new_end(Node::Destination, p.span(8..9)),
+                Op::new_end(Node::Anchor, Content::Span(0..0))
+            ]
         );
     }
 
     #[test]
     fn has_unclosed_nested_paren() {
-        let p: Parser = "[a]((ur)t".into();
+        let mut p: Parser = "[a]((ur)t".into();
+        assert!(anchor(&mut p));
         assert_eq!(
-            anchor(&p),
-            Some(vec![
-                Op::new_start(Node::Anchor, &[]),
-                Op::new_start(Node::Title, p.slice(0..1)),
-                Op::new_value(p.slice(1..2)),
-                Op::new_end(Node::Title, p.slice(2..3)),
-                Op::new_start(Node::Destination, p.slice(3..4)),
-                Op::new_value(p.slice(4..6)),
-                Op::new_end(Node::Destination, p.slice(6..7)),
-                Op::new_end(Node::Anchor, &[])
-            ])
+            p.ops,
+            vec![
+                Op::new_start(Node::Anchor, Content::Span(0..0)),
+                Op::new_start(Node::Title, p.span(0..1)),
+                Op::new_value(p.span(1..2)),
+                Op::new_end(Node::Title, p.span(2..3)),
+                Op::new_start(Node::Destination, p.span(3..4)),
+                Op::new_value(p.span(4..6)),
+                Op::new_end(Node::Destination, p.span(6..7)),
+                Op::new_end(Node::Anchor, Content::Span(0..0))
+            ]
         );
     }
 
     #[test]
     fn has_terminator() {
-        let p: Parser = "[[a]((u\n\n)r)".into();
-        let _g = p.push_eof(StopCondition::Terminator);
-        assert_eq!(anchor(&p), None);
-        assert_eq!(
-            p.peek(),
-            Some((
-                0,
-                &Token::new(TokenKind::LeftSquareBracket, 0..1, Position::default())
-            ))
-        )
+        let mut p: Parser = "[[a]((u\n\n)r)".into();
+        p.with_eof(StopCondition::Terminator, |p| {
+            assert!(!anchor(p));
+            assert!(p.ops.is_empty());
+            assert_eq!(
+                p.peek(),
+                Some((
+                    0,
+                    &Token::new(TokenKind::LeftSquareBracket, 0..1, Position::default())
+                ))
+            );
+        });
     }
 
     #[test]
     fn no_paren() {
-        let p: Parser = "[a]".into();
-        assert_eq!(anchor(&p), None);
+        let mut p: Parser = "[a]".into();
+        assert!(!anchor(&mut p));
+        assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
             Some((
@@ -149,8 +156,9 @@ mod tests {
 
     #[test]
     fn right_paren() {
-        let p = "[a])".into();
-        assert_eq!(anchor(&p), None);
+        let mut p: Parser = "[a])".into();
+        assert!(!anchor(&mut p));
+        assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
             Some((

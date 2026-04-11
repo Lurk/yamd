@@ -1,6 +1,6 @@
 use crate::{
     lexer::{Token, TokenKind},
-    op::{Node, Op, Parser, destination::destination, title::title},
+    op::{Content, Node, Op, Parser, destination::destination, title::title},
 };
 
 fn is_bang(t: &Token) -> bool {
@@ -11,32 +11,38 @@ fn is_eol(t: &Token) -> bool {
     t.kind == TokenKind::Eol
 }
 
-pub fn image(p: &Parser) -> Option<Vec<Op>> {
-    let start = p.pos();
-    let start_token = p.eat(is_bang)?;
-
-    let Some(alt_ops) = title(p) else {
-        p.replace_position(start);
-        return None;
+pub fn image(p: &mut Parser) -> bool {
+    let start = p.pos;
+    let snap = p.ops.len();
+    let Some(start_range) = p.eat(is_bang) else {
+        return false;
     };
 
-    let Some(dest_ops) = destination(p) else {
-        p.replace_position(start);
-        return None;
-    };
+    let start_content = p.span(start_range);
+    p.ops.push(Op::new_start(Node::Image, start_content));
 
-    let mut ops = vec![Op::new_start(Node::Image, start_token)];
-    ops.extend(alt_ops);
-    ops.extend(dest_ops);
-
-    if let Some(t) = p.eat(is_eol) {
-        ops.push(Op::new_end(Node::Image, t));
-        return Some(ops);
-    } else if p.at_eof() {
-        ops.push(Op::new_end(Node::Image, &[]));
-        return Some(ops);
+    if !title(p) {
+        p.pos = start;
+        p.ops.truncate(snap);
+        return false;
     }
 
-    p.replace_position(start);
-    None
+    if !destination(p) {
+        p.pos = start;
+        p.ops.truncate(snap);
+        return false;
+    }
+
+    if let Some(eol_range) = p.eat(is_eol) {
+        let end_content = p.span(eol_range);
+        p.ops.push(Op::new_end(Node::Image, end_content));
+        return true;
+    } else if p.at_eof() {
+        p.ops.push(Op::new_end(Node::Image, Content::Span(0..0)));
+        return true;
+    }
+
+    p.pos = start;
+    p.ops.truncate(snap);
+    false
 }

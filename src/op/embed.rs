@@ -15,38 +15,42 @@ fn is_right_curly2(t: &Token) -> bool {
     t.kind == TokenKind::RightCurlyBrace && t.range.len() == 2
 }
 
-pub fn embed(p: &Parser) -> Option<Vec<Op>> {
-    let start = p.pos();
-    let start_token = p.eat(is_left_curly2)?;
-
-    let Some((lhs, separator_token)) = p.advance_until(is_pipe) else {
-        p.replace_position(start);
-        return None;
+pub fn embed(p: &mut Parser) -> bool {
+    let start = p.pos;
+    let Some(start_range) = p.eat(is_left_curly2) else {
+        return false;
     };
 
-    let Some((rhs, end_token)) = p.advance_until(is_right_curly2) else {
-        p.replace_position(start);
-        return None;
+    let Some((lhs_range, sep_range)) = p.advance_until(is_pipe) else {
+        p.pos = start;
+        return false;
+    };
+
+    let Some((rhs_range, end_range)) = p.advance_until(is_right_curly2) else {
+        p.pos = start;
+        return false;
     };
 
     if !p.at_block_boundary() {
-        p.replace_position(start);
-        return None;
+        p.pos = start;
+        return false;
     }
 
-    Some(vec![
-        Op::new_start(Node::Embed, start_token),
-        Op::new_value(lhs),
-        Op::new_value(separator_token),
-        Op::new_value(rhs),
-        Op::new_end(Node::Embed, end_token),
-    ])
+    let start_content = p.span(start_range);
+    let lhs_content = p.span(lhs_range);
+    let sep_content = p.span(sep_range);
+    let rhs_content = p.span(rhs_range);
+    let end_content = p.span(end_range);
+    p.ops.push(Op::new_start(Node::Embed, start_content));
+    p.ops.push(Op::new_value(lhs_content));
+    p.ops.push(Op::new_value(sep_content));
+    p.ops.push(Op::new_value(rhs_content));
+    p.ops.push(Op::new_end(Node::Embed, end_content));
+    true
 }
 
 #[cfg(test)]
 mod tests {
-    use pretty_assertions::assert_eq;
-
     use crate::{
         lexer::{Position, Token, TokenKind},
         op::{Node, Op, Parser, embed::embed, parser::StopCondition},
@@ -54,37 +58,41 @@ mod tests {
 
     #[test]
     fn happy_path() {
-        let p = "{{happy|path}}".into();
+        let mut p: Parser = "{{happy|path}}".into();
+        assert!(embed(&mut p));
         assert_eq!(
-            embed(&p),
-            Some(vec![
-                Op::new_start(Node::Embed, p.slice(0..1)), // {{
-                Op::new_value(p.slice(1..2)),              // happy
-                Op::new_value(p.slice(2..3)),              // |
-                Op::new_value(p.slice(3..4)),              // path
-                Op::new_end(Node::Embed, p.slice(4..5)),   // }}
-            ])
+            p.ops,
+            vec![
+                Op::new_start(Node::Embed, p.span(0..1)),
+                Op::new_value(p.span(1..2)),
+                Op::new_value(p.span(2..3)),
+                Op::new_value(p.span(3..4)),
+                Op::new_end(Node::Embed, p.span(4..5)),
+            ]
         );
     }
 
     #[test]
     fn terminator() {
-        let p: Parser = "{{\n\n|path}}".into();
-        let _g = p.push_eof(StopCondition::Terminator);
-        assert_eq!(embed(&p), None);
-        assert_eq!(
-            p.peek(),
-            Some((
-                0,
-                &Token::new(TokenKind::LeftCurlyBrace, 0..2, Position::default()),
-            ))
-        )
+        let mut p: Parser = "{{\n\n|path}}".into();
+        p.with_eof(StopCondition::Terminator, |p| {
+            assert!(!embed(p));
+            assert!(p.ops.is_empty());
+            assert_eq!(
+                p.peek(),
+                Some((
+                    0,
+                    &Token::new(TokenKind::LeftCurlyBrace, 0..2, Position::default()),
+                ))
+            );
+        });
     }
 
     #[test]
     fn do_not_have_closing_token() {
-        let p = "{{happy|path}".into();
-        assert_eq!(embed(&p), None);
+        let mut p: Parser = "{{happy|path}".into();
+        assert!(!embed(&mut p));
+        assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
             Some((
@@ -96,8 +104,9 @@ mod tests {
 
     #[test]
     fn no_pipe() {
-        let p = "{{happy}}".into();
-        assert_eq!(embed(&p), None);
+        let mut p: Parser = "{{happy}}".into();
+        assert!(!embed(&mut p));
+        assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
             Some((

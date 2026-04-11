@@ -1,75 +1,76 @@
-use crate::op::{Node, Op, Parser, image::image};
+use crate::op::{Content, Node, Op, Parser, image::image};
 
-pub fn images(p: &Parser) -> Option<Vec<Op>> {
-    let start = p.pos();
-    let mut all_ops = vec![];
+pub fn images(p: &mut Parser) -> bool {
+    let start = p.pos;
+    let snap = p.ops.len();
     let mut count = 0;
     while p.peek().is_some() {
-        if let Some(ops) = image(p) {
+        if image(p) {
             count += 1;
-            all_ops.extend(ops);
         } else if p.at_eof() {
             break;
         } else {
-            p.replace_position(start);
-            return None;
+            p.pos = start;
+            p.ops.truncate(snap);
+            return false;
         }
     }
 
     if count == 1 {
-        return Some(all_ops);
+        return true;
     } else if count > 1 {
-        let mut res = vec![Op::new_start(Node::Images, &[])];
-        res.extend(all_ops);
-        res.push(Op::new_end(Node::Images, &[]));
-        return Some(res);
+        p.ops
+            .insert(snap, Op::new_start(Node::Images, Content::Span(0..0)));
+        p.ops.push(Op::new_end(Node::Images, Content::Span(0..0)));
+        return true;
     }
 
-    p.replace_position(start);
-    None
+    p.pos = start;
+    p.ops.truncate(snap);
+    false
 }
 
 #[cfg(test)]
 mod tests {
-    use pretty_assertions::assert_eq;
-
     use crate::{
         lexer::{Position, Token, TokenKind},
-        op::{Node, Op, images::images},
+        op::{Content, Node, Op, images::images},
     };
 
     #[test]
     fn happy_path() {
-        let p = "![a](u)\n![a](u)".into();
+        let mut p = "![a](u)\n![a](u)".into();
+        assert!(images(&mut p));
         assert_eq!(
-            images(&p),
-            Some(vec![
-                Op::new_start(Node::Images, &[]),
-                Op::new_start(Node::Image, p.slice(0..1)), // !
-                Op::new_start(Node::Title, p.slice(1..2)), // [
-                Op::new_value(p.slice(2..3)),              // a
-                Op::new_end(Node::Title, p.slice(3..4)),   // ]
-                Op::new_start(Node::Destination, p.slice(4..5)), // (
-                Op::new_value(p.slice(5..6)),              // u
-                Op::new_end(Node::Destination, p.slice(6..7)), // )
-                Op::new_end(Node::Image, p.slice(7..8)),   // \n
-                Op::new_start(Node::Image, p.slice(8..9)), // !
-                Op::new_start(Node::Title, p.slice(9..10)), // [
-                Op::new_value(p.slice(10..11)),            // a
-                Op::new_end(Node::Title, p.slice(11..12)), // ]
-                Op::new_start(Node::Destination, p.slice(12..13)), // (
-                Op::new_value(p.slice(13..14)),            // u
-                Op::new_end(Node::Destination, p.slice(14..15)), // )
-                Op::new_end(Node::Image, &[]),
-                Op::new_end(Node::Images, &[]),
-            ])
+            p.ops,
+            vec![
+                Op::new_start(Node::Images, Content::Span(0..0)),
+                Op::new_start(Node::Image, p.span(0..1)),
+                Op::new_start(Node::Title, p.span(1..2)),
+                Op::new_value(p.span(2..3)),
+                Op::new_end(Node::Title, p.span(3..4)),
+                Op::new_start(Node::Destination, p.span(4..5)),
+                Op::new_value(p.span(5..6)),
+                Op::new_end(Node::Destination, p.span(6..7)),
+                Op::new_end(Node::Image, p.span(7..8)),
+                Op::new_start(Node::Image, p.span(8..9)),
+                Op::new_start(Node::Title, p.span(9..10)),
+                Op::new_value(p.span(10..11)),
+                Op::new_end(Node::Title, p.span(11..12)),
+                Op::new_start(Node::Destination, p.span(12..13)),
+                Op::new_value(p.span(13..14)),
+                Op::new_end(Node::Destination, p.span(14..15)),
+                Op::new_end(Node::Image, Content::Span(0..0)),
+                Op::new_end(Node::Images, Content::Span(0..0)),
+            ]
         );
     }
 
     #[test]
     fn not_an_anchor() {
-        let p = "![a](u)\n!!foo".into();
-        assert_eq!(images(&p), None);
+        let mut p = "![a](u)\n!!foo".into();
+        assert!(!images(&mut p));
+        assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
             Some((0, &Token::new(TokenKind::Bang, 0..1, Position::default())))
@@ -78,8 +79,9 @@ mod tests {
 
     #[test]
     fn next_token_can_be_only_terminator() {
-        let p = "![a](u)\n![a](u)fasdf".into();
-        assert_eq!(images(&p), None);
+        let mut p = "![a](u)\n![a](u)fasdf".into();
+        assert!(!images(&mut p));
+        assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
             Some((0, &Token::new(TokenKind::Bang, 0..1, Position::default())))
@@ -88,29 +90,30 @@ mod tests {
 
     #[test]
     fn new_line_check() {
-        let p = "![a](u)\n![a](u)\n".into();
+        let mut p = "![a](u)\n![a](u)\n".into();
+        assert!(images(&mut p));
         assert_eq!(
-            images(&p),
-            Some(vec![
-                Op::new_start(Node::Images, &[]),
-                Op::new_start(Node::Image, p.slice(0..1)), // !
-                Op::new_start(Node::Title, p.slice(1..2)), // [
-                Op::new_value(p.slice(2..3)),              // a
-                Op::new_end(Node::Title, p.slice(3..4)),   // ]
-                Op::new_start(Node::Destination, p.slice(4..5)), // (
-                Op::new_value(p.slice(5..6)),              // u
-                Op::new_end(Node::Destination, p.slice(6..7)), // )
-                Op::new_end(Node::Image, p.slice(7..8)),   // \n
-                Op::new_start(Node::Image, p.slice(8..9)), // !
-                Op::new_start(Node::Title, p.slice(9..10)), // [
-                Op::new_value(p.slice(10..11)),            // a
-                Op::new_end(Node::Title, p.slice(11..12)), // ]
-                Op::new_start(Node::Destination, p.slice(12..13)), // (
-                Op::new_value(p.slice(13..14)),            // u
-                Op::new_end(Node::Destination, p.slice(14..15)), // )
-                Op::new_end(Node::Image, p.slice(15..16)), // \n
-                Op::new_end(Node::Images, &[]),
-            ])
+            p.ops,
+            vec![
+                Op::new_start(Node::Images, Content::Span(0..0)),
+                Op::new_start(Node::Image, p.span(0..1)),
+                Op::new_start(Node::Title, p.span(1..2)),
+                Op::new_value(p.span(2..3)),
+                Op::new_end(Node::Title, p.span(3..4)),
+                Op::new_start(Node::Destination, p.span(4..5)),
+                Op::new_value(p.span(5..6)),
+                Op::new_end(Node::Destination, p.span(6..7)),
+                Op::new_end(Node::Image, p.span(7..8)),
+                Op::new_start(Node::Image, p.span(8..9)),
+                Op::new_start(Node::Title, p.span(9..10)),
+                Op::new_value(p.span(10..11)),
+                Op::new_end(Node::Title, p.span(11..12)),
+                Op::new_start(Node::Destination, p.span(12..13)),
+                Op::new_value(p.span(13..14)),
+                Op::new_end(Node::Destination, p.span(14..15)),
+                Op::new_end(Node::Image, p.span(15..16)),
+                Op::new_end(Node::Images, Content::Span(0..0)),
+            ]
         );
     }
 }

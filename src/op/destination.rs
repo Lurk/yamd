@@ -7,9 +7,11 @@ fn is_left_paren(t: &Token) -> bool {
     t.kind == TokenKind::LeftParenthesis && t.range.len() == 1
 }
 
-pub fn destination(p: &Parser) -> Option<Vec<Op>> {
-    let start = p.pos();
-    let start_token = p.eat(is_left_paren)?;
+pub fn destination(p: &mut Parser) -> bool {
+    let start = p.pos;
+    let Some(start_range) = p.eat(is_left_paren) else {
+        return false;
+    };
 
     let mut paren_count = 1;
     let mut end_pos = start;
@@ -20,38 +22,39 @@ pub fn destination(p: &Parser) -> Option<Vec<Op>> {
         match token.kind {
             TokenKind::LeftParenthesis => {
                 paren_count += 1;
-                p.replace_position(i + 1);
+                p.pos = i + 1;
             }
             TokenKind::RightParenthesis => {
                 paren_count -= 1;
                 end_pos = i;
-                p.replace_position(i + 1);
+                p.pos = i + 1;
                 if paren_count == 0 {
                     break;
                 }
             }
             _ => {
-                p.replace_position(i + 1);
+                p.pos = i + 1;
             }
         }
     }
 
     if start == end_pos {
-        p.replace_position(start);
-        return None;
+        p.pos = start;
+        return false;
     }
 
-    let Some(_end_token) = p.get(end_pos) else {
-        p.replace_position(start);
-        return None;
-    };
+    if p.get(end_pos).is_none() {
+        p.pos = start;
+        return false;
+    }
 
-    let ops = vec![
-        Op::new_start(Node::Destination, start_token),
-        Op::new_value(p.slice(start + 1..end_pos)),
-        Op::new_end(Node::Destination, p.slice(end_pos..end_pos + 1)),
-    ];
-
-    p.replace_position(end_pos + 1);
-    Some(ops)
+    let start_content = p.span(start_range);
+    let body_range = start + 1..end_pos;
+    let body_content = p.span(body_range);
+    let end_content = p.span(end_pos..end_pos + 1);
+    p.pos = end_pos + 1;
+    p.ops.push(Op::new_start(Node::Destination, start_content));
+    p.ops.push(Op::new_value(body_content));
+    p.ops.push(Op::new_end(Node::Destination, end_content));
+    true
 }

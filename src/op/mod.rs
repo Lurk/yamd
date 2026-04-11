@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use crate::lexer::Token;
 pub use crate::op::parser::Parser;
 
@@ -28,20 +30,19 @@ pub use to_yamd::to_yamd;
 
 #[derive(Debug, PartialEq)]
 pub enum Content {
-    Source(Vec<Token>),
+    Span(Range<usize>),
     Materialized(String),
 }
 
 impl Content {
     pub fn as_str<'a>(&'a self, source: &'a str) -> &'a str {
         match self {
-            Content::Source(tokens) => {
-                if tokens.is_empty() {
-                    return "";
+            Content::Span(range) => {
+                if range.is_empty() {
+                    ""
+                } else {
+                    &source[range.clone()]
                 }
-                let start = tokens.first().unwrap().range.start;
-                let end = tokens.last().unwrap().range.end;
-                &source[start..end]
             }
             Content::Materialized(s) => s.as_str(),
         }
@@ -53,20 +54,22 @@ impl Content {
 
     pub fn is_empty(&self) -> bool {
         match self {
-            Content::Source(tokens) => tokens.is_empty(),
+            Content::Span(range) => range.is_empty(),
             Content::Materialized(s) => s.is_empty(),
         }
     }
 
     pub fn from_tokens(tokens: &[Token], source: &str) -> Self {
         if tokens.is_empty() {
-            return Content::Source(Vec::new());
+            return Content::Span(0..0);
         }
         let is_contiguous = tokens
             .windows(2)
             .all(|w| w[0].range.end == w[1].range.start);
         if is_contiguous {
-            Content::Source(tokens.to_vec())
+            let start = tokens.first().unwrap().range.start;
+            let end = tokens.last().unwrap().range.end;
+            Content::Span(start..end)
         } else {
             let s: String = tokens.iter().map(|t| &source[t.range.clone()]).collect();
             Content::Materialized(s)
@@ -76,19 +79,25 @@ impl Content {
 
 impl From<&[Token]> for Content {
     fn from(tokens: &[Token]) -> Self {
-        Content::Source(tokens.to_vec())
+        if tokens.is_empty() {
+            Content::Span(0..0)
+        } else {
+            let start = tokens.first().unwrap().range.start;
+            let end = tokens.last().unwrap().range.end;
+            Content::Span(start..end)
+        }
     }
 }
 
 impl<const N: usize> From<&[Token; N]> for Content {
     fn from(tokens: &[Token; N]) -> Self {
-        Content::Source(tokens.to_vec())
+        Content::from(tokens.as_slice())
     }
 }
 
 impl From<Vec<Token>> for Content {
     fn from(tokens: Vec<Token>) -> Self {
-        Content::Source(tokens)
+        Content::from(tokens.as_slice())
     }
 }
 
@@ -162,14 +171,11 @@ impl Op {
     }
 }
 
-pub fn parse<P: Into<Parser>>(parser: P) -> Vec<Op> {
-    let parser = parser.into();
-    let mut ops = Vec::new();
-    if let Some(mut metadata_ops) = metadata::metadata(&parser) {
-        ops.append(&mut metadata_ops);
-    }
-    ops.append(&mut document::document(&parser));
-    ops
+pub fn parse(input: &str) -> Vec<Op> {
+    let mut parser = Parser::from(input);
+    metadata::metadata(&mut parser);
+    document::document(&mut parser);
+    parser.into_ops()
 }
 
 #[cfg(test)]
@@ -242,18 +248,18 @@ end"#;
         let ops = parse(TEST_CASE);
         let mut covered = vec![false; TEST_CASE.len()];
         for op in &ops {
-            let Content::Source(tokens) = &op.content else {
-                continue;
-            };
-            for token in tokens {
-                for i in token.range.start..token.range.end {
-                    assert!(
-                        !covered[i],
-                        "byte {i} covered by multiple ops (char: {:?})",
-                        &TEST_CASE[i..i + 1]
-                    );
-                    covered[i] = true;
+            match &op.content {
+                Content::Span(range) => {
+                    for i in range.clone() {
+                        assert!(
+                            !covered[i],
+                            "byte {i} covered by multiple ops (char: {:?})",
+                            &TEST_CASE[i..i + 1]
+                        );
+                        covered[i] = true;
+                    }
                 }
+                Content::Materialized(_) => {}
             }
         }
         let uncovered: Vec<usize> = covered
@@ -264,8 +270,7 @@ end"#;
             .collect();
         assert!(
             uncovered.is_empty(),
-            "uncovered byte positions: {:?}",
-            uncovered
+            "uncovered byte positions: {uncovered:?}"
         );
     }
 
@@ -386,10 +391,9 @@ end"#;
     }
 
     #[test]
-    fn content_source_as_str() {
+    fn content_span_as_str() {
         let source = "hello world";
-        let token = Token::new(TokenKind::Literal, 0..5, Position::default());
-        let content = Content::Source(vec![token]);
+        let content = Content::Span(0..5);
         assert_eq!(content.as_str(source), "hello");
     }
 
@@ -400,10 +404,9 @@ end"#;
     }
 
     #[test]
-    fn content_source_to_string() {
+    fn content_span_to_string() {
         let source = "hello world";
-        let token = Token::new(TokenKind::Literal, 0..5, Position::default());
-        let content = Content::Source(vec![token]);
+        let content = Content::Span(0..5);
         assert_eq!(content.to_string(source), "hello");
     }
 
@@ -437,10 +440,10 @@ end"#;
     }
 
     #[test]
-    fn content_from_contiguous_tokens_stays_source() {
+    fn content_from_contiguous_tokens_stays_span() {
         let source = "hello";
         let tokens = vec![Token::new(TokenKind::Literal, 0..5, Position::default())];
         let content = Content::from_tokens(&tokens, source);
-        assert_eq!(content, Content::Source(tokens));
+        assert_eq!(content, Content::Span(0..5));
     }
 }

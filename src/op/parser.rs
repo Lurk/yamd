@@ -1,8 +1,7 @@
-use std::cell::RefCell;
+use std::ops::Range;
 
-use crate::eat_seq;
 use crate::lexer::{Lexer, Token, TokenKind};
-use crate::op::Node;
+use crate::op::{Content, Node, Op};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ListKind {
@@ -54,27 +53,36 @@ fn is_space_1(t: &Token) -> bool {
 }
 
 fn at_list_boundary(p: &Parser, current_level: usize, max_level: usize, kind: ListKind) -> bool {
-    let start = p.pos();
     for level in 0..=max_level {
         let k = if level == current_level {
             Some(kind)
         } else {
             None
         };
+        let mut offset = p.pos;
         let matched = if level == 0 {
-            p.at(|t: &Token| t.position.column == 0)
-                && eat_seq!(p, |t: &Token| is_list_marker(t, k), is_space_1).is_some()
+            p.tokens.get(offset).is_some_and(|t| t.position.column == 0) && {
+                // check: list_marker, space_1
+                p.tokens.get(offset).is_some_and(|t| is_list_marker(t, k)) && {
+                    offset += 1;
+                    p.tokens.get(offset).is_some_and(is_space_1)
+                }
+            }
         } else {
-            p.at(|t: &Token| t.position.column == 0)
-                && eat_seq!(
-                    p,
-                    |t: &Token| t.kind == TokenKind::Space && t.range.len() == level,
-                    |t: &Token| is_list_marker(t, k),
-                    is_space_1
-                )
-                .is_some()
+            p.tokens.get(offset).is_some_and(|t| t.position.column == 0) && {
+                // check: space of len==level, list_marker, space_1
+                p.tokens
+                    .get(offset)
+                    .is_some_and(|t| t.kind == TokenKind::Space && t.range.len() == level)
+                    && {
+                        offset += 1;
+                        p.tokens.get(offset).is_some_and(|t| is_list_marker(t, k)) && {
+                            offset += 1;
+                            p.tokens.get(offset).is_some_and(is_space_1)
+                        }
+                    }
+            }
         };
-        p.replace_position(start);
         if matched {
             return true;
         }
@@ -101,35 +109,29 @@ impl StopCondition {
     }
 }
 
-pub struct EofGuard<'a> {
-    parser: &'a Parser,
-}
-
-impl Drop for EofGuard<'_> {
-    fn drop(&mut self) {
-        self.parser.eof_stack.borrow_mut().pop();
-    }
-}
-
-pub struct Parser {
+pub struct Parser<'a> {
+    pub source: &'a str,
     tokens: Vec<Token>,
-    pos: RefCell<usize>,
-    eof_stack: RefCell<Vec<StopCondition>>,
+    pub pos: usize,
+    eof_stack: Vec<StopCondition>,
+    pub ops: Vec<Op>,
 }
 
-impl From<&str> for Parser {
-    fn from(input: &str) -> Self {
+impl<'a> From<&'a str> for Parser<'a> {
+    fn from(input: &'a str) -> Self {
         Self {
+            source: input,
             tokens: Lexer::new(input).collect(),
-            pos: RefCell::new(0),
-            eof_stack: RefCell::new(Vec::new()),
+            pos: 0,
+            eof_stack: Vec::new(),
+            ops: Vec::new(),
         }
     }
 }
 
-impl Parser {
+impl Parser<'_> {
     pub fn is_eof(&self) -> bool {
-        *self.pos.borrow() >= self.tokens.len()
+        self.pos >= self.tokens.len()
     }
 
     pub fn len(&self) -> usize {
@@ -140,49 +142,39 @@ impl Parser {
         self.tokens.is_empty()
     }
 
-    pub fn pos(&self) -> usize {
-        *self.pos.borrow()
-    }
-
     pub fn get(&self, index: usize) -> Option<&Token> {
         self.tokens.get(index)
     }
 
     pub fn peek(&self) -> Option<(usize, &Token)> {
-        let pos = self.pos();
-        Some((pos, self.tokens.get(pos)?))
+        Some((self.pos, self.tokens.get(self.pos)?))
     }
 
-    pub fn advance(&self) -> Option<(usize, &Token)> {
-        let pos = self.pos();
-        let token = self.tokens.get(pos)?;
-        self.replace_position(pos + 1)?;
-        Some((pos, token))
+    pub fn advance(&mut self) -> Option<usize> {
+        if self.pos >= self.tokens.len() {
+            return None;
+        }
+        let pos = self.pos;
+        self.pos += 1;
+        Some(pos)
     }
 
-    pub fn slice(&self, range: std::ops::Range<usize>) -> &[Token] {
+    pub fn slice(&self, range: Range<usize>) -> &[Token] {
         &self.tokens[range]
     }
 
-    pub fn next(&self) {
-        let pos = self.pos();
-        self.replace_position(pos + 1);
-    }
-
-    pub fn replace_position(&self, new_pos: usize) -> Option<usize> {
-        if new_pos > self.len() {
-            None
-        } else {
-            Some(self.pos.replace(new_pos))
+    pub fn next(&mut self) {
+        if self.pos < self.tokens.len() {
+            self.pos += 1;
         }
     }
 
-    pub fn eat(&self, pred: impl Fn(&Token) -> bool) -> Option<&[Token]> {
-        let pos = self.pos();
-        let (_, token) = self.peek()?;
+    pub fn eat(&mut self, pred: impl Fn(&Token) -> bool) -> Option<Range<usize>> {
+        let token = self.tokens.get(self.pos)?;
         if pred(token) {
-            self.next();
-            Some(self.slice(pos..self.pos()))
+            let start = self.pos;
+            self.pos += 1;
+            Some(start..self.pos)
         } else {
             None
         }
@@ -192,45 +184,74 @@ impl Parser {
         self.peek().is_some_and(|(_, t)| pred(t))
     }
 
-    pub fn push_eof(&self, cond: StopCondition) -> EofGuard<'_> {
-        self.eof_stack.borrow_mut().push(cond);
-        EofGuard { parser: self }
+    pub fn with_eof<R>(&mut self, cond: StopCondition, f: impl FnOnce(&mut Self) -> R) -> R {
+        self.eof_stack.push(cond);
+        let result = f(self);
+        self.eof_stack.pop();
+        result
+    }
+
+    pub fn with_eofs<R>(&mut self, conds: &[StopCondition], f: impl FnOnce(&mut Self) -> R) -> R {
+        for &c in conds {
+            self.eof_stack.push(c);
+        }
+        let result = f(self);
+        for _ in conds {
+            self.eof_stack.pop();
+        }
+        result
     }
 
     pub fn at_eof(&self) -> bool {
         let Some((_, token)) = self.peek() else {
             return true;
         };
-        self.eof_stack
-            .borrow()
-            .iter()
-            .any(|cond| cond.matches(token, self))
+        self.eof_stack.iter().any(|cond| cond.matches(token, self))
     }
 
-    /// Like `at_eof()`, but also treats a Terminator token as a block boundary.
-    /// Use this in block-level parsers (code, embed) that need to accept
-    /// terminators as valid end-of-block when called without a Terminator
-    /// stop condition on the stack.
+    pub fn flip_to_literal(&mut self, pos: usize) {
+        if let Some(token) = self.tokens.get_mut(pos) {
+            token.kind = TokenKind::Literal;
+        }
+    }
+
     pub fn at_block_boundary(&self) -> bool {
         self.at_eof() || self.at(|t| t.kind == TokenKind::Terminator)
     }
 
-    pub fn advance_until(&self, matcher: impl Fn(&Token) -> bool) -> Option<(&[Token], &[Token])> {
-        let start = self.pos();
-        while let Some((pos, token)) = self.peek() {
+    pub fn advance_until(
+        &mut self,
+        matcher: impl Fn(&Token) -> bool,
+    ) -> Option<(Range<usize>, Range<usize>)> {
+        let start = self.pos;
+        while let Some(token) = self.tokens.get(self.pos) {
             if self.at_eof() {
                 break;
             }
             if matcher(token) {
-                let before = self.slice(start..pos);
-                self.next();
-                let matched = self.slice(pos..self.pos());
-                return Some((before, matched));
+                let before = start..self.pos;
+                let match_start = self.pos;
+                self.pos += 1;
+                return Some((before, match_start..self.pos));
             }
-            self.next();
+            self.pos += 1;
         }
-        self.replace_position(start);
+        self.pos = start;
         None
+    }
+
+    pub fn span(&self, range: Range<usize>) -> Content {
+        if range.is_empty() {
+            Content::Span(0..0)
+        } else {
+            let byte_start = self.tokens[range.start].range.start;
+            let byte_end = self.tokens[range.end - 1].range.end;
+            Content::Span(byte_start..byte_end)
+        }
+    }
+
+    pub fn into_ops(self) -> Vec<Op> {
+        self.ops
     }
 }
 
@@ -241,11 +262,11 @@ pub fn eol(t: &Token) -> bool {
 #[macro_export]
 macro_rules! eat_seq {
     ($p:expr, $($pred:expr),+ $(,)?) => {{
-        let start = $p.pos();
+        let start = $p.pos;
         if $( $p.eat($pred).is_some() )&&+ {
-            Some($p.slice(start..$p.pos()))
+            Some(start..$p.pos)
         } else {
-            $p.replace_position(start);
+            $p.pos = start;
             None
         }
     }};
@@ -258,24 +279,24 @@ mod tests {
 
     #[test]
     fn eat_matches_and_consumes() {
-        let p = Parser::from("hello world");
+        let mut p = Parser::from("hello world");
         let result = p.eat(|t| t.kind == TokenKind::Literal);
         assert!(result.is_some());
-        assert_eq!(result.unwrap().len(), 1);
-        assert_eq!(p.pos(), 1);
+        assert_eq!(result.unwrap(), 0..1);
+        assert_eq!(p.pos, 1);
     }
 
     #[test]
     fn eat_no_match_does_not_advance() {
-        let p = Parser::from("hello world");
+        let mut p = Parser::from("hello world");
         let result = p.eat(|t| t.kind == TokenKind::Star);
         assert!(result.is_none());
-        assert_eq!(p.pos(), 0);
+        assert_eq!(p.pos, 0);
     }
 
     #[test]
     fn eat_at_eof_returns_none() {
-        let p = Parser::from("");
+        let mut p = Parser::from("");
         let result = p.eat(|t| t.kind == TokenKind::Literal);
         assert!(result.is_none());
     }
@@ -284,14 +305,14 @@ mod tests {
     fn at_matches_without_consuming() {
         let p = Parser::from("hello");
         assert!(p.at(|t| t.kind == TokenKind::Literal));
-        assert_eq!(p.pos(), 0);
+        assert_eq!(p.pos, 0);
     }
 
     #[test]
     fn at_no_match() {
         let p = Parser::from("hello");
         assert!(!p.at(|t| t.kind == TokenKind::Star));
-        assert_eq!(p.pos(), 0);
+        assert_eq!(p.pos, 0);
     }
 
     #[test]
@@ -302,56 +323,57 @@ mod tests {
 
     #[test]
     fn eat_seq_matches_sequence() {
-        let p = Parser::from("# hello");
+        let mut p = Parser::from("# hello");
         let result = eat_seq!(p, |t: &Token| t.kind == TokenKind::Hash, |t: &Token| t.kind
             == TokenKind::Space);
         assert!(result.is_some());
-        assert_eq!(result.unwrap().len(), 2);
-        assert_eq!(p.pos(), 2);
+        assert_eq!(result.unwrap(), 0..2);
+        assert_eq!(p.pos, 2);
     }
 
     #[test]
     fn eat_seq_backtracks_on_partial_match() {
-        let p = Parser::from("# hello");
+        let mut p = Parser::from("# hello");
         let result = eat_seq!(p, |t: &Token| t.kind == TokenKind::Hash, |t: &Token| t.kind
             == TokenKind::Star);
         assert!(result.is_none());
-        assert_eq!(p.pos(), 0);
+        assert_eq!(p.pos, 0);
     }
 
     #[test]
     fn eat_seq_single_predicate() {
-        let p = Parser::from("hello");
+        let mut p = Parser::from("hello");
         let result = eat_seq!(p, |t: &Token| t.kind == TokenKind::Literal);
         assert!(result.is_some());
-        assert_eq!(p.pos(), 1);
+        assert_eq!(p.pos, 1);
     }
 
     #[test]
     fn advance_until_finds_match() {
-        let p = Parser::from("hello\nworld");
+        let mut p = Parser::from("hello\nworld");
         let result = p.advance_until(|t: &Token| t.kind == TokenKind::Eol);
         assert!(result.is_some());
         let (before, matched) = result.unwrap();
-        assert_eq!(before.len(), 1);
-        assert_eq!(matched.len(), 1);
+        assert_eq!(before, 0..1);
+        assert_eq!(matched, 1..2);
     }
 
     #[test]
     fn advance_until_eof_hit() {
-        let p = Parser::from("hello\n\nworld");
-        let _g = p.push_eof(StopCondition::Terminator);
-        let result = p.advance_until(|t: &Token| t.kind == TokenKind::Star);
-        assert!(result.is_none());
-        assert_eq!(p.pos(), 0);
+        let mut p = Parser::from("hello\n\nworld");
+        p.with_eof(StopCondition::Terminator, |p| {
+            let result = p.advance_until(|t: &Token| t.kind == TokenKind::Star);
+            assert!(result.is_none());
+            assert_eq!(p.pos, 0);
+        });
     }
 
     #[test]
     fn advance_until_no_match_at_eof() {
-        let p = Parser::from("hello");
+        let mut p = Parser::from("hello");
         let result = p.advance_until(|t: &Token| t.kind == TokenKind::Star);
         assert!(result.is_none());
-        assert_eq!(p.pos(), 0);
+        assert_eq!(p.pos, 0);
     }
 
     #[test]
@@ -368,34 +390,34 @@ mod tests {
 
     #[test]
     fn at_eof_terminator_on_stack() {
-        let p = Parser::from("hello\n\nworld");
-        let _g = p.push_eof(StopCondition::Terminator);
-        assert!(!p.at_eof());
-        p.next();
-        assert!(p.at_eof());
+        let mut p = Parser::from("hello\n\nworld");
+        p.with_eof(StopCondition::Terminator, |p| {
+            assert!(!p.at_eof());
+            p.next();
+            assert!(p.at_eof());
+        });
     }
 
     #[test]
     fn eof_guard_pops_on_drop() {
-        let p = Parser::from("hello\n\nworld");
-        {
-            let _g = p.push_eof(StopCondition::Terminator);
+        let mut p = Parser::from("hello\n\nworld");
+        p.with_eof(StopCondition::Terminator, |p| {
             p.next();
             assert!(p.at_eof());
-        }
+        });
         assert!(!p.at_eof());
     }
 
     #[test]
     fn nested_guards_pop_in_order() {
-        let p = Parser::from("hello\n\nworld");
-        let _outer = p.push_eof(StopCondition::Terminator);
-        p.next();
-        assert!(p.at_eof());
-        {
-            let _inner = p.push_eof(StopCondition::HighlightEnd);
+        let mut p = Parser::from("hello\n\nworld");
+        p.with_eof(StopCondition::Terminator, |p| {
+            p.next();
             assert!(p.at_eof());
-        }
-        assert!(p.at_eof());
+            p.with_eof(StopCondition::HighlightEnd, |p| {
+                assert!(p.at_eof());
+            });
+            assert!(p.at_eof());
+        });
     }
 }
