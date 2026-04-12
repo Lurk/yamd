@@ -28,13 +28,22 @@ mod title;
 mod to_yamd;
 pub use to_yamd::to_yamd;
 
+/// Text content extracted from the source input.
+///
+/// `Content` provides zero-copy access to source text when possible. Use [`Span`](Content::Span)
+/// when the text maps to a contiguous byte range in the source. Use
+/// [`Materialized`](Content::Materialized) when the text was assembled from non-contiguous tokens
+/// (e.g., after escape processing removed backslashes).
 #[derive(Debug, PartialEq)]
 pub enum Content {
+    /// A contiguous byte range in the source string. Avoids allocation by referencing the original input directly.
     Span(Range<usize>),
+    /// An owned string for text assembled from non-contiguous tokens.
     Materialized(String),
 }
 
 impl Content {
+    /// Returns the text this content represents, borrowing from `source` for [`Span`](Content::Span) variants.
     pub fn as_str<'a>(&'a self, source: &'a str) -> &'a str {
         match self {
             Content::Span(range) => {
@@ -48,10 +57,12 @@ impl Content {
         }
     }
 
+    /// Returns an owned copy of the text this content represents.
     pub fn to_string(&self, source: &str) -> String {
         self.as_str(source).to_owned()
     }
 
+    /// Returns `true` if this content represents an empty string.
     pub fn is_empty(&self) -> bool {
         match self {
             Content::Span(range) => range.is_empty(),
@@ -59,6 +70,7 @@ impl Content {
         }
     }
 
+    /// Builds `Content` from a token slice. Produces a [`Span`](Content::Span) when tokens are contiguous in `source`, or [`Materialized`](Content::Materialized) when gaps exist (e.g., escape characters were removed).
     pub fn from_tokens(tokens: &[Token], source: &str) -> Self {
         if tokens.is_empty() {
             return Content::Span(0..0);
@@ -107,6 +119,10 @@ impl From<String> for Content {
     }
 }
 
+/// Identifies which AST node type an [`Op`] refers to.
+///
+/// Used in [`OpKind::Start`] and [`OpKind::End`] to mark the boundaries of nested structures
+/// in the flat operation stream.
 #[derive(Debug, PartialEq)]
 pub enum Node {
     Anchor,
@@ -135,13 +151,29 @@ pub enum Node {
     UnorderedList,
 }
 
+/// Describes the role of an [`Op`] in the operation stream.
+///
+/// The operation stream represents nested document structure as a flat sequence using
+/// Start/End pairs with Value nodes for leaf content:
+///
+/// ```text
+/// Start(Paragraph) -> Value("hello ") -> Start(Bold) -> Value("world") -> End(Bold) -> End(Paragraph)
+/// ```
 #[derive(Debug, PartialEq)]
 pub enum OpKind {
+    /// Opens a new node. Everything until the matching [`End`](OpKind::End) is a child.
     Start(Node),
+    /// Closes the most recently opened node of this type.
     End(Node),
+    /// Leaf content belonging to the innermost open node.
     Value,
 }
 
+/// A single operation in the intermediate representation between lexer tokens and the final
+/// [`Yamd`](crate::nodes::Yamd) AST.
+///
+/// The parser produces a `Vec<Op>` where Start/End pairs encode nesting and Value ops carry
+/// text content. [`to_yamd`] converts this flat stream into the tree-shaped AST.
 #[derive(Debug, PartialEq)]
 pub struct Op {
     pub kind: OpKind,
@@ -149,6 +181,7 @@ pub struct Op {
 }
 
 impl Op {
+    /// Creates a [`Value`](OpKind::Value) operation with the given content.
     pub fn new_value<T: Into<Content>>(tokens: T) -> Self {
         Self {
             kind: OpKind::Value,
@@ -156,6 +189,7 @@ impl Op {
         }
     }
 
+    /// Creates a [`Start`](OpKind::Start) operation for the given node type.
     pub fn new_start<T: Into<Content>>(node: Node, tokens: T) -> Self {
         Self {
             kind: OpKind::Start(node),
@@ -163,6 +197,7 @@ impl Op {
         }
     }
 
+    /// Creates an [`End`](OpKind::End) operation for the given node type.
     pub fn new_end<T: Into<Content>>(node: Node, tokens: T) -> Self {
         Self {
             kind: OpKind::End(node),
@@ -171,6 +206,16 @@ impl Op {
     }
 }
 
+/// Parses markdown source text into a flat operation stream.
+///
+/// This is the entry point of the op-based parser. It tokenizes the input via the
+/// [`Lexer`](crate::lexer::Lexer), then runs the metadata and document parsers to produce
+/// a sequence of [`Op`]s. Use [`to_yamd`] to convert the result into the final AST.
+///
+/// ```
+/// let ops = yamd::parse("# hello\n\nworld");
+/// assert!(!ops.is_empty());
+/// ```
 pub fn parse(input: &str) -> Vec<Op> {
     let mut parser = Parser::from(input);
     metadata::metadata(&mut parser);

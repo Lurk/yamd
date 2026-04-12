@@ -95,27 +95,66 @@ enum Frame {
 impl Frame {
     fn from_node(node: &Node) -> Self {
         match node {
-            Node::Document => Frame::Document { children: Vec::new() },
+            Node::Document => Frame::Document {
+                children: Vec::new(),
+            },
             Node::Paragraph => Frame::Paragraph { body: Vec::new() },
             Node::Bold => Frame::Bold { body: Vec::new() },
-            Node::Italic => Frame::Italic { text: String::new() },
-            Node::Strikethrough => Frame::Strikethrough { text: String::new() },
-            Node::CodeSpan => Frame::CodeSpan { text: String::new() },
-            Node::Emphasis => Frame::Emphasis { text: String::new() },
-            Node::Anchor => Frame::Anchor { text: String::new(), url: String::new() },
-            Node::Title => Frame::Title { text: String::new() },
-            Node::Destination => Frame::Destination { text: String::new() },
-            Node::Image => Frame::Image { alt: String::new(), src: String::new() },
+            Node::Italic => Frame::Italic {
+                text: String::new(),
+            },
+            Node::Strikethrough => Frame::Strikethrough {
+                text: String::new(),
+            },
+            Node::CodeSpan => Frame::CodeSpan {
+                text: String::new(),
+            },
+            Node::Emphasis => Frame::Emphasis {
+                text: String::new(),
+            },
+            Node::Anchor => Frame::Anchor {
+                text: String::new(),
+                url: String::new(),
+            },
+            Node::Title => Frame::Title {
+                text: String::new(),
+            },
+            Node::Destination => Frame::Destination {
+                text: String::new(),
+            },
+            Node::Image => Frame::Image {
+                alt: String::new(),
+                src: String::new(),
+            },
             Node::Images => Frame::Images { images: Vec::new() },
-            Node::Code => Frame::Code { lang: String::new(), code: String::new() },
-            Node::Modifier => Frame::Modifier { text: String::new() },
+            Node::Code => Frame::Code {
+                lang: String::new(),
+                code: String::new(),
+            },
+            Node::Modifier => Frame::Modifier {
+                text: String::new(),
+            },
             Node::Embed => Frame::Embed { values: Vec::new() },
             Node::ThematicBreak => Frame::ThematicBreak,
-            Node::Highlight => Frame::Highlight { title: None, icon: None, paragraphs: Vec::new() },
-            Node::Icon => Frame::Icon { text: String::new() },
-            Node::Collapsible => Frame::Collapsible { title: String::new(), body: Vec::new() },
-            Node::ListItem => Frame::ListItem { text: Vec::new(), nested_list: None },
-            Node::Metadata => Frame::Metadata { text: String::new() },
+            Node::Highlight => Frame::Highlight {
+                title: None,
+                icon: None,
+                paragraphs: Vec::new(),
+            },
+            Node::Icon => Frame::Icon {
+                text: String::new(),
+            },
+            Node::Collapsible => Frame::Collapsible {
+                title: String::new(),
+                body: Vec::new(),
+            },
+            Node::ListItem => Frame::ListItem {
+                text: Vec::new(),
+                nested_list: None,
+            },
+            Node::Metadata => Frame::Metadata {
+                text: String::new(),
+            },
             Node::Heading | Node::UnorderedList | Node::OrderedList => {
                 unreachable!("use dedicated push logic for {node:?}")
             }
@@ -130,6 +169,18 @@ fn count_list_depth(stack: &[Frame]) -> usize {
         .count()
 }
 
+/// Converts an operation stream into the final [`Yamd`] AST.
+///
+/// Takes the `ops` produced by [`parse`](crate::parse) and the original `source` text.
+/// Walks the operation stream using a stack of frames — each [`OpKind::Start`] pushes a frame,
+/// each [`OpKind::End`] pops it and folds the result into the parent.
+///
+/// ```
+/// let source = "# hello\n\nworld";
+/// let ops = yamd::parse(source);
+/// let yamd = yamd::to_yamd(&ops, source);
+/// assert_eq!(yamd.body.len(), 2);
+/// ```
 pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
     let mut stack: Vec<Frame> = vec![Frame::Yamd {
         metadata: None,

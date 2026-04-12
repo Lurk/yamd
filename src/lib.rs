@@ -4,6 +4,21 @@
 //!
 //! For formatting check [`YAMD`](nodes::Yamd) struct documentation.
 //!
+//! # Quick start
+//!
+//! ```rust
+//! use yamd::deserialize;
+//!
+//! let input = "# Hello\n\nA paragraph with **bold** text.";
+//! let yamd = deserialize(input);
+//!
+//! // Access the AST
+//! assert_eq!(yamd.body.len(), 2);
+//!
+//! // Round-trip back to markdown
+//! assert_eq!(yamd.to_string(), input);
+//! ```
+//!
 //! # Reasoning
 //!
 //! Simplified set of rules allows to have simpler, more efficient, parser and renderer.
