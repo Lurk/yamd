@@ -1,5 +1,8 @@
 use std::ops::Range;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 use crate::lexer::Token;
 pub use crate::op::parser::Parser;
 
@@ -35,6 +38,8 @@ pub use to_yamd::to_yamd;
 /// [`Materialized`](Content::Materialized) when the text was assembled from non-contiguous tokens
 /// (e.g., after escape processing removed backslashes).
 #[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(tag = "type", content = "value"))]
 pub enum Content {
     /// A contiguous byte range in the source string. Avoids allocation by referencing the original input directly.
     Span(Range<usize>),
@@ -124,6 +129,7 @@ impl From<String> for Content {
 /// Used in [`OpKind::Start`] and [`OpKind::End`] to mark the boundaries of nested structures
 /// in the flat operation stream.
 #[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Node {
     Anchor,
     Bold,
@@ -160,6 +166,8 @@ pub enum Node {
 /// Start(Paragraph) -> Value("hello ") -> Start(Bold) -> Value("world") -> End(Bold) -> End(Paragraph)
 /// ```
 #[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(tag = "type", content = "value"))]
 pub enum OpKind {
     /// Opens a new node. Everything until the matching [`End`](OpKind::End) is a child.
     Start(Node),
@@ -175,6 +183,7 @@ pub enum OpKind {
 /// The parser produces a `Vec<Op>` where Start/End pairs encode nesting and Value ops carry
 /// text content. [`to_yamd`] converts this flat stream into the tree-shaped AST.
 #[derive(Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Op {
     pub kind: OpKind,
     pub content: Content,
