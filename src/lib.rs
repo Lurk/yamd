@@ -4,6 +4,21 @@
 //!
 //! For formatting check [`YAMD`](nodes::Yamd) struct documentation.
 //!
+//! # Quick start
+//!
+//! ```rust
+//! use yamd::deserialize;
+//!
+//! let input = "# Hello\n\nA paragraph with **bold** text.";
+//! let yamd = deserialize(input);
+//!
+//! // Access the AST
+//! assert_eq!(yamd.body.len(), 2);
+//!
+//! // Round-trip back to markdown
+//! assert_eq!(yamd.to_string(), input);
+//! ```
+//!
 //! # Reasoning
 //!
 //! Simplified set of rules allows to have simpler, more efficient, parser and renderer.
@@ -60,11 +75,12 @@
 #[deny(missing_docs, rustdoc::broken_intra_doc_links)]
 pub mod lexer;
 pub mod nodes;
-mod parser;
+pub mod op;
 
 #[doc(inline)]
 pub use nodes::Yamd;
-use parser::{yamd, Parser};
+pub use op::parse;
+pub use op::to_yamd;
 
 /// Deserialize a string into a Yamd struct
 /// # Example
@@ -73,9 +89,9 @@ use parser::{yamd, Parser};
 /// let input = "# header";
 /// let yamd = deserialize(input);
 /// ```
-pub fn deserialize(str: &str) -> Yamd {
-    let mut p = Parser::new(str);
-    yamd(&mut p, |_| false)
+pub fn deserialize(input: &str) -> Yamd {
+    let ops = op::parse(input);
+    op::to_yamd(&ops, input)
 }
 
 #[cfg(test)]

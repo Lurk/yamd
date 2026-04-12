@@ -5,6 +5,20 @@ use serde::{Deserialize, Serialize};
 
 use super::{List, ParagraphNodes};
 
+/// # ListItem
+///
+/// A single item in a [`List`]. Contains inline text and an optional nested [`List`].
+///
+/// ```text
+/// - Item text
+///  - Nested item
+/// ```
+///
+/// HTML equivalent:
+///
+/// ```html
+/// <ul><li>Item text<ul><li>Nested item</li></ul></li><ul>
+/// ```
 #[derive(Debug, PartialEq, Clone, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ListItem {

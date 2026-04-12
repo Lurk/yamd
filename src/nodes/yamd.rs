@@ -11,7 +11,7 @@ use super::{
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(tag = "type", content = "value"))]
 pub enum YamdNodes {
-    Pargargaph(Paragraph),
+    Paragraph(Paragraph),
     Heading(Heading),
     Image(Image),
     Images(Images),
@@ -25,7 +25,7 @@ pub enum YamdNodes {
 
 impl From<Paragraph> for YamdNodes {
     fn from(value: Paragraph) -> Self {
-        YamdNodes::Pargargaph(value)
+        YamdNodes::Paragraph(value)
     }
 }
 
@@ -86,7 +86,7 @@ impl From<Collapsible> for YamdNodes {
 impl Display for YamdNodes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            YamdNodes::Pargargaph(node) => write!(f, "{}", node),
+            YamdNodes::Paragraph(node) => write!(f, "{}", node),
             YamdNodes::Heading(node) => write!(f, "{}", node),
             YamdNodes::Image(node) => write!(f, "{}", node),
             YamdNodes::Images(node) => write!(f, "{}", node),
@@ -356,7 +356,7 @@ mod tests {
 
     #[test]
     fn paragraph_node() {
-        let node = YamdNodes::Pargargaph(Paragraph::new(vec!["Paragraph".to_string().into()]));
+        let node = YamdNodes::Paragraph(Paragraph::new(vec!["Paragraph".to_string().into()]));
 
         assert_eq!(node.to_string(), "Paragraph");
     }
