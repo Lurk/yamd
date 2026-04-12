@@ -500,4 +500,58 @@ end"#;
         let content = Content::from_tokens(&tokens, source);
         assert_eq!(content, Content::Span(0..5));
     }
+
+    #[test]
+    fn content_empty_span_as_str() {
+        let content = Content::Span(0..0);
+        assert_eq!(content.as_str("anything"), "");
+    }
+
+    #[test]
+    fn content_is_empty() {
+        assert!(Content::Span(0..0).is_empty());
+        assert!(!Content::Span(0..5).is_empty());
+        assert!(Content::Materialized(String::new()).is_empty());
+        assert!(!Content::Materialized(String::from("hi")).is_empty());
+    }
+
+    #[test]
+    fn content_from_empty_tokens() {
+        let content = Content::from_tokens(&[], "source");
+        assert_eq!(content, Content::Span(0..0));
+    }
+
+    #[test]
+    fn content_from_token_slice() {
+        let tokens = vec![Token::new(TokenKind::Literal, 0..5, Position::default())];
+        let content = Content::from(tokens.as_slice());
+        assert_eq!(content, Content::Span(0..5));
+    }
+
+    #[test]
+    fn content_from_empty_token_slice() {
+        let empty: &[Token] = &[];
+        let content = Content::from(empty);
+        assert_eq!(content, Content::Span(0..0));
+    }
+
+    #[test]
+    fn content_from_token_array() {
+        let tokens = [Token::new(TokenKind::Literal, 0..3, Position::default())];
+        let content = Content::from(&tokens);
+        assert_eq!(content, Content::Span(0..3));
+    }
+
+    #[test]
+    fn content_from_token_vec() {
+        let tokens = vec![Token::new(TokenKind::Literal, 0..5, Position::default())];
+        let content = Content::from(tokens);
+        assert_eq!(content, Content::Span(0..5));
+    }
+
+    #[test]
+    fn content_from_string() {
+        let content = Content::from(String::from("hello"));
+        assert_eq!(content, Content::Materialized(String::from("hello")));
+    }
 }

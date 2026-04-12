@@ -481,6 +481,41 @@ mod tests {
     }
 
     #[test]
+    fn parser_len_is_empty_is_eof() {
+        let p = Parser::from("");
+        assert!(p.is_empty());
+        assert_eq!(p.len(), 0);
+        assert!(p.is_eof());
+
+        let p = Parser::from("hello");
+        assert!(!p.is_empty());
+        assert!(p.len() > 0);
+        assert!(!p.is_eof());
+    }
+
+    #[test]
+    fn advance_returns_position_and_none_at_eof() {
+        let mut p = Parser::from("a");
+        assert_eq!(p.advance(), Some(0));
+        assert_eq!(p.advance(), None);
+        assert!(p.is_eof());
+    }
+
+    #[test]
+    fn slice_returns_tokens() {
+        let p = Parser::from("hello world");
+        let slice = p.slice(0..1);
+        assert_eq!(slice.len(), 1);
+        assert_eq!(slice[0].kind, TokenKind::Literal);
+    }
+
+    #[test]
+    fn list_kind_node() {
+        assert_eq!(ListKind::Unordered.node(), Node::UnorderedList);
+        assert_eq!(ListKind::Ordered.node(), Node::OrderedList);
+    }
+
+    #[test]
     fn nested_guards_pop_in_order() {
         let mut p = Parser::from("hello\n\nworld");
         p.with_eof(StopCondition::Terminator, |p| {

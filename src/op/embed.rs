@@ -103,6 +103,14 @@ mod tests {
     }
 
     #[test]
+    fn closing_braces_not_at_block_boundary() {
+        let mut p: Parser = "{{happy|path}}extra".into();
+        assert!(!embed(&mut p));
+        assert!(p.ops.is_empty());
+        assert_eq!(p.pos, 0);
+    }
+
+    #[test]
     fn no_pipe() {
         let mut p: Parser = "{{happy}}".into();
         assert!(!embed(&mut p));

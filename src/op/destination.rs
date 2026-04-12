@@ -58,3 +58,30 @@ pub fn destination(p: &mut Parser) -> bool {
     p.ops.push(Op::new_end(Node::Destination, end_content));
     true
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::op::{destination::destination, parser::Parser};
+
+    #[test]
+    fn happy_path() {
+        let mut p: Parser = "(url)".into();
+        assert!(destination(&mut p));
+        assert_eq!(p.ops.len(), 3);
+    }
+
+    #[test]
+    fn unclosed_paren() {
+        let mut p: Parser = "(url".into();
+        assert!(!destination(&mut p));
+        assert!(p.ops.is_empty());
+        assert_eq!(p.pos, 0);
+    }
+
+    #[test]
+    fn nested_parens() {
+        let mut p: Parser = "(a(b)c)".into();
+        assert!(destination(&mut p));
+        assert_eq!(p.ops.len(), 3);
+    }
+}

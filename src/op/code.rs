@@ -119,6 +119,14 @@ mod tests {
     }
 
     #[test]
+    fn closing_backticks_not_at_block_boundary() {
+        let mut p: Parser = "```\ncode\n```extra".into();
+        assert!(!code(&mut p));
+        assert!(p.ops.is_empty());
+        assert_eq!(p.pos, 0);
+    }
+
+    #[test]
     fn terminator_in_the_middle_and_do_not_have_closing_token() {
         let mut p: Parser = "```\nprintln!(\"hello\");\n\n\n``".into();
         assert!(!code(&mut p));

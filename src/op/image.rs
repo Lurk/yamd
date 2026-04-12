@@ -46,3 +46,24 @@ pub fn image(p: &mut Parser) -> bool {
     p.ops.truncate(snap);
     false
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::op::{image::image, parser::Parser};
+
+    #[test]
+    fn missing_title() {
+        let mut p: Parser = "!not_a_bracket".into();
+        assert!(!image(&mut p));
+        assert!(p.ops.is_empty());
+        assert_eq!(p.pos, 0);
+    }
+
+    #[test]
+    fn missing_destination() {
+        let mut p: Parser = "![title]no_paren".into();
+        assert!(!image(&mut p));
+        assert!(p.ops.is_empty());
+        assert_eq!(p.pos, 0);
+    }
+}

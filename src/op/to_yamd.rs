@@ -899,6 +899,113 @@ end"#;
     }
 
     #[test]
+    fn collapsible_with_body() {
+        let input = "{% title\n\nparagraph text\n\n%}";
+        let ops = parse(input);
+        let result = to_yamd(&ops, input);
+        assert_eq!(
+            result,
+            Yamd::new(
+                None,
+                vec![
+                    Collapsible::new(
+                        "title",
+                        vec![Paragraph::new(vec![String::from("paragraph text").into()]).into()]
+                    )
+                    .into()
+                ]
+            )
+        );
+    }
+
+    #[test]
+    fn ordered_list_nested() {
+        let input = "+ one\n + two";
+        let ops = parse(input);
+        let result = to_yamd(&ops, input);
+        assert_eq!(
+            result,
+            Yamd::new(
+                None,
+                vec![
+                    List::new(
+                        ListTypes::Ordered,
+                        0,
+                        vec![ListItem::new(
+                            vec![String::from("one").into()],
+                            Some(List::new(
+                                ListTypes::Ordered,
+                                1,
+                                vec![ListItem::new(vec![String::from("two").into()], None)]
+                            ))
+                        )]
+                    )
+                    .into()
+                ]
+            )
+        );
+    }
+
+    #[test]
+    fn strikethrough_in_bold() {
+        let input = "**~~text~~**";
+        let ops = parse(input);
+        let result = to_yamd(&ops, input);
+        assert_eq!(
+            result,
+            Yamd::new(
+                None,
+                vec![
+                    Paragraph::new(vec![ParagraphNodes::Bold(Bold::new(vec![
+                        BoldNodes::Strikethrough(Strikethrough::new("text"))
+                    ]))])
+                    .into()
+                ]
+            )
+        );
+    }
+
+    #[test]
+    fn italic_in_bold() {
+        let input = "**_text_**";
+        let ops = parse(input);
+        let result = to_yamd(&ops, input);
+        assert_eq!(
+            result,
+            Yamd::new(
+                None,
+                vec![
+                    Paragraph::new(vec![ParagraphNodes::Bold(Bold::new(vec![
+                        BoldNodes::Italic(Italic::new("text"))
+                    ]))])
+                    .into()
+                ]
+            )
+        );
+    }
+
+    #[test]
+    fn highlight_without_icon() {
+        let input = "!! Title\ntext\n!!";
+        let ops = parse(input);
+        let result = to_yamd(&ops, input);
+        assert_eq!(
+            result,
+            Yamd::new(
+                None,
+                vec![
+                    Highlight::new(
+                        Some("Title"),
+                        None::<&str>,
+                        vec![Paragraph::new(vec![String::from("text").into()])]
+                    )
+                    .into()
+                ]
+            )
+        );
+    }
+
+    #[test]
     fn empty_input() {
         let input = "";
         let ops = parse(input);

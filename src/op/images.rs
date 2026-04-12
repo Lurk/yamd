@@ -78,6 +78,14 @@ mod tests {
     }
 
     #[test]
+    fn no_images_at_all() {
+        let mut p = "not an image".into();
+        assert!(!images(&mut p));
+        assert!(p.ops.is_empty());
+        assert_eq!(p.pos, 0);
+    }
+
+    #[test]
     fn next_token_can_be_only_terminator() {
         let mut p = "![a](u)\n![a](u)fasdf".into();
         assert!(!images(&mut p));
