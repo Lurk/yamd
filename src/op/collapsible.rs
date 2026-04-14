@@ -168,4 +168,27 @@ mod tests {
             ))
         );
     }
+
+    #[test]
+    fn has_embed() {
+        let mut p = "{% Title\n{{foo|bar}}\n%}".into();
+        assert!(collapsible(&mut p));
+        assert_eq!(
+            p.ops,
+            vec![
+                Op::new_start(Node::Collapsible, p.span(0..2)), // {%
+                Op::new_start(Node::Modifier, Content::Span(0..0)), //
+                Op::new_value(p.span(2..3)),                    // Title
+                Op::new_end(Node::Modifier, p.span(3..4)),      // \n
+                Op::new_start(Node::Document, Content::Span(0..0)), //
+                Op::new_start(Node::Embed, p.span(4..5)),       // {{
+                Op::new_value(p.span(5..6)),                    // foo
+                Op::new_value(p.span(6..7)),                    // |
+                Op::new_value(p.span(7..8)),                    // bar
+                Op::new_end(Node::Embed, p.span(8..10)),        // }}\n
+                Op::new_end(Node::Document, Content::Span(0..0)),
+                Op::new_end(Node::Collapsible, p.span(10..11)), // %}
+            ]
+        );
+    }
 }

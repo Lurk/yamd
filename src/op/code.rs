@@ -30,17 +30,21 @@ pub fn code(p: &mut Parser) -> bool {
         modifier(p);
     }
 
-    let Some((body_range, end_range)) = p.advance_until(is_backtick3) else {
+    let Some((body_range, close_range)) = p.advance_until(is_backtick3) else {
         p.pos = start_pos;
         p.ops.truncate(snap);
         return false;
     };
 
-    if !p.at_block_boundary() {
+    let end_range = if let Some(eol_range) = p.eat(is_eol) {
+        close_range.start..eol_range.end
+    } else if p.at_block_boundary() {
+        close_range
+    } else {
         p.pos = start_pos;
         p.ops.truncate(snap);
         return false;
-    }
+    };
 
     let body_content = p.span(body_range);
     let end_content = p.span(end_range);
@@ -116,6 +120,21 @@ mod tests {
                 &Token::new(TokenKind::Backtick, 0..3, Position::default()),
             ))
         );
+    }
+
+    #[test]
+    fn trailing_eol_consumed() {
+        let mut p: Parser = "```\ncode\n```\n".into();
+        assert!(code(&mut p));
+        assert_eq!(
+            p.ops,
+            vec![
+                Op::new_start(Node::Code, p.span(0..2)),
+                Op::new_value(p.span(2..4)),
+                Op::new_end(Node::Code, p.span(4..6)),
+            ]
+        );
+        assert!(p.at_eof());
     }
 
     #[test]

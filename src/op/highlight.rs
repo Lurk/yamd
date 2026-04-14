@@ -81,7 +81,12 @@ pub fn highlight(p: &mut Parser) -> bool {
     while !p.at_eof() {
         let before = p.pos;
 
-        if let Some(end_range) = p.eat(is_two_bangs) {
+        if let Some(close_range) = p.eat(is_two_bangs) {
+            let end_range = if let Some(eol_range) = p.eat(is_eol) {
+                close_range.start..eol_range.end
+            } else {
+                close_range
+            };
             let end_content = p.span(end_range);
             p.ops.push(Op::new_end(Node::Highlight, end_content));
             return true;
