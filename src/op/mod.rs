@@ -75,7 +75,8 @@ impl Content {
         }
     }
 
-    /// Builds `Content` from a token slice. Produces a [`Span`](Content::Span) when tokens are contiguous in `source`, or [`Materialized`](Content::Materialized) when gaps exist (e.g., escape characters were removed).
+    /// Builds `Content` from a token slice. Produces a [`Span`](Content::Span) when tokens are contiguous in `source`,
+    /// or [`Materialized`](Content::Materialized) when gaps exist (e.g., escape characters were removed).
     pub fn from_tokens(tokens: &[Token], source: &str) -> Self {
         if tokens.is_empty() {
             return Content::Span(0..0);
