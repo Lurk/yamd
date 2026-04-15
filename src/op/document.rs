@@ -81,48 +81,95 @@ mod tests {
     use super::*;
     use crate::op::OpKind;
 
-    /// Verifies that every block element listed in [`block_fixture`] consumes its
-    /// trailing EOL (or stops at a block boundary) so that the next element does not
-    /// inherit a stray newline.
-    ///
-    /// If this test fails for a new block type, the parser for that block needs to
-    /// eat the trailing EOL before returning success — see `code.rs` or `embed.rs`
-    /// for the canonical pattern.
     #[test]
-    fn block_elements_consume_trailing_eol() {
-        let nodes_with_fixtures = [Node::Code, Node::Collapsible, Node::Embed, Node::Highlight];
+    fn code_block_consumes_trailing_eol() {
+        let input = "```\ncode\n```\nparagraph_text";
+        let mut p: Parser = input.into();
+        document(&mut p);
+        assert_eq!(p.ops.len(), 8);
+        assert_eq!(p.ops[0].kind, OpKind::Start(Node::Document));
+        assert_eq!(p.ops[1].kind, OpKind::Start(Node::Code));
+        assert_eq!(p.ops[2].kind, OpKind::Value);
+        assert_eq!(p.ops[3].kind, OpKind::End(Node::Code));
+        assert_eq!(p.ops[4].kind, OpKind::Start(Node::Paragraph));
+        assert_eq!(p.ops[5].kind, OpKind::Value);
+        assert_eq!(p.ops[5].content.as_str(input), "paragraph_text");
+        assert_eq!(p.ops[6].kind, OpKind::End(Node::Paragraph));
+        assert_eq!(p.ops[7].kind, OpKind::End(Node::Document));
+    }
 
-        for node in &nodes_with_fixtures {
-            let fixture = block_fixture(node).expect("node listed in test must have a fixture");
+    #[test]
+    fn collapsible_block_consumes_trailing_eol() {
+        let input = "{% Title\ntext\n%}\nparagraph_text";
+        let mut p: Parser = input.into();
+        document(&mut p);
+        assert_eq!(p.ops.len(), 15);
+        assert_eq!(p.ops[0].kind, OpKind::Start(Node::Document));
+        assert_eq!(p.ops[1].kind, OpKind::Start(Node::Collapsible));
+        assert_eq!(p.ops[2].kind, OpKind::Start(Node::Modifier));
+        assert_eq!(p.ops[3].kind, OpKind::Value);
+        assert_eq!(p.ops[3].content.as_str(input), "Title");
+        assert_eq!(p.ops[4].kind, OpKind::End(Node::Modifier));
+        assert_eq!(p.ops[5].kind, OpKind::Start(Node::Document));
+        assert_eq!(p.ops[6].kind, OpKind::Start(Node::Paragraph));
+        assert_eq!(p.ops[7].kind, OpKind::Value);
+        assert_eq!(p.ops[8].kind, OpKind::End(Node::Paragraph));
+        assert_eq!(p.ops[9].kind, OpKind::End(Node::Document));
+        assert_eq!(p.ops[10].kind, OpKind::End(Node::Collapsible));
+        assert_eq!(p.ops[11].kind, OpKind::Start(Node::Paragraph));
+        assert_eq!(p.ops[12].kind, OpKind::Value);
+        assert_eq!(p.ops[12].content.as_str(input), "paragraph_text");
+        assert_eq!(p.ops[13].kind, OpKind::End(Node::Paragraph));
+        assert_eq!(p.ops[14].kind, OpKind::End(Node::Document));
+    }
 
-            let input = format!("{fixture}\nparagraph_text");
-            let mut p: Parser = input.as_str().into();
-            document(&mut p);
+    #[test]
+    fn embed_block_consumes_trailing_eol() {
+        let input = "{{a|b}}\nparagraph_text";
+        let mut p: Parser = input.into();
+        document(&mut p);
+        assert_eq!(p.ops.len(), 10);
+        assert_eq!(p.ops[0].kind, OpKind::Start(Node::Document));
+        assert_eq!(p.ops[1].kind, OpKind::Start(Node::Embed));
+        assert_eq!(p.ops[2].kind, OpKind::Value);
+        assert_eq!(p.ops[2].content.as_str(input), "a");
+        assert_eq!(p.ops[3].kind, OpKind::Value);
+        assert_eq!(p.ops[3].content.as_str(input), "|");
+        assert_eq!(p.ops[4].kind, OpKind::Value);
+        assert_eq!(p.ops[4].content.as_str(input), "b");
+        assert_eq!(p.ops[5].kind, OpKind::End(Node::Embed));
+        assert_eq!(p.ops[6].kind, OpKind::Start(Node::Paragraph));
+        assert_eq!(p.ops[7].kind, OpKind::Value);
+        assert_eq!(p.ops[7].content.as_str(input), "paragraph_text");
+        assert_eq!(p.ops[8].kind, OpKind::End(Node::Paragraph));
+        assert_eq!(p.ops[9].kind, OpKind::End(Node::Document));
+    }
 
-            // Find the last Paragraph in the op stream — that's the one after
-            // the block, not one nested inside it (collapsible/highlight contain
-            // inner paragraphs).
-            let last_para_start = p
-                .ops
-                .iter()
-                .rposition(|op| op.kind == OpKind::Start(Node::Paragraph))
-                .expect("expected a trailing paragraph");
-            let mut paragraph_text = String::new();
-            for op in &p.ops[last_para_start + 1..] {
-                match &op.kind {
-                    OpKind::End(Node::Paragraph) => break,
-                    OpKind::Value => {
-                        paragraph_text.push_str(op.content.as_str(input.as_str()));
-                    }
-                    _ => {}
-                }
-            }
+    #[test]
+    fn highlight_block_consumes_trailing_eol() {
+        let input = "!! Title\ntext\n!!\nparagraph_text";
+        let mut p: Parser = input.into();
+        document(&mut p);
+        assert_eq!(p.ops.len(), 13);
+        assert_eq!(p.ops[0].kind, OpKind::Start(Node::Document));
+        assert_eq!(p.ops[1].kind, OpKind::Start(Node::Highlight));
+        assert_eq!(p.ops[2].kind, OpKind::Start(Node::Modifier));
+        assert_eq!(p.ops[3].kind, OpKind::Value);
+        assert_eq!(p.ops[3].content.as_str(input), "Title");
+        assert_eq!(p.ops[4].kind, OpKind::End(Node::Modifier));
+        assert_eq!(p.ops[5].kind, OpKind::Start(Node::Paragraph));
+        assert_eq!(p.ops[6].kind, OpKind::Value);
+        assert_eq!(p.ops[7].kind, OpKind::End(Node::Paragraph));
+        assert_eq!(p.ops[8].kind, OpKind::End(Node::Highlight));
+        assert_eq!(p.ops[9].kind, OpKind::Start(Node::Paragraph));
+        assert_eq!(p.ops[10].kind, OpKind::Value);
+        assert_eq!(p.ops[10].content.as_str(input), "paragraph_text");
+        assert_eq!(p.ops[11].kind, OpKind::End(Node::Paragraph));
+        assert_eq!(p.ops[12].kind, OpKind::End(Node::Document));
+    }
 
-            assert_eq!(
-                paragraph_text, "paragraph_text",
-                "{node:?} block did not consume its trailing EOL — \
-                 the following paragraph inherited a stray newline"
-            );
-        }
+    #[test]
+    fn block_fixture_is_exhaustive() {
+        let _ = block_fixture(&Node::Code);
     }
 }

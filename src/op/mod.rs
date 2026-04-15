@@ -348,47 +348,25 @@ end"#;
     #[test]
     fn document_level_block_sequence() {
         let ops = parse(TEST_CASE);
-
-        let mut block_nodes: Vec<&Node> = vec![];
-        let mut depth: usize = 0;
-        for op in &ops {
-            match &op.kind {
-                OpKind::Start(node) => {
-                    if depth == 1 {
-                        block_nodes.push(node);
-                    }
-                    depth += 1;
-                }
-                OpKind::End(_) => {
-                    depth -= 1;
-                }
-                OpKind::Value => {}
-            }
-        }
-
-        assert_eq!(
-            block_nodes,
-            vec![
-                &Node::Heading,       // # hello
-                &Node::Code,          // ```rust ... ```
-                &Node::Paragraph,     // t**b**
-                &Node::Image,         // ![a](u)
-                &Node::Images,        // ![a](u)\n![a2](u2)
-                &Node::Highlight,     // !! H ... !!
-                &Node::ThematicBreak, // -----
-                &Node::UnorderedList, // - one\n - two
-                &Node::OrderedList,   // + first\n + second
-                &Node::Embed,         // {{youtube|123}}
-                &Node::Embed,         // {{cloudinary_gallery|...}}
-                &Node::Collapsible,   // {% collapsible ... %}
-                &Node::Collapsible,   // {% one more collapsible ... %}
-                &Node::Paragraph,     // + (fallback)
-                &Node::Paragraph,     // - (fallback)
-                &Node::Paragraph,     // ![]( (fallback)
-                &Node::Paragraph,     // ``` (fallback)
-                &Node::Paragraph,     // end (fallback)
-            ]
-        );
+        assert_eq!(ops.len(), 154);
+        assert_eq!(ops[5].kind, OpKind::Start(Node::Heading)); // # hello
+        assert_eq!(ops[9].kind, OpKind::Start(Node::Code)); // ```rust ... ```
+        assert_eq!(ops[16].kind, OpKind::Start(Node::Paragraph)); // t**b**
+        assert_eq!(ops[23].kind, OpKind::Start(Node::Image)); // ![a](u)
+        assert_eq!(ops[32].kind, OpKind::Start(Node::Images)); // ![a](u)\n![a2](u2)
+        assert_eq!(ops[51].kind, OpKind::Start(Node::Highlight)); // !! H ... !!
+        assert_eq!(ops[72].kind, OpKind::Start(Node::ThematicBreak)); // -----
+        assert_eq!(ops[76].kind, OpKind::Start(Node::UnorderedList)); // - one\n - two
+        assert_eq!(ops[91].kind, OpKind::Start(Node::OrderedList)); // + first\n + second
+        assert_eq!(ops[106].kind, OpKind::Start(Node::Embed)); // {{youtube|123}}
+        assert_eq!(ops[112].kind, OpKind::Start(Node::Embed)); // {{cloudinary_gallery|...}}
+        assert_eq!(ops[118].kind, OpKind::Start(Node::Collapsible)); // {% collapsible ... %}
+        assert_eq!(ops[126].kind, OpKind::Start(Node::Collapsible)); // {% one more collapsible ... %}
+        assert_eq!(ops[134].kind, OpKind::Start(Node::Paragraph)); // + (fallback)
+        assert_eq!(ops[138].kind, OpKind::Start(Node::Paragraph)); // - (fallback)
+        assert_eq!(ops[142].kind, OpKind::Start(Node::Paragraph)); // ![]( (fallback)
+        assert_eq!(ops[146].kind, OpKind::Start(Node::Paragraph)); // ``` (fallback)
+        assert_eq!(ops[150].kind, OpKind::Start(Node::Paragraph)); // end (fallback)
     }
 
     #[test]
@@ -416,32 +394,35 @@ end"#;
     fn fallback_paragraphs_have_correct_content() {
         let ops = parse(TEST_CASE);
 
-        let mut fallback_texts: Vec<String> = vec![];
-        let mut i = 0;
-        while i < ops.len() {
-            if ops[i].kind == OpKind::Start(Node::Paragraph)
-                && i + 2 < ops.len()
-                && ops[i + 1].kind == OpKind::Value
-                && ops[i + 2].kind == OpKind::End(Node::Paragraph)
-            {
-                fallback_texts.push(ops[i + 1].content.to_string(TEST_CASE));
-            }
-            i += 1;
-        }
+        // fallback paragraph: +
+        assert_eq!(ops[134].kind, OpKind::Start(Node::Paragraph));
+        assert_eq!(ops[135].kind, OpKind::Value);
+        assert_eq!(ops[135].content.as_str(TEST_CASE), "+");
+        assert_eq!(ops[136].kind, OpKind::End(Node::Paragraph));
 
-        let tail: Vec<&str> = fallback_texts.iter().map(|s| s.as_str()).collect();
-        assert!(
-            tail.contains(&"+"),
-            "should contain '+' fallback paragraph, got: {tail:?}"
-        );
-        assert!(
-            tail.contains(&"-"),
-            "should contain '-' fallback paragraph, got: {tail:?}"
-        );
-        assert!(
-            tail.contains(&"end"),
-            "should contain 'end' fallback paragraph, got: {tail:?}"
-        );
+        // fallback paragraph: -
+        assert_eq!(ops[138].kind, OpKind::Start(Node::Paragraph));
+        assert_eq!(ops[139].kind, OpKind::Value);
+        assert_eq!(ops[139].content.as_str(TEST_CASE), "-");
+        assert_eq!(ops[140].kind, OpKind::End(Node::Paragraph));
+
+        // fallback paragraph: ![](
+        assert_eq!(ops[142].kind, OpKind::Start(Node::Paragraph));
+        assert_eq!(ops[143].kind, OpKind::Value);
+        assert_eq!(ops[143].content.as_str(TEST_CASE), "![](");
+        assert_eq!(ops[144].kind, OpKind::End(Node::Paragraph));
+
+        // fallback paragraph: ```
+        assert_eq!(ops[146].kind, OpKind::Start(Node::Paragraph));
+        assert_eq!(ops[147].kind, OpKind::Value);
+        assert_eq!(ops[147].content.as_str(TEST_CASE), "```");
+        assert_eq!(ops[148].kind, OpKind::End(Node::Paragraph));
+
+        // fallback paragraph: end
+        assert_eq!(ops[150].kind, OpKind::Start(Node::Paragraph));
+        assert_eq!(ops[151].kind, OpKind::Value);
+        assert_eq!(ops[151].content.as_str(TEST_CASE), "end");
+        assert_eq!(ops[152].kind, OpKind::End(Node::Paragraph));
     }
 
     #[test]
@@ -550,8 +531,16 @@ end"#;
     }
 
     #[test]
-    fn content_from_string() {
-        let content = Content::from(String::from("hello"));
-        assert_eq!(content, Content::Materialized(String::from("hello")));
+    fn escape() {
+        assert_eq!(
+            parse("¯\\\\\\_(ツ)\\_/¯"),
+            vec![
+                Op::new_start(Node::Document, Content::Span(0..0)),
+                Op::new_start(Node::Paragraph, Content::Span(0..0)),
+                Op::new_value(Content::Materialized(String::from("¯\\_(ツ)_/¯"))),
+                Op::new_end(Node::Paragraph, Content::Span(0..0)),
+                Op::new_end(Node::Document, Content::Span(0..0))
+            ]
+        );
     }
 }

@@ -295,14 +295,20 @@ impl Parser<'_> {
         None
     }
 
-    /// Converts a token index range into a [`Content::Span`] using the tokens' byte ranges.
+    /// Converts a token index range into [`Content`] using the tokens' byte ranges.
+    /// Returns [`Content::Materialized`] when any token in the range is escaped (has gaps from
+    /// removed backslashes), otherwise returns [`Content::Span`].
     #[inline]
     pub fn span(&self, range: Range<usize>) -> Content {
         if range.is_empty() {
-            Content::Span(0..0)
+            return Content::Span(0..0);
+        }
+        let tokens = &self.tokens[range];
+        if tokens.iter().any(|t| t.escaped) {
+            Content::from_tokens(tokens, self.source)
         } else {
-            let byte_start = self.tokens[range.start].range.start;
-            let byte_end = self.tokens[range.end - 1].range.end;
+            let byte_start = tokens.first().unwrap().range.start;
+            let byte_end = tokens.last().unwrap().range.end;
             Content::Span(byte_start..byte_end)
         }
     }
