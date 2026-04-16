@@ -17,19 +17,15 @@ pub fn paragraph(p: &mut Parser) {
                 let content = p.span(start..pos);
                 p.ops.insert(snap, Op::new_value(content));
             }
-        } else if let Some(pos) = p.advance() {
-            text_start.get_or_insert(pos);
         } else {
-            break;
+            text_start.get_or_insert(p.pos);
+            p.next();
         }
     }
 
     if let Some(start) = text_start {
-        let end = p.pos;
-        if start < end {
-            let content = p.span(start..end);
-            p.ops.push(Op::new_value(content));
-        }
+        let content = p.span(start..p.pos);
+        p.ops.push(Op::new_value(content));
     }
     p.ops
         .push(Op::new_end(Node::Paragraph, Content::Span(0..0)));

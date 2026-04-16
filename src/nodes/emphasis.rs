@@ -21,6 +21,14 @@ use serde::{Deserialize, Serialize};
 /// <em>Emphasis can contain any token
 /// even EOL</em>
 /// ```
+///
+/// # Round-trip invariant
+///
+/// An empty body has no meaningful semantic or visual interpretation. Its
+/// serialization (`**`) collides with the Bold opener and does not round-trip.
+/// Constructing `Emphasis::new("")` is permitted for now but should not be
+/// relied on — a future breaking change is expected to reject empty bodies at
+/// construction.
 #[derive(Debug, PartialEq, Clone, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Emphasis(pub String);
@@ -36,7 +44,10 @@ impl Display for Emphasis {
         write!(
             f,
             "*{}*",
-            self.0.replace("*", "\\*").replace("\n\n", "\\\n\n")
+            self.0
+                .replace("\\", "\\\\")
+                .replace("*", "\\*")
+                .replace("\n\n", "\\\n\n")
         )
     }
 }

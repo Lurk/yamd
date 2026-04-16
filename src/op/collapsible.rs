@@ -44,6 +44,7 @@ pub fn collapsible(p: &mut Parser) -> bool {
         document(p);
     });
 
+    p.eat(|t: &Token| t.kind == TokenKind::Eol);
     let end_range = eat_seq!(p, is_collapsible_end, is_eol).or_else(|| p.eat(is_collapsible_end));
 
     let Some(end_range) = end_range else {
@@ -147,7 +148,7 @@ mod tests {
                 Op::new_end(Node::Modifier, p.span(3..4)),
                 Op::new_start(Node::Document, Content::Span(0..0)),
                 Op::new_start(Node::Heading, p.span(4..6)),
-                Op::new_value(p.span(6..8)),
+                Op::new_value(p.span(6..7)),
                 Op::new_end(Node::Heading, Content::Span(0..0)),
                 Op::new_end(Node::Document, Content::Span(0..0)),
                 Op::new_end(Node::Collapsible, p.span(8..9)),

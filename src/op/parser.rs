@@ -107,7 +107,11 @@ impl StopCondition {
         match self {
             Self::Terminator => token.kind == TokenKind::Terminator,
             Self::CollapsibleEnd => {
-                token.kind == TokenKind::CollapsibleEnd && token.position.column == 0
+                (token.kind == TokenKind::CollapsibleEnd && token.position.column == 0)
+                    || (token.kind == TokenKind::Eol
+                        && parser.tokens.get(parser.pos + 1).is_some_and(|t| {
+                            t.kind == TokenKind::CollapsibleEnd && t.position.column == 0
+                        }))
             }
             Self::HighlightEnd => {
                 token.kind == TokenKind::Bang
@@ -400,6 +404,20 @@ mod tests {
     }
 
     #[test]
+    fn next_at_eof_is_noop() {
+        let mut p = Parser::from("");
+        p.next();
+        assert_eq!(p.pos, 0);
+    }
+
+    #[test]
+    fn flip_to_literal_out_of_range_is_noop() {
+        let mut p = Parser::from("hi");
+        p.flip_to_literal(usize::MAX);
+        assert_eq!(p.pos, 0);
+    }
+
+    #[test]
     fn eat_seq_matches_sequence() {
         let mut p = Parser::from("# hello");
         let result = eat_seq!(p, |t: &Token| t.kind == TokenKind::Hash, |t: &Token| t.kind
@@ -495,7 +513,7 @@ mod tests {
 
         let p = Parser::from("hello");
         assert!(!p.is_empty());
-        assert!(p.len() > 0);
+        assert!(!p.is_empty());
         assert!(!p.is_eof());
     }
 

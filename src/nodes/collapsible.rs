@@ -3,7 +3,7 @@ use std::fmt::Display;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use super::YamdNodes;
+use super::{YamdNodes, paragraph::escape_leading_block_marker};
 
 /// # Collapsible
 ///
@@ -56,10 +56,13 @@ impl Display for Collapsible {
         write!(
             f,
             "{{% {}\n{}\n%}}",
-            self.title,
+            self.title.replace("\\", "\\\\").replace("%}", "\\%}"),
             self.body
                 .iter()
-                .map(|node| node.to_string())
+                .map(|node| match node {
+                    YamdNodes::Paragraph(p) => escape_leading_block_marker(p.to_string()),
+                    other => other.to_string(),
+                })
                 .collect::<Vec<_>>()
                 .join("\n\n")
         )

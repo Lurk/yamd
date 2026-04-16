@@ -140,6 +140,19 @@ mod tests {
     }
 
     #[test]
+    fn empty_heading() {
+        let mut p: Parser = "# ".into();
+        assert!(heading(&mut p));
+        assert_eq!(
+            p.ops,
+            vec![
+                Op::new_start(Node::Heading, p.span(0..2)),
+                Op::new_end(Node::Heading, Content::Span(0..0)),
+            ]
+        );
+    }
+
+    #[test]
     fn new_line_check() {
         let mut p: Parser = "## heading [a](u) text\n ".into();
         assert!(heading(&mut p));

@@ -3,7 +3,7 @@ use std::fmt::Display;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use super::Paragraph;
+use super::{Paragraph, paragraph::escape_leading_block_marker};
 
 /// # Highlight
 ///
@@ -77,11 +77,10 @@ impl Display for Highlight {
         let title = self
             .title
             .as_ref()
-            .map_or("".to_string(), |t| format!(" {}", t));
-        let icon = self
-            .icon
-            .as_ref()
-            .map_or("".to_string(), |i| format!("! {}\n", i));
+            .map_or("".to_string(), |t| format!(" {}", t.replace("\\", "\\\\")));
+        let icon = self.icon.as_ref().map_or("".to_string(), |i| {
+            format!("! {}\n", i.replace("\\", "\\\\"))
+        });
         write!(
             f,
             "!!{}\n{}{}\n!!",
@@ -89,10 +88,9 @@ impl Display for Highlight {
             icon,
             self.body
                 .iter()
-                .map(|paragraph| paragraph.to_string())
+                .map(|p| escape_leading_block_marker(p.to_string().replace("!!", "\\!!")))
                 .collect::<Vec<_>>()
                 .join("\n\n")
-                .replace("!!", "\\!!")
         )
     }
 }

@@ -730,4 +730,9 @@ mod tests {
             ]
         )
     }
+
+    #[test]
+    fn dangling_backslash_at_eof() {
+        assert_eq!(Lexer::new("\\").collect::<Vec<_>>(), vec![]);
+    }
 }

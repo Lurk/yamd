@@ -54,8 +54,15 @@ impl Display for Image {
         write!(
             f,
             "![{}]({})",
-            self.alt.replace("]", "\\]").replace("\n\n", "\\\n\n"),
-            self.src.replace("\n\n", "\\\n\n")
+            self.alt
+                .replace("\\", "\\\\")
+                .replace("]", "\\]")
+                .replace("\n\n", "\\\n\n"),
+            self.src
+                .replace("\\", "\\\\")
+                .replace("(", "\\(")
+                .replace(")", "\\)")
+                .replace("\n\n", "\\\n\n")
         )
     }
 }
@@ -79,7 +86,7 @@ mod tests {
     #[test]
     fn image_with_nested_parentheses() {
         let image = Image::new("alt", "src(with nested)parentheses");
-        assert_eq!(image.to_string(), "![alt](src(with nested)parentheses)");
+        assert_eq!(image.to_string(), "![alt](src\\(with nested\\)parentheses)");
     }
 
     #[test]

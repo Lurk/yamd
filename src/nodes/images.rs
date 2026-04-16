@@ -25,6 +25,15 @@ use super::Image;
 ///     <img src="url" alt="alt"/>
 /// </div>
 /// ```
+///
+/// # Round-trip invariant
+///
+/// A single-element `Images` has no grammatical form distinct from a lone
+/// [`Image`] — both serialize to `![alt](src)`. Constructing
+/// `Images::new(vec![image])` (with fewer than two images) is permitted for
+/// now but will not round-trip (it will parse back as `Image`). A future
+/// breaking change is expected to reject bodies shorter than two at
+/// construction.
 
 #[derive(Debug, PartialEq, Clone, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

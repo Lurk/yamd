@@ -169,7 +169,18 @@ mod tests {
     }
 
     #[test]
-    fn block_fixture_is_exhaustive() {
-        let _ = block_fixture(&Node::Code);
+    fn every_block_fixture_parses_to_its_node() {
+        for node in [Node::Code, Node::Collapsible, Node::Embed, Node::Highlight] {
+            let src =
+                block_fixture(&node).unwrap_or_else(|| panic!("missing fixture for {node:?}"));
+            let mut p: Parser = src.into();
+            document(&mut p);
+            assert!(
+                p.ops
+                    .iter()
+                    .any(|op| matches!(&op.kind, OpKind::Start(n) if n == &node)),
+                "fixture {src:?} did not emit Start({node:?})"
+            );
+        }
     }
 }

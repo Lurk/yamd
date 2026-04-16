@@ -21,6 +21,13 @@ use serde::{Deserialize, Serialize};
 /// <i>Italic can contain any token
 /// even EOL</i>
 /// ```
+///
+/// # Round-trip invariant
+///
+/// An empty body has no meaningful semantic or visual interpretation and its
+/// serialization behavior across inline nodes is inconsistent. Constructing
+/// `Italic::new("")` is permitted for now but should not be relied on — a
+/// future breaking change is expected to reject empty bodies at construction.
 #[derive(Debug, PartialEq, Clone, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Italic(pub String);
@@ -36,7 +43,10 @@ impl Display for Italic {
         write!(
             f,
             "_{}_",
-            self.0.replace("_", "\\_").replace("\n\n", "\\\n\n")
+            self.0
+                .replace("\\", "\\\\")
+                .replace("_", "\\_")
+                .replace("\n\n", "\\\n\n")
         )
     }
 }

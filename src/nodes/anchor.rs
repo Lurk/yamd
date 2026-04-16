@@ -54,10 +54,12 @@ impl Display for Anchor {
             f,
             "[{}]({})",
             self.text
+                .replace("\\", "\\\\")
                 .replace("[", "\\[")
                 .replace("]", "\\]")
                 .replace("\n\n", "\\\n\n"),
             self.url
+                .replace("\\", "\\\\")
                 .replace("(", "\\(")
                 .replace(")", "\\)")
                 .replace("\n\n", "\\\n\n")

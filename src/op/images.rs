@@ -16,18 +16,12 @@ pub fn images(p: &mut Parser) -> bool {
         }
     }
 
-    if count == 1 {
-        return true;
-    } else if count > 1 {
+    if count > 1 {
         p.ops
             .insert(snap, Op::new_start(Node::Images, Content::Span(0..0)));
         p.ops.push(Op::new_end(Node::Images, Content::Span(0..0)));
-        return true;
     }
-
-    p.pos = start;
-    p.ops.truncate(snap);
-    false
+    count > 0
 }
 
 #[cfg(test)]

@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     Code, Collapsible, Embed, Heading, Highlight, Image, Images, List, Paragraph, ThematicBreak,
+    paragraph::escape_leading_block_marker,
 };
 
 #[derive(Debug, PartialEq, Clone, Eq)]
@@ -257,27 +258,29 @@ pub struct Yamd {
 
 impl Yamd {
     pub fn new(metadata: Option<String>, body: Vec<YamdNodes>) -> Self {
+        let metadata = metadata.map(|m| m.trim_matches('\n').to_owned());
         Self { metadata, body }
     }
 }
 
 impl Display for Yamd {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(metadata) = &self.metadata {
-            writeln!(f, "---")?;
-            write!(f, "{}", metadata)?;
-            write!(f, "---\n\n")?;
+        let body = self
+            .body
+            .iter()
+            .map(|node| match node {
+                YamdNodes::Paragraph(p) => escape_leading_block_marker(p.to_string()),
+                other => other.to_string(),
+            })
+            .collect::<Vec<_>>()
+            .join("\n\n");
+        match &self.metadata {
+            Some(metadata) => {
+                let sep = if metadata.ends_with('\n') { "" } else { "\n" };
+                write!(f, "---\n{}{}---\n\n{}", metadata, sep, body)
+            }
+            None => write!(f, "{}", body),
         }
-
-        write!(
-            f,
-            "{}",
-            self.body
-                .iter()
-                .map(|node| node.to_string())
-                .collect::<Vec<_>>()
-                .join("\n\n")
-        )
     }
 }
 
@@ -351,7 +354,7 @@ mod tests {
     fn test_yamd_with_empty_metadata() {
         let yamd = Yamd::new(Some("".to_string()), vec![]);
 
-        assert_eq!(yamd.to_string(), "---\n---\n\n");
+        assert_eq!(yamd.to_string(), "---\n\n---\n\n");
     }
 
     #[test]

@@ -156,6 +156,7 @@ impl Frame {
                 text: String::new(),
             },
             Node::Heading | Node::UnorderedList | Node::OrderedList => {
+                // coverage: these three node kinds are handled by dedicated branches in the Start match; reaching this means a programmer error
                 unreachable!("use dedicated push logic for {node:?}")
             }
         }
@@ -241,6 +242,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                     Frame::Metadata { text: t } => t.push_str(&text),
                     Frame::ThematicBreak => {}
                     Frame::Highlight { .. } | Frame::Document { .. } => {}
+                    // coverage: defensive catchall; every frame that accepts Value is enumerated above
                     _ => {}
                 }
             }
@@ -256,6 +258,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                             Frame::Yamd { body, .. } => {
                                 body.extend(children);
                             }
+                            // coverage: defensive catchall; a Document's parent is always Yamd or Collapsible under the grammar
                             _ => {}
                         }
                     }
@@ -279,19 +282,10 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                                 trim_trailing_newline_from_text(&mut body);
                                 *text = body;
                             }
-                            Frame::Yamd {
-                                body: yamd_body, ..
-                            } => {
-                                yamd_body.push(Paragraph::new(body).into());
-                            }
                             Frame::Document { children } => {
                                 children.push(Paragraph::new(body).into());
                             }
-                            Frame::Collapsible {
-                                body: coll_body, ..
-                            } => {
-                                coll_body.push(Paragraph::new(body).into());
-                            }
+                            // coverage: defensive catchall; a Paragraph's parent is always one of the arms above
                             _ => {}
                         }
                     }
@@ -303,6 +297,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                         match stack.last_mut().expect("stack underflow") {
                             Frame::Paragraph { body } => body.push(italic.into()),
                             Frame::Bold { body } => body.push(italic.into()),
+                            // coverage: defensive catchall; Italic's parent is always Paragraph or Bold
                             _ => {}
                         }
                     }
@@ -311,6 +306,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                         match stack.last_mut().expect("stack underflow") {
                             Frame::Paragraph { body } => body.push(st.into()),
                             Frame::Bold { body } => body.push(st.into()),
+                            // coverage: defensive catchall; Strikethrough's parent is always Paragraph or Bold
                             _ => {}
                         }
                     }
@@ -325,6 +321,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                         match top {
                             Frame::Anchor { text: t, .. } => *t = text,
                             Frame::Image { alt, .. } => *alt = text,
+                            // coverage: defensive catchall; Title's parent is always Anchor or Image
                             _ => {}
                         }
                     }
@@ -333,6 +330,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                         match top {
                             Frame::Anchor { url, .. } => *url = text,
                             Frame::Image { src, .. } => *src = text,
+                            // coverage: defensive catchall; Destination's parent is always Anchor or Image
                             _ => {}
                         }
                     }
@@ -342,6 +340,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                         match top {
                             Frame::Paragraph { body } => body.push(anchor.into()),
                             Frame::Heading { body, .. } => body.push(anchor.into()),
+                            // coverage: defensive catchall; Anchor's parent is always Paragraph or Heading
                             _ => {}
                         }
                     }
@@ -354,11 +353,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                         }
                     }
                     (Node::Images, Frame::Images { images }) => {
-                        if images.len() == 1 {
-                            push_yamd_node(&mut stack, images.into_iter().next().unwrap().into());
-                        } else {
-                            push_yamd_node(&mut stack, Images::new(images).into());
-                        }
+                        push_yamd_node(&mut stack, Images::new(images).into());
                     }
                     (Node::Code, Frame::Code { lang, code }) => {
                         let code = code.trim_end_matches('\n').to_owned();
@@ -370,6 +365,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                             Frame::Code { lang, .. } => *lang = text,
                             Frame::Highlight { title, .. } => *title = Some(text),
                             Frame::Collapsible { title: t, .. } => *t = text,
+                            // coverage: defensive catchall; Modifier's parent is always Code, Highlight, or Collapsible
                             _ => {}
                         }
                     }
@@ -414,6 +410,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                             items.push(item);
                         }
                     }
+                    // coverage: defensive catchall for any (Node, Frame) mismatch; indicates a programmer or parser error
                     _ => {}
                 }
             }
@@ -422,6 +419,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
 
     match stack.pop().expect("stack should have Yamd root") {
         Frame::Yamd { metadata, body } => Yamd::new(metadata, body),
+        // coverage: the root frame is invariantly Yamd; reaching this means stack corruption
         _ => panic!("expected Yamd frame at bottom of stack"),
     }
 }
@@ -443,12 +441,8 @@ fn trim_trailing_newline_from_text(body: &mut Vec<ParagraphNodes>) {
 }
 
 fn push_yamd_node(stack: &mut [Frame], node: YamdNodes) {
-    let top = stack.last_mut().expect("stack underflow");
-    match top {
-        Frame::Yamd { body, .. } => body.push(node),
-        Frame::Document { children } => children.push(node),
-        Frame::Collapsible { body, .. } => body.push(node),
-        _ => {}
+    if let Some(Frame::Document { children }) = stack.last_mut() {
+        children.push(node);
     }
 }
 

@@ -43,11 +43,6 @@ pub fn destination(p: &mut Parser) -> bool {
         return false;
     }
 
-    if p.get(end_pos).is_none() {
-        p.pos = start;
-        return false;
-    }
-
     let start_content = p.span(start_range);
     let body_range = start + 1..end_pos;
     let body_content = p.span(body_range);

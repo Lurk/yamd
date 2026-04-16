@@ -21,6 +21,14 @@ use serde::{Deserialize, Serialize};
 /// <code>anything even EOL
 /// can be it</code>
 /// ```
+///
+/// # Round-trip invariant
+///
+/// An empty body has no meaningful semantic or visual interpretation. The
+/// `Display` impl currently collapses it to the empty string, which means an
+/// empty code span is AST-lossy (disappears on round-trip). Constructing
+/// `CodeSpan::new("")` is permitted for now but should not be relied on — a
+/// future breaking change is expected to reject empty bodies at construction.
 #[derive(Debug, PartialEq, Clone, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CodeSpan(pub String);
@@ -33,10 +41,16 @@ impl CodeSpan {
 
 impl Display for CodeSpan {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.0.is_empty() {
+            return Ok(());
+        }
         write!(
             f,
             "`{}`",
-            self.0.replace("`", "\\`").replace("\n\n", "\\\n\n")
+            self.0
+                .replace("\\", "\\\\")
+                .replace("`", "\\`")
+                .replace("\n\n", "\\\n\n")
         )
     }
 }
