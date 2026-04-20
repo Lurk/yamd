@@ -1,7 +1,11 @@
 use crate::{
-    eat_seq,
     lexer::{Token, TokenKind},
-    op::{Node, Op, Parser, document::document, modifier::modifier, parser::StopCondition},
+    op::{
+        Node, Op, Parser,
+        document::document,
+        modifier::modifier,
+        parser::{StopCondition, eat_seq},
+    },
 };
 
 fn is_collapsible_start(t: &Token) -> bool {

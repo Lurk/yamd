@@ -1,20 +1,11 @@
 use crate::{
-    eat_seq,
     lexer::{Token, TokenKind},
     op::{
         Content, Node, Op,
         paragraph::paragraph,
-        parser::{ListKind, Parser, StopCondition},
+        parser::{ListKind, Parser, StopCondition, eat_seq, is_list_marker},
     },
 };
-
-fn is_list_marker(t: &Token, kind: Option<ListKind>) -> bool {
-    match kind {
-        Some(ListKind::Unordered) => t.kind == TokenKind::Minus && t.range.len() == 1,
-        Some(ListKind::Ordered) => t.kind == TokenKind::Plus && t.range.len() == 1,
-        None => (t.kind == TokenKind::Minus || t.kind == TokenKind::Plus) && t.range.len() == 1,
-    }
-}
 
 fn is_space(t: &Token) -> bool {
     t.kind == TokenKind::Space && t.range.len() == 1

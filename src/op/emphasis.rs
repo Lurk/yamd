@@ -12,7 +12,7 @@ pub fn emphasis(p: &mut Parser) -> bool {
     let Some(start_range) = p.eat(is_star) else {
         return false;
     };
-    let Some((body_range, end_range)) = p.advance_until(is_star) else {
+    let Some((body_range, end_range)) = p.eat_until(is_star) else {
         p.pos = start;
         return false;
     };

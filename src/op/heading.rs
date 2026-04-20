@@ -1,7 +1,6 @@
 use crate::{
-    eat_seq,
     lexer::{Token, TokenKind},
-    op::{Content, Node, Op, Parser, anchor::anchor},
+    op::{Content, Node, Op, Parser, anchor::anchor, parser::eat_seq},
 };
 
 fn is_hash(t: &Token) -> bool {

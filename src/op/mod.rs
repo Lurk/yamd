@@ -4,7 +4,7 @@ use std::ops::Range;
 use serde::{Deserialize, Serialize};
 
 use crate::lexer::Token;
-pub use crate::op::parser::Parser;
+pub(crate) use crate::op::parser::Parser;
 
 mod anchor;
 mod bold;
@@ -24,7 +24,7 @@ mod list;
 mod metadata;
 mod modifier;
 mod paragraph;
-pub mod parser;
+mod parser;
 mod strikethrough;
 mod thematic_break;
 mod title;

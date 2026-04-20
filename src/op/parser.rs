@@ -5,7 +5,7 @@ use crate::op::{Content, Node, Op};
 
 /// Distinguishes unordered (`-`) from ordered (`+`) lists during parsing.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum ListKind {
+pub(crate) enum ListKind {
     /// Unordered list, items prefixed with `-`. Maps to [`Node::UnorderedList`].
     Unordered,
     /// Ordered list, items prefixed with `+`. Maps to [`Node::OrderedList`].
@@ -13,7 +13,7 @@ pub enum ListKind {
 }
 
 impl ListKind {
-    pub fn node(&self) -> Node {
+    pub(crate) fn node(&self) -> Node {
         match self {
             ListKind::Unordered => Node::UnorderedList,
             ListKind::Ordered => Node::OrderedList,
@@ -41,7 +41,7 @@ impl TryFrom<&Token> for ListKind {
 /// [`Parser::at_eof`]. This lets nested parsers (e.g., a paragraph inside a collapsible block)
 /// stop at their enclosing delimiter without consuming it.
 #[derive(Debug, Clone, Copy)]
-pub enum StopCondition {
+pub(crate) enum StopCondition {
     /// Double newline — separates block-level elements.
     Terminator,
     /// `%}` at column 0 — ends a collapsible block.
@@ -52,12 +52,8 @@ pub enum StopCondition {
     ListBoundary { level: usize, kind: ListKind },
 }
 
-fn is_list_marker(t: &Token, kind: Option<ListKind>) -> bool {
-    match kind {
-        Some(ListKind::Unordered) => t.kind == TokenKind::Minus && t.range.len() == 1,
-        Some(ListKind::Ordered) => t.kind == TokenKind::Plus && t.range.len() == 1,
-        None => (t.kind == TokenKind::Minus || t.kind == TokenKind::Plus) && t.range.len() == 1,
-    }
+pub(crate) fn is_list_marker(t: &Token, kind: Option<ListKind>) -> bool {
+    ListKind::try_from(t).is_ok_and(|k| kind.is_none_or(|want| k == want))
 }
 
 fn is_space_1(t: &Token) -> bool {
@@ -133,12 +129,12 @@ impl StopCondition {
 /// Node-specific parsing functions (e.g., `heading`, `paragraph`) receive `&mut Parser`, use
 /// [`eat`](Parser::eat)/[`at`](Parser::at) to match tokens, and push results to [`ops`](Parser::ops).
 /// On mismatch they restore [`pos`](Parser::pos) and truncate `ops` to backtrack.
-pub struct Parser<'a> {
-    pub source: &'a str,
+pub(crate) struct Parser<'a> {
+    pub(crate) source: &'a str,
     tokens: Vec<Token>,
-    pub pos: usize,
+    pub(crate) pos: usize,
     eof_stack: Vec<StopCondition>,
-    pub ops: Vec<Op>,
+    pub(crate) ops: Vec<Op>,
 }
 
 impl<'a> From<&'a str> for Parser<'a> {
@@ -154,56 +150,21 @@ impl<'a> From<&'a str> for Parser<'a> {
 }
 
 impl Parser<'_> {
-    /// Returns `true` when the position cursor has passed the last token.
-    #[inline]
-    pub fn is_eof(&self) -> bool {
-        self.pos >= self.tokens.len()
-    }
-
-    /// Returns the total number of tokens.
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.tokens.len()
-    }
-
-    /// Returns `true` if the token stream is empty.
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        self.tokens.is_empty()
-    }
-
     /// Returns the token at `index`, or `None` if out of bounds.
     #[inline]
-    pub fn get(&self, index: usize) -> Option<&Token> {
+    pub(crate) fn get(&self, index: usize) -> Option<&Token> {
         self.tokens.get(index)
     }
 
     /// Returns the current position and token, or `None` at end-of-stream.
     #[inline]
-    pub fn peek(&self) -> Option<(usize, &Token)> {
+    pub(crate) fn peek(&self) -> Option<(usize, &Token)> {
         Some((self.pos, self.tokens.get(self.pos)?))
-    }
-
-    /// Advances the cursor by one and returns the previous position, or `None` at end-of-stream.
-    #[inline]
-    pub fn advance(&mut self) -> Option<usize> {
-        if self.pos >= self.tokens.len() {
-            return None;
-        }
-        let pos = self.pos;
-        self.pos += 1;
-        Some(pos)
-    }
-
-    /// Returns a slice of tokens for the given index range.
-    #[inline]
-    pub fn slice(&self, range: Range<usize>) -> &[Token] {
-        &self.tokens[range]
     }
 
     /// Advances the cursor by one. Does nothing at end-of-stream.
     #[inline]
-    pub fn next(&mut self) {
+    pub(crate) fn next(&mut self) {
         if self.pos < self.tokens.len() {
             self.pos += 1;
         }
@@ -211,7 +172,7 @@ impl Parser<'_> {
 
     /// Consumes the current token if `pred` returns `true`. Returns the token index range on match, or `None` (without advancing) on mismatch.
     #[inline]
-    pub fn eat(&mut self, pred: impl Fn(&Token) -> bool) -> Option<Range<usize>> {
+    pub(crate) fn eat(&mut self, pred: impl Fn(&Token) -> bool) -> Option<Range<usize>> {
         let token = self.tokens.get(self.pos)?;
         if pred(token) {
             let start = self.pos;
@@ -224,14 +185,14 @@ impl Parser<'_> {
 
     /// Returns `true` if the current token satisfies `pred`, without consuming it.
     #[inline]
-    pub fn at(&self, pred: impl Fn(&Token) -> bool) -> bool {
+    pub(crate) fn at(&self, pred: impl Fn(&Token) -> bool) -> bool {
         self.peek().is_some_and(|(_, t)| pred(t))
     }
 
     /// Pushes `cond` onto the stop-condition stack, runs `f`, then pops it.
     /// This scopes a stop condition to a parsing function — nested parsers see the condition
     /// via [`at_eof`](Parser::at_eof) and stop before consuming the delimiter.
-    pub fn with_eof<R>(&mut self, cond: StopCondition, f: impl FnOnce(&mut Self) -> R) -> R {
+    pub(crate) fn with_eof<R>(&mut self, cond: StopCondition, f: impl FnOnce(&mut Self) -> R) -> R {
         self.eof_stack.push(cond);
         let result = f(self);
         self.eof_stack.pop();
@@ -239,7 +200,11 @@ impl Parser<'_> {
     }
 
     /// Like [`with_eof`](Parser::with_eof) but pushes multiple conditions at once.
-    pub fn with_eofs<R>(&mut self, conds: &[StopCondition], f: impl FnOnce(&mut Self) -> R) -> R {
+    pub(crate) fn with_eofs<R>(
+        &mut self,
+        conds: &[StopCondition],
+        f: impl FnOnce(&mut Self) -> R,
+    ) -> R {
         for &c in conds {
             self.eof_stack.push(c);
         }
@@ -252,7 +217,7 @@ impl Parser<'_> {
 
     /// Returns `true` if at end-of-stream or the current token matches any condition on the stop-condition stack.
     #[inline]
-    pub fn at_eof(&self) -> bool {
+    pub(crate) fn at_eof(&self) -> bool {
         let Some((_, token)) = self.peek() else {
             return true;
         };
@@ -262,7 +227,7 @@ impl Parser<'_> {
     /// Changes the token at `pos` to [`Literal`](crate::lexer::TokenKind::Literal).
     /// Used during backtracking to prevent a special character from being re-interpreted
     /// as a delimiter on the next parse attempt.
-    pub fn flip_to_literal(&mut self, pos: usize) {
+    pub(crate) fn flip_to_literal(&mut self, pos: usize) {
         if let Some(token) = self.tokens.get_mut(pos) {
             token.kind = TokenKind::Literal;
         }
@@ -270,7 +235,7 @@ impl Parser<'_> {
 
     /// Returns `true` if at a block boundary — either at logical EOF or at a [`Terminator`](StopCondition::Terminator) token.
     #[inline]
-    pub fn at_block_boundary(&self) -> bool {
+    pub(crate) fn at_block_boundary(&self) -> bool {
         self.at_eof() || self.at(|t| t.kind == TokenKind::Terminator)
     }
 
@@ -278,7 +243,7 @@ impl Parser<'_> {
     /// Returns `(before_range, match_range)` on success, where `before_range` covers tokens
     /// before the match and `match_range` covers the matched token. Backtracks to the starting
     /// position if no match is found before EOF or a stop condition.
-    pub fn advance_until(
+    pub(crate) fn eat_until(
         &mut self,
         matcher: impl Fn(&Token) -> bool,
     ) -> Option<(Range<usize>, Range<usize>)> {
@@ -303,7 +268,7 @@ impl Parser<'_> {
     /// Returns [`Content::Materialized`] when any token in the range is escaped (has gaps from
     /// removed backslashes), otherwise returns [`Content::Span`].
     #[inline]
-    pub fn span(&self, range: Range<usize>) -> Content {
+    pub(crate) fn span(&self, range: Range<usize>) -> Content {
         if range.is_empty() {
             return Content::Span(0..0);
         }
@@ -318,30 +283,20 @@ impl Parser<'_> {
     }
 
     /// Consumes the parser and returns the accumulated operations.
-    pub fn into_ops(self) -> Vec<Op> {
+    pub(crate) fn into_ops(self) -> Vec<Op> {
         self.ops
     }
 }
 
 /// Token predicate that matches an end-of-line token. Intended for use with [`Parser::eat`]
 /// and [`Parser::at`].
-pub fn eol(t: &Token) -> bool {
+pub(crate) fn eol(t: &Token) -> bool {
     t.kind == TokenKind::Eol
 }
 
 /// Attempts to eat a sequence of tokens matching the given predicates in order.
 /// Returns `Some(start..end)` covering all matched tokens on success, or `None`
 /// with the parser position restored on partial or full mismatch.
-///
-/// ```
-/// # use yamd::op::Parser;
-/// # use yamd::eat_seq;
-/// # use yamd::lexer::{Token, TokenKind};
-/// let mut p = Parser::from("# hello");
-/// let range = eat_seq!(p, |t: &Token| t.kind == TokenKind::Hash, |t: &Token| t.kind == TokenKind::Space);
-/// assert!(range.is_some());
-/// ```
-#[macro_export]
 macro_rules! eat_seq {
     ($p:expr, $($pred:expr),+ $(,)?) => {{
         let start = $p.pos;
@@ -353,6 +308,8 @@ macro_rules! eat_seq {
         }
     }};
 }
+
+pub(crate) use eat_seq;
 
 #[cfg(test)]
 mod tests {
@@ -445,9 +402,9 @@ mod tests {
     }
 
     #[test]
-    fn advance_until_finds_match() {
+    fn eat_until_finds_match() {
         let mut p = Parser::from("hello\nworld");
-        let result = p.advance_until(|t: &Token| t.kind == TokenKind::Eol);
+        let result = p.eat_until(|t: &Token| t.kind == TokenKind::Eol);
         assert!(result.is_some());
         let (before, matched) = result.unwrap();
         assert_eq!(before, 0..1);
@@ -455,19 +412,19 @@ mod tests {
     }
 
     #[test]
-    fn advance_until_eof_hit() {
+    fn eat_until_eof_hit() {
         let mut p = Parser::from("hello\n\nworld");
         p.with_eof(StopCondition::Terminator, |p| {
-            let result = p.advance_until(|t: &Token| t.kind == TokenKind::Star);
+            let result = p.eat_until(|t: &Token| t.kind == TokenKind::Star);
             assert!(result.is_none());
             assert_eq!(p.pos, 0);
         });
     }
 
     #[test]
-    fn advance_until_no_match_at_eof() {
+    fn eat_until_no_match_at_eof() {
         let mut p = Parser::from("hello");
-        let result = p.advance_until(|t: &Token| t.kind == TokenKind::Star);
+        let result = p.eat_until(|t: &Token| t.kind == TokenKind::Star);
         assert!(result.is_none());
         assert_eq!(p.pos, 0);
     }
@@ -502,35 +459,6 @@ mod tests {
             assert!(p.at_eof());
         });
         assert!(!p.at_eof());
-    }
-
-    #[test]
-    fn parser_len_is_empty_is_eof() {
-        let p = Parser::from("");
-        assert!(p.is_empty());
-        assert_eq!(p.len(), 0);
-        assert!(p.is_eof());
-
-        let p = Parser::from("hello");
-        assert!(!p.is_empty());
-        assert!(!p.is_empty());
-        assert!(!p.is_eof());
-    }
-
-    #[test]
-    fn advance_returns_position_and_none_at_eof() {
-        let mut p = Parser::from("a");
-        assert_eq!(p.advance(), Some(0));
-        assert_eq!(p.advance(), None);
-        assert!(p.is_eof());
-    }
-
-    #[test]
-    fn slice_returns_tokens() {
-        let p = Parser::from("hello world");
-        let slice = p.slice(0..1);
-        assert_eq!(slice.len(), 1);
-        assert_eq!(slice[0].kind, TokenKind::Literal);
     }
 
     #[test]

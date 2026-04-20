@@ -1,7 +1,10 @@
 use crate::{
-    eat_seq,
     lexer::{Token, TokenKind},
-    op::{Node, Op, Parser, modifier::modifier, parser::eol},
+    op::{
+        Node, Op, Parser,
+        modifier::modifier,
+        parser::{eat_seq, eol},
+    },
 };
 
 fn is_backtick3(t: &Token) -> bool {
@@ -30,7 +33,7 @@ pub fn code(p: &mut Parser) -> bool {
         modifier(p);
     }
 
-    let Some((body_range, close_range)) = p.advance_until(is_backtick3) else {
+    let Some((body_range, close_range)) = p.eat_until(is_backtick3) else {
         p.pos = start_pos;
         p.ops.truncate(snap);
         return false;

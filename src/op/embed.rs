@@ -25,12 +25,12 @@ pub fn embed(p: &mut Parser) -> bool {
         return false;
     };
 
-    let Some((lhs_range, sep_range)) = p.advance_until(is_pipe) else {
+    let Some((lhs_range, sep_range)) = p.eat_until(is_pipe) else {
         p.pos = start;
         return false;
     };
 
-    let Some((rhs_range, close_range)) = p.advance_until(is_right_curly2) else {
+    let Some((rhs_range, close_range)) = p.eat_until(is_right_curly2) else {
         p.pos = start;
         return false;
     };

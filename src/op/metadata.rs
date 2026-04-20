@@ -13,7 +13,7 @@ pub fn metadata(p: &mut Parser) -> bool {
         return false;
     };
 
-    let Some((body_range, end_range)) = p.advance_until(is_three_dashes) else {
+    let Some((body_range, end_range)) = p.eat_until(is_three_dashes) else {
         p.pos = start;
         return false;
     };

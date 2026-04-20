@@ -12,7 +12,7 @@ pub fn strikethrough(p: &mut Parser) -> bool {
     let Some(start_range) = p.eat(is_tilde) else {
         return false;
     };
-    let Some((body_range, end_range)) = p.advance_until(is_tilde) else {
+    let Some((body_range, end_range)) = p.eat_until(is_tilde) else {
         p.pos = start;
         return false;
     };

@@ -67,13 +67,14 @@ mod tests {
 
     #[test]
     fn text_only() {
-        let mut p: Parser = "hello world".into();
+        let input = "hello world";
+        let mut p: Parser = input.into();
         paragraph(&mut p);
         assert_eq!(
             p.ops,
             vec![
                 Op::new_start(Node::Paragraph, Content::Span(0..0)),
-                Op::new_value(p.span(0..p.len())),
+                Op::new_value(Content::Span(0..input.len())),
                 Op::new_end(Node::Paragraph, Content::Span(0..0)),
             ]
         );
