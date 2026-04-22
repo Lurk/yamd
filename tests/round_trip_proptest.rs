@@ -293,6 +293,19 @@ proptest! {
         let deserialized = deserialize(&serialized);
         prop_assert_eq!(yamd, deserialized, "Serialized: {:?}", serialized);
     }
+
+    #[test]
+    fn collapsible_round_trip_mixed_body(
+        title in arb_inline_text(),
+        body in prop::collection::vec(arb_yamd_node(), 1..=4)
+    ) {
+        let yamd = Yamd::new(None, vec![
+            Collapsible::new(&title, body).into(),
+        ]);
+        let serialized = yamd.to_string();
+        let deserialized = deserialize(&serialized);
+        prop_assert_eq!(yamd, deserialized, "Serialized: {:?}", serialized);
+    }
 }
 
 fn arb_paragraph_node() -> impl Strategy<Value = ParagraphNodes> {

@@ -215,6 +215,16 @@ impl Parser<'_> {
         result
     }
 
+    /// Temporarily clears the stop-condition stack for the scope of `f`.
+    /// Used when scanning verbatim content (e.g. a fenced code body) whose
+    /// bytes must not be interpreted as delimiters of an enclosing block.
+    pub(crate) fn with_no_stops<R>(&mut self, f: impl FnOnce(&mut Self) -> R) -> R {
+        let saved = std::mem::take(&mut self.eof_stack);
+        let result = f(self);
+        self.eof_stack = saved;
+        result
+    }
+
     /// Returns `true` if at end-of-stream or the current token matches any condition on the stop-condition stack.
     #[inline]
     pub(crate) fn at_eof(&self) -> bool {
