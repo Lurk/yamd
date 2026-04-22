@@ -1,11 +1,10 @@
 use crate::{
-    eat_seq,
     lexer::{Token, TokenKind},
     op::{
         Node, Op, Parser,
         modifier::modifier,
         paragraph::paragraph,
-        parser::{StopCondition, eol},
+        parser::{StopCondition, eat_seq, eol},
     },
 };
 
@@ -36,7 +35,7 @@ fn icon(p: &mut Parser) -> bool {
         return false;
     };
 
-    let Some((body_range, end_range)) = p.advance_until(is_eol) else {
+    let Some((body_range, end_range)) = p.eat_until(is_eol) else {
         p.pos = start;
         p.ops.truncate(snap);
         return false;

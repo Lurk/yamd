@@ -1,33 +1,14 @@
 use crate::{
-    eat_seq,
     lexer::{Token, TokenKind},
     op::{
         Content, Node, Op,
         paragraph::paragraph,
-        parser::{ListKind, Parser, StopCondition},
+        parser::{ListKind, Parser, StopCondition, eat_seq, is_list_marker},
     },
 };
 
-fn is_list_marker(t: &Token, kind: Option<ListKind>) -> bool {
-    match kind {
-        Some(ListKind::Unordered) => t.kind == TokenKind::Minus && t.range.len() == 1,
-        Some(ListKind::Ordered) => t.kind == TokenKind::Plus && t.range.len() == 1,
-        None => (t.kind == TokenKind::Minus || t.kind == TokenKind::Plus) && t.range.len() == 1,
-    }
-}
-
 fn is_space(t: &Token) -> bool {
     t.kind == TokenKind::Space && t.range.len() == 1
-}
-
-fn list_kind_from_range(p: &Parser, range: &std::ops::Range<usize>) -> Option<ListKind> {
-    let token_count = range.end - range.start;
-    let marker_idx = if token_count == 2 {
-        range.start
-    } else {
-        range.start + 1
-    };
-    ListKind::try_from(p.get(marker_idx)?).ok()
 }
 
 fn list_item(p: &mut Parser, level: usize, kind: Option<ListKind>) -> Option<ListKind> {
@@ -35,8 +16,8 @@ fn list_item(p: &mut Parser, level: usize, kind: Option<ListKind>) -> Option<Lis
         return None;
     }
 
-    let start = p.pos;
-    let snap = p.ops.len();
+    let marker_idx = p.pos + if level == 0 { 0 } else { 1 };
+    let marker_kind = ListKind::try_from(p.get(marker_idx)?).ok()?;
 
     let start_range = if level == 0 {
         eat_seq!(p, |t: &Token| is_list_marker(t, kind), is_space)?
@@ -49,35 +30,28 @@ fn list_item(p: &mut Parser, level: usize, kind: Option<ListKind>) -> Option<Lis
         )?
     };
 
-    let kind: ListKind = match kind {
-        Some(k) => k,
-        None => {
-            let Some(k) = list_kind_from_range(p, &start_range) else {
-                p.pos = start;
-                p.ops.truncate(snap);
-                return None;
-            };
-            k
-        }
-    };
-
     let start_content = p.span(start_range);
     p.ops.push(Op::new_start(Node::ListItem, start_content));
 
-    p.with_eof(StopCondition::ListBoundary { level, kind }, |p| {
-        paragraph(p);
-    });
+    p.with_eof(
+        StopCondition::ListBoundary {
+            level,
+            kind: marker_kind,
+        },
+        |p| {
+            paragraph(p);
+        },
+    );
 
     if !p.at_eof() {
         list_inner(p, level + 1);
     }
 
     p.ops.push(Op::new_end(Node::ListItem, Content::Span(0..0)));
-    Some(kind)
+    Some(marker_kind)
 }
 
 fn list_inner(p: &mut Parser, level: usize) -> Option<ListKind> {
-    let start = p.pos;
     let snap = p.ops.len();
     let list_kind = list_item(p, level, None)?;
 
@@ -88,12 +62,6 @@ fn list_inner(p: &mut Parser, level: usize) -> Option<ListKind> {
     );
 
     while list_item(p, level, Some(list_kind)).is_some() {}
-
-    if level == 0 && !p.at_eof() {
-        p.pos = start;
-        p.ops.truncate(snap);
-        return None;
-    }
 
     p.ops
         .push(Op::new_end(list_kind.node(), Content::Span(0..0)));

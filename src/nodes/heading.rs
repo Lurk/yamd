@@ -29,7 +29,13 @@ impl Display for HeadingNodes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             HeadingNodes::Text(text) => {
-                write!(f, "{}", text.replace("\n\n", "\\\n\n").replace("#", "\\#"))
+                write!(
+                    f,
+                    "{}",
+                    text.replace("\\", "\\\\")
+                        .replace("\n\n", "\\\n\n")
+                        .replace("#", "\\#")
+                )
             }
             HeadingNodes::Anchor(anchor) => write!(f, "{}", anchor),
         }
@@ -75,11 +81,8 @@ impl Heading {
 
 impl Display for Heading {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} ", "#".repeat(self.level as usize))?;
-        for node in &self.body {
-            write!(f, "{}", node)?;
-        }
-        Ok(())
+        let body: String = self.body.iter().map(|n| n.to_string()).collect();
+        write!(f, "{} {}", "#".repeat(self.level as usize), body)
     }
 }
 

@@ -17,19 +17,15 @@ pub fn paragraph(p: &mut Parser) {
                 let content = p.span(start..pos);
                 p.ops.insert(snap, Op::new_value(content));
             }
-        } else if let Some(pos) = p.advance() {
-            text_start.get_or_insert(pos);
         } else {
-            break;
+            text_start.get_or_insert(p.pos);
+            p.next();
         }
     }
 
     if let Some(start) = text_start {
-        let end = p.pos;
-        if start < end {
-            let content = p.span(start..end);
-            p.ops.push(Op::new_value(content));
-        }
+        let content = p.span(start..p.pos);
+        p.ops.push(Op::new_value(content));
     }
     p.ops
         .push(Op::new_end(Node::Paragraph, Content::Span(0..0)));
@@ -71,13 +67,14 @@ mod tests {
 
     #[test]
     fn text_only() {
-        let mut p: Parser = "hello world".into();
+        let input = "hello world";
+        let mut p: Parser = input.into();
         paragraph(&mut p);
         assert_eq!(
             p.ops,
             vec![
                 Op::new_start(Node::Paragraph, Content::Span(0..0)),
-                Op::new_value(p.span(0..p.len())),
+                Op::new_value(Content::Span(0..input.len())),
                 Op::new_end(Node::Paragraph, Content::Span(0..0)),
             ]
         );

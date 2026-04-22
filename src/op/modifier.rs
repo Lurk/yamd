@@ -12,7 +12,7 @@ pub fn modifier(p: &mut Parser) -> bool {
         return false;
     }
 
-    let Some((body_range, end_range)) = p.advance_until(is_eol_or_terminator) else {
+    let Some((body_range, end_range)) = p.eat_until(is_eol_or_terminator) else {
         return false;
     };
 

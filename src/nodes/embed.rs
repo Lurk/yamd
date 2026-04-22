@@ -45,8 +45,15 @@ impl Display for Embed {
         write!(
             f,
             "{{{{{}|{}}}}}",
-            self.kind.replace("|", "\\|"),
-            self.args.replace("}", "\\}")
+            self.kind
+                .replace("\\", "\\\\")
+                .replace("{", "\\{")
+                .replace("|", "\\|"),
+            self.args
+                .replace("\\", "\\\\")
+                .replace("{", "\\{")
+                .replace("%", "\\%")
+                .replace("}", "\\}")
         )
     }
 }

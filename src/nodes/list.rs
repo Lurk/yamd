@@ -152,6 +152,10 @@ impl List {
 
 impl Display for List {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let (pat, rep) = match self.list_type {
+            ListTypes::Unordered => ("\n- ", "\n\\- "),
+            ListTypes::Ordered => ("\n+ ", "\n\\+ "),
+        };
         write!(
             f,
             "{}",
@@ -161,7 +165,7 @@ impl Display for List {
                     "{}{} {}",
                     " ".repeat(self.level),
                     self.list_type,
-                    list_item
+                    list_item.to_string().replace(pat, rep)
                 ))
                 .collect::<Vec<_>>()
                 .join("\n")

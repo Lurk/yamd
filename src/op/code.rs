@@ -1,7 +1,10 @@
 use crate::{
-    eat_seq,
     lexer::{Token, TokenKind},
-    op::{Node, Op, Parser, modifier::modifier, parser::eol},
+    op::{
+        Node, Op, Parser,
+        modifier::modifier,
+        parser::{eat_seq, eol},
+    },
 };
 
 fn is_backtick3(t: &Token) -> bool {
@@ -26,11 +29,14 @@ pub fn code(p: &mut Parser) -> bool {
     let first_content = p.span(first_range);
     p.ops.push(Op::new_start(Node::Code, first_content));
 
-    if with_modifier {
-        modifier(p);
-    }
+    let scan = p.with_no_stops(|p| {
+        if with_modifier {
+            modifier(p);
+        }
+        p.eat_until(is_backtick3)
+    });
 
-    let Some((body_range, close_range)) = p.advance_until(is_backtick3) else {
+    let Some((body_range, close_range)) = scan else {
         p.pos = start_pos;
         p.ops.truncate(snap);
         return false;
@@ -93,19 +99,12 @@ mod tests {
     }
 
     #[test]
-    fn terminator_before_lang() {
-        let mut p: Parser = "```\n\nprintln!(\"hello\");\n```".into();
-        p.with_eof(StopCondition::Terminator, |p| {
-            assert!(!code(p));
-            assert!(p.ops.is_empty());
-            assert_eq!(
-                p.peek(),
-                Some((
-                    0,
-                    &Token::new(TokenKind::Backtick, 0..3, Position::default()),
-                ))
-            );
+    fn outer_stops_do_not_interrupt_fence_scan() {
+        let mut p: Parser = "```\nbody\n%}\n```".into();
+        p.with_eof(StopCondition::CollapsibleEnd, |p| {
+            assert!(code(p));
         });
+        assert!(p.at_eof());
     }
 
     #[test]

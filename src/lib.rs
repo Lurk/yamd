@@ -19,20 +19,35 @@
 //! assert_eq!(yamd.to_string(), input);
 //! ```
 //!
+//! # Two APIs
+//!
+//! - [`deserialize`] returns a nested [`Yamd`](nodes::Yamd) document — a tree of typed nodes,
+//!   suitable for walking, pattern-matching, or round-tripping back to markdown via
+//!   [`Display`](std::fmt::Display). The AST makes invalid nestings unrepresentable, and
+//!   `deserialize` is fuzz-tested for panic-freedom and property-tested for round-trip fidelity.
+//! - [`parse`] returns a flat `Vec<`[`Op`](op::Op)`>` of Start/End/Value events, where
+//!   [`Content`](op::Content) borrows from the source when possible. Reach for it when you want
+//!   streaming rendering or zero-copy text processing without materializing the full tree.
+//!   [`to_yamd`] promotes an event stream to the tree form. Fuzz-tested for panic-freedom
+//!   (transitively, via `deserialize`); the AST's type-level invariants and round-trip property
+//!   do not apply at this layer.
+//!
 //! # Reasoning
 //!
-//! Simplified set of rules allows to have simpler, more efficient, parser and renderer.
-//! [YAMD](nodes::Yamd) does not provide render functionality, instead it is a [serde]
-//! serializable structure that allows you to write any renderer for that structure. All HTML
-//! equivalents in this doc are provided as an example to what it can be rendered.
+//! YAMD exchanges CommonMark's context-dependent rules for a uniform set: every node is treated
+//! the same, and escaping is resolved at the lexer. The goal is a parser that's easier to reason
+//! about locally, with fewer special cases to remember.
+//!
+//! Rendering is out of scope; [`Yamd`](nodes::Yamd) is an AST you walk and render however you
+//! like. With the `serde` feature enabled, the AST is also serde-serializable.
 //!
 //! # Difference from CommonMark
 //!
-//! While YAMD tries to utilize as much CommonMark syntax as possible, there are differences.
+//! YAMD reuses most of CommonMark's syntax but diverges in a few places.
 //!
 //! ## Escaping
 //!
-//! Escaping done on a [lexer] level. Every symbol following the `\` symbol will be treated as a
+//! Escaping is handled at the [lexer] level: any character following `\` is treated as a
 //! [literal](lexer::TokenKind::Literal).
 //!
 //! Example:
@@ -43,10 +58,9 @@
 //!
 //! ## Precedence
 //!
-//! [CommonMark](https://spec.commonmark.org/0.31.2/#precedence) defines container blocks and leaf
-//! blocks. And that container block indicator has higher precedence. YAMD does not discriminate by
-//! block type, every node (block) is the same. In practice, there are no additional rules to encode
-//! and remember.
+//! [CommonMark](https://spec.commonmark.org/0.31.2/#precedence) distinguishes container blocks from
+//! leaf blocks and gives container-block markers higher precedence. YAMD does not distinguish block
+//! types — every node is treated the same, so there are no precedence rules to remember.
 //!
 //! Example:
 //!
@@ -55,22 +69,22 @@
 //! | ``- `one\n- two` ``   | `<ol><li><code>one\n- two</code></li></ol>`   |
 //!
 //!
-//! If you want to have two [ListItem](nodes::ListItem)'s use escaping:
+//! To get two separate [ListItem](nodes::ListItem)s, escape the backticks:
 //!
 //! | YAMD                      | HTML equivalent                           |
 //! |---------------------------|-------------------------------------------|
 //! | ``- \`one\n- two\` ``     | ``<ol><li>`one</li><li>two`</li><ol>``    |
 //!
-//! The reasoning is that those kind issues can be caught with tooling like linters/lsp. That tooling
-//! does not exist yet.
+//! The reasoning: issues like this should be caught by tooling such as linters or language servers
+//! — that tooling doesn't exist yet.
 //!
 //! ## Nodes
 //!
-//! List of supported [nodes] and their formatting. The best starting point is [YAMD](nodes::Yamd).
+//! See [nodes] for the full list of supported nodes and their formatting. Start with [YAMD](nodes::Yamd).
 //!
 //! # MSRV
 //!
-//! YAMD minimal supported Rust version is 1.80.0 due to [Option::take_if] usage
+//! YAMD minimal supported Rust version is 1.87.
 
 #[deny(missing_docs, rustdoc::broken_intra_doc_links)]
 pub mod lexer;

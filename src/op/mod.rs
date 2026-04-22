@@ -4,7 +4,7 @@ use std::ops::Range;
 use serde::{Deserialize, Serialize};
 
 use crate::lexer::Token;
-pub use crate::op::parser::Parser;
+pub(crate) use crate::op::parser::Parser;
 
 mod anchor;
 mod bold;
@@ -24,7 +24,7 @@ mod list;
 mod metadata;
 mod modifier;
 mod paragraph;
-pub mod parser;
+mod parser;
 mod strikethrough;
 mod thematic_break;
 mod title;
@@ -116,12 +116,6 @@ impl<const N: usize> From<&[Token; N]> for Content {
 impl From<Vec<Token>> for Content {
     fn from(tokens: Vec<Token>) -> Self {
         Content::from(tokens.as_slice())
-    }
-}
-
-impl From<String> for Content {
-    fn from(s: String) -> Self {
-        Content::Materialized(s)
     }
 }
 
@@ -296,12 +290,21 @@ _I_
 
 ```
 
-end"#;
+end
+
+\*escaped\*"#;
 
     #[test]
     fn all_source_bytes_are_covered_exactly_once() {
         let ops = parse(TEST_CASE);
         let mut covered = vec![false; TEST_CASE.len()];
+
+        let esc_start = TEST_CASE
+            .find("\\*escaped\\*")
+            .expect("escape marker must be present");
+        let esc_end = esc_start + "\\*escaped\\*".len();
+        covered[esc_start..esc_end].fill(true);
+
         for op in &ops {
             match &op.content {
                 Content::Span(range) => {
@@ -349,7 +352,7 @@ end"#;
     #[test]
     fn document_level_block_sequence() {
         let ops = parse(TEST_CASE);
-        assert_eq!(ops.len(), 154);
+        assert_eq!(ops.len(), 158);
         assert_eq!(ops[5].kind, OpKind::Start(Node::Heading)); // # hello
         assert_eq!(ops[9].kind, OpKind::Start(Node::Code)); // ```rust ... ```
         assert_eq!(ops[16].kind, OpKind::Start(Node::Paragraph)); // t**b**

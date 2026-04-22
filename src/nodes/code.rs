@@ -37,9 +37,11 @@ pub struct Code {
 
 impl Code {
     pub fn new<S: Into<String>>(lang: S, code: S) -> Self {
+        let code = code.into();
+        let code = code.trim_end_matches('\n').to_owned();
         Self {
             lang: lang.into(),
-            code: code.into(),
+            code,
         }
     }
 }
@@ -49,8 +51,11 @@ impl Display for Code {
         write!(
             f,
             "```{}\n{}\n```",
-            self.lang.replace("```", "\\```").replace("\n", "\\\n"),
-            self.code.replace("```", "\\```")
+            self.lang
+                .replace("\\", "\\\\")
+                .replace("`", "\\`")
+                .replace("\n", "\\\n"),
+            self.code.replace("\\", "\\\\").replace("```", "\\```")
         )
     }
 }

@@ -1,7 +1,6 @@
 use crate::{
-    eat_seq,
     lexer::{Token, TokenKind},
-    op::{Content, Node, Op, Parser, anchor::anchor},
+    op::{Content, Node, Op, Parser, anchor::anchor, parser::eat_seq},
 };
 
 fn is_hash(t: &Token) -> bool {
@@ -136,6 +135,19 @@ mod tests {
         assert_eq!(
             p.peek(),
             Some((0, &Token::new(TokenKind::Hash, 0..2, Position::default())))
+        );
+    }
+
+    #[test]
+    fn empty_heading() {
+        let mut p: Parser = "# ".into();
+        assert!(heading(&mut p));
+        assert_eq!(
+            p.ops,
+            vec![
+                Op::new_start(Node::Heading, p.span(0..2)),
+                Op::new_end(Node::Heading, Content::Span(0..0)),
+            ]
         );
     }
 
