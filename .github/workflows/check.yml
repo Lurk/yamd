@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     name: stable / fmt
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - name: Install stable
@@ -34,7 +34,7 @@ jobs:
       matrix:
         toolchain: [stable, beta]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - name: Install ${{ matrix.toolchain }}
@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     name: semver
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - name: Install stable
@@ -66,7 +66,7 @@ jobs:
     runs-on: ubuntu-latest
     name: nightly / doc
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - name: Install nightly
@@ -81,7 +81,7 @@ jobs:
     runs-on: ubuntu-latest
     name: ubuntu / stable / features
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - name: Install stable
@@ -101,7 +101,7 @@ jobs:
         msrv: [1.87.0]
     name: ubuntu / ${{ matrix.msrv }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - name: Install ${{ matrix.msrv }}
@@ -114,7 +114,7 @@ jobs:
     runs-on: ubuntu-latest
     name: ubuntu / rdme
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
       - name: cargo install cargo-rdme
