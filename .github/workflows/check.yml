@@ -92,23 +92,28 @@ jobs:
       # --feature-powerset runs for every combination of features
       - name: cargo hack
         run: cargo
+  msrv-version:
+    runs-on: ubuntu-latest
+    name: read MSRV from Cargo.toml
+    outputs:
+      msrv: ${{ steps.msrv.outputs.msrv }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: msrv
+        run: echo "msrv=$(grep '^rust-version' Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/')" >> "$GITHUB_OUTPUT"
   msrv:
     runs-on: ubuntu-latest
-    # we use a matrix here just because env can't be used in job names
-    # https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
-    strategy:
-      matrix:
-        msrv: [1.87.0]
-    name: ubuntu / ${{ matrix.msrv }}
+    needs: msrv-version
+    name: ubuntu / ${{ needs.msrv-version.outputs.msrv }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Install ${{ matrix.msrv }}
+      - name: Install ${{ needs.msrv-version.outputs.msrv }}
         uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: ${{ matrix.msrv }}
-      - name: cargo +${{ matrix.msrv }} check
+          toolchain: ${{ needs.msrv-version.outputs.msrv }}
+      - name: cargo +${{ needs.msrv-version.outputs.msrv }} check
         run: cargo check
   rdme:
     runs-on: ubuntu-latest
