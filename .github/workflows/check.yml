@@ -123,6 +123,10 @@ jobs:
       - name: Install stable
         uses: dtolnay/rust-toolchain@stable
       - name: cargo install cargo-rdme
-        uses: taiki-e/install-action@cargo-rdme
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-rdme@2.1.0
+      - name: install nightly toolchain for intralinks
+        run: cargo rdme install-rust-toolchain-for-intralinks
       - name: cargo rdme --check
         run: cargo rdme --check

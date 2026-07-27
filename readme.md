@@ -10,7 +10,7 @@ YAMD - Yet Another Markdown Document (flavour)
 
 Simplified version of [CommonMark](https://spec.commonmark.org/).
 
-For formatting check [`YAMD`](nodes::Yamd) struct documentation.
+For formatting check [`YAMD`](https://docs.rs/yamd/latest/yamd/nodes/yamd/struct.Yamd.html) struct documentation.
 
 ## Quick start
 
@@ -29,34 +29,28 @@ assert_eq!(yamd.to_string(), input);
 
 ## Two APIs
 
-- [`deserialize`] returns a nested [`Yamd`](nodes::Yamd) document — a tree of typed nodes,
+- [`deserialize`](https://docs.rs/yamd/latest/yamd/fn.deserialize.html) returns a nested [`Yamd`](https://docs.rs/yamd/latest/yamd/nodes/yamd/struct.Yamd.html) document — a tree of typed nodes,
   suitable for walking, pattern-matching, or round-tripping back to markdown via
-  [`Display`](std::fmt::Display). The AST makes invalid nestings unrepresentable, and
+  [`Display`](https://doc.rust-lang.org/stable/core/fmt/trait.Display.html). The AST makes invalid nestings unrepresentable, and
   `deserialize` is fuzz-tested for panic-freedom and property-tested for round-trip fidelity.
-- [`parse`] returns a flat `Vec<`[`Op`](op::Op)`>` of Start/End/Value events, where
-  [`Content`](op::Content) borrows from the source when possible. Reach for it when you want
-  streaming rendering or zero-copy text processing without materializing the full tree.
-  [`to_yamd`] promotes an event stream to the tree form. Fuzz-tested for panic-freedom
+- [`parse`](https://docs.rs/yamd/latest/yamd/op/fn.parse.html) returns a flat `Vec<`[`Op`](https://docs.rs/yamd/latest/yamd/op/struct.Op.html)`>` of Start/End/Value events.
+  [`to_yamd`](https://docs.rs/yamd/latest/yamd/op/to_yamd/fn.to_yamd.html) promotes an event stream to the tree form. Fuzz-tested for panic-freedom
   (transitively, via `deserialize`); the AST's type-level invariants and round-trip property
   do not apply at this layer.
 
-## Reasoning
-
-YAMD exchanges CommonMark's context-dependent rules for a uniform set: every node is treated
-the same, and escaping is resolved at the lexer. The goal is a parser that's easier to reason
-about locally, with fewer special cases to remember.
-
-Rendering is out of scope; [`Yamd`](nodes::Yamd) is an AST you walk and render however you
+Rendering is out of scope; [`Yamd`](https://docs.rs/yamd/latest/yamd/nodes/yamd/struct.Yamd.html) is an AST you walk and render however you
 like. With the `serde` feature enabled, the AST is also serde-serializable.
 
 ## Difference from CommonMark
 
-YAMD reuses most of CommonMark's syntax but diverges in a few places.
+YAMD reuses most of CommonMark's syntax but diverges where CommonMark's context-dependent
+rules would force special cases: every node is treated the same (no container/leaf
+distinction), and escaping is context-independent.
 
 ### Escaping
 
-Escaping is handled at the [lexer] level: any character following `\` is treated as a
-[literal](lexer::TokenKind::Literal).
+Escaping is handled at the [`lexer`](https://docs.rs/yamd/latest/yamd/lexer/) level: any character following `\` is treated as a
+[literal](https://docs.rs/yamd/latest/yamd/lexer/token/enum.TokenKind.html#variant.Literal).
 
 Example:
 
@@ -77,7 +71,7 @@ Example:
 | ``- `one\n- two` ``   | `<ol><li><code>one\n- two</code></li></ol>`   |
 
 
-To get two separate [ListItem](nodes::ListItem)s, escape the backticks:
+To get two separate [`ListItem`](https://docs.rs/yamd/latest/yamd/nodes/list_item/struct.ListItem.html)s, escape the backticks:
 
 | YAMD                      | HTML equivalent                           |
 |---------------------------|-------------------------------------------|
@@ -88,7 +82,7 @@ The reasoning: issues like this should be caught by tooling such as linters or l
 
 ### Nodes
 
-See [nodes] for the full list of supported nodes and their formatting. Start with [YAMD](nodes::Yamd).
+See [`nodes`](https://docs.rs/yamd/latest/yamd/nodes/) for the full list of supported nodes and their formatting. Start with [YAMD](https://docs.rs/yamd/latest/yamd/nodes/yamd/struct.Yamd.html).
 
 ## MSRV
 

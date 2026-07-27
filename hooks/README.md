@@ -15,7 +15,9 @@ git config core.hooksPath hooks
 
 ```sh
 rustup component add rustfmt clippy
-cargo install cargo-rdme cargo-semver-checks cargo-hack
+cargo install cargo-rdme --version 2.1.0
+cargo rdme install-rust-toolchain-for-intralinks
+cargo install cargo-semver-checks cargo-hack
 rustup toolchain install "$(grep '^rust-version' Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/')"
 ```
 

@@ -21,29 +21,23 @@
 //!
 //! # Two APIs
 //!
-//! - [`deserialize`] returns a nested [`Yamd`](nodes::Yamd) document — a tree of typed nodes,
+//! - [`deserialize`] returns a nested [`Yamd`] document — a tree of typed nodes,
 //!   suitable for walking, pattern-matching, or round-tripping back to markdown via
 //!   [`Display`](std::fmt::Display). The AST makes invalid nestings unrepresentable, and
 //!   `deserialize` is fuzz-tested for panic-freedom and property-tested for round-trip fidelity.
-//! - [`parse`] returns a flat `Vec<`[`Op`](op::Op)`>` of Start/End/Value events, where
-//!   [`Content`](op::Content) borrows from the source when possible. Reach for it when you want
-//!   streaming rendering or zero-copy text processing without materializing the full tree.
+//! - [`parse`] returns a flat `Vec<`[`Op`](op::Op)`>` of Start/End/Value events.
 //!   [`to_yamd`] promotes an event stream to the tree form. Fuzz-tested for panic-freedom
 //!   (transitively, via `deserialize`); the AST's type-level invariants and round-trip property
 //!   do not apply at this layer.
 //!
-//! # Reasoning
-//!
-//! YAMD exchanges CommonMark's context-dependent rules for a uniform set: every node is treated
-//! the same, and escaping is resolved at the lexer. The goal is a parser that's easier to reason
-//! about locally, with fewer special cases to remember.
-//!
-//! Rendering is out of scope; [`Yamd`](nodes::Yamd) is an AST you walk and render however you
+//! Rendering is out of scope; [`Yamd`] is an AST you walk and render however you
 //! like. With the `serde` feature enabled, the AST is also serde-serializable.
 //!
 //! # Difference from CommonMark
 //!
-//! YAMD reuses most of CommonMark's syntax but diverges in a few places.
+//! YAMD reuses most of CommonMark's syntax but diverges where CommonMark's context-dependent
+//! rules would force special cases: every node is treated the same (no container/leaf
+//! distinction), and escaping is context-independent.
 //!
 //! ## Escaping
 //!
@@ -69,7 +63,7 @@
 //! | ``- `one\n- two` ``   | `<ol><li><code>one\n- two</code></li></ol>`   |
 //!
 //!
-//! To get two separate [ListItem](nodes::ListItem)s, escape the backticks:
+//! To get two separate [`ListItem`](nodes::ListItem)s, escape the backticks:
 //!
 //! | YAMD                      | HTML equivalent                           |
 //! |---------------------------|-------------------------------------------|
