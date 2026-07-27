@@ -1,0 +1,22 @@
+#!/bin/sh
+# Mirrors checks from .github/workflows/check.yml (fmt, clippy, rdme)
+# and test.yml (test), so failures are caught before they hit CI.
+set -e
+
+echo "==> cargo fmt --check"
+cargo fmt --check
+
+echo "==> cargo clippy"
+cargo clippy --all-targets --all-features -- -D warnings
+
+echo "==> cargo test"
+cargo test --locked --all-features --all-targets
+cargo test --locked --all-features --doc
+
+echo "==> cargo rdme install-rust-toolchain-for-intralinks"
+cargo rdme install-rust-toolchain-for-intralinks
+
+echo "==> cargo rdme --check"
+cargo rdme --check
+
+echo "pre-commit checks passed"

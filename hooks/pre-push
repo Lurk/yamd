@@ -1,0 +1,32 @@
+#!/bin/sh
+# Mirrors checks from .github/workflows/check.yml: semver, hack
+# (feature powerset), and MSRV.
+set -e
+
+MSRV=$(grep '^rust-version' Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/')
+
+need() {
+    command -v "$1" >/dev/null 2>&1 || {
+        echo "error: $1 not found. Install with: $2" >&2
+        exit 1
+    }
+}
+
+need cargo-semver-checks "cargo install cargo-semver-checks"
+need cargo-hack "cargo install cargo-hack"
+
+if ! rustup toolchain list | grep -q "^${MSRV}"; then
+    echo "error: rust ${MSRV} toolchain not installed. Install with: rustup toolchain install ${MSRV}" >&2
+    exit 1
+fi
+
+echo "==> cargo semver-checks"
+cargo semver-checks
+
+echo "==> cargo hack check --feature-powerset"
+cargo hack check --feature-powerset --all-targets
+
+echo "==> cargo +${MSRV} check"
+cargo "+${MSRV}" check
+
+echo "pre-push checks passed"
