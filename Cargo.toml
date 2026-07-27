@@ -10,7 +10,7 @@ keywords = ["markdown", "parser"]
 rust-version = "1.87"
 
 [dependencies]
-serde = { version = "1.0.228", features = ["derive"], optional = true }
+serde = { version = "1.0.229", features = ["derive"], optional = true }
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
