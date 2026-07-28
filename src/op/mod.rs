@@ -1,3 +1,17 @@
+//! A flat, streaming alternative to [`deserialize`](crate::deserialize): [`parse`] turns source
+//! text into a `Vec<`[`Op`]`>` of Start/End/Value events instead of a nested tree.
+//!
+//! - [`Op`] pairs an [`OpKind`] with its [`Content`].
+//! - [`OpKind::Start`]`(`[`Node`]`)` / [`OpKind::End`]`(`[`Node`]`)` bracket a node; everything
+//!   between belongs to it. [`OpKind::Value`] is leaf content belonging to the innermost open
+//!   node.
+//! - [`Content`] borrows from the source ([`Content::Span`]) when possible, and only allocates
+//!   ([`Content::Materialized`]) when text was assembled from non-contiguous tokens (e.g. after
+//!   escape processing).
+//!
+//! [`to_yamd`] consumes an event stream and promotes it to the [`Yamd`](crate::nodes::Yamd) tree
+//! form used by [`deserialize`](crate::deserialize).
+
 use std::ops::Range;
 
 #[cfg(feature = "serde")]
