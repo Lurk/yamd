@@ -1,0 +1,19 @@
+---
+title: "Small note"
+date: 2024-12-8T21:00:00+02:00
+tags:
+- notes
+---
+# Hello
+
+A paragraph with **bold**, _italic_, and `inline code`.
+
+- one
+- two
+- three
+
+-----
+
+```rust
+fn main() {}
+```
