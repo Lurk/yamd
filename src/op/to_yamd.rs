@@ -485,7 +485,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use crate::nodes::*;
-    use crate::op::{parse, to_yamd};
+    use crate::op::{Node, Op, UnbalancedOpStream, parse, to_yamd, try_to_yamd};
 
     #[test]
     fn single_paragraph() {
@@ -1044,5 +1044,19 @@ end"#;
                 ]
             )
         );
+    }
+
+    #[test]
+    fn unbalanced_op_stream_display() {
+        assert_eq!(
+            UnbalancedOpStream.to_string(),
+            "op stream is not well-formed"
+        );
+    }
+
+    #[test]
+    fn unclosed_frame_errors() {
+        let ops = vec![Op::new_start(Node::Heading, &[] as &[crate::lexer::Token])];
+        assert_eq!(try_to_yamd(&ops, ""), Err(UnbalancedOpStream));
     }
 }
