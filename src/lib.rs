@@ -89,6 +89,7 @@ pub mod op;
 pub use nodes::Yamd;
 pub use op::parse;
 pub use op::to_yamd;
+pub use op::{UnbalancedOpStream, try_to_yamd};
 
 /// Deserialize a string into a Yamd struct
 /// # Example
