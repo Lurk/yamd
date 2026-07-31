@@ -43,7 +43,7 @@ mod strikethrough;
 mod thematic_break;
 mod title;
 mod to_yamd;
-pub use to_yamd::to_yamd;
+pub use to_yamd::{UnbalancedOpStream, to_yamd, try_to_yamd};
 
 /// Text content extracted from the source input.
 ///

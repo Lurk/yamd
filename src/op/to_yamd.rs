@@ -5,6 +5,19 @@ use crate::nodes::{
 };
 use crate::op::{Content, Node, Op, OpKind};
 
+/// Error returned by [`try_to_yamd`] when the op stream is not well-formed
+/// (unbalanced Start/End pairs, or an End that doesn't match the frame it closes).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct UnbalancedOpStream;
+
+impl std::fmt::Display for UnbalancedOpStream {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "op stream is not well-formed")
+    }
+}
+
+impl std::error::Error for UnbalancedOpStream {}
+
 enum Frame {
     Yamd {
         metadata: Option<String>,
@@ -182,7 +195,16 @@ fn count_list_depth(stack: &[Frame]) -> usize {
 /// let yamd = yamd::to_yamd(&ops, source);
 /// assert_eq!(yamd.body.len(), 2);
 /// ```
+///
+/// # Panics
+///
+/// Panics if `ops` is not well-formed. Use [`try_to_yamd`] to handle hand-built streams.
 pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
+    try_to_yamd(ops, source).expect("op stream produced by parse() is always well-formed")
+}
+
+/// Fallible variant of [`to_yamd`]. Returns [`UnbalancedOpStream`] if `ops` is not well-formed.
+pub fn try_to_yamd(ops: &[Op], source: &str) -> Result<Yamd, UnbalancedOpStream> {
     let mut stack: Vec<Frame> = vec![Frame::Yamd {
         metadata: None,
         body: Vec::new(),
@@ -216,9 +238,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
             },
             OpKind::Value => {
                 let text = op.content.to_string(source);
-                let top = stack
-                    .last_mut()
-                    .expect("stack should not be empty on Value");
+                let top = stack.last_mut().ok_or(UnbalancedOpStream)?;
                 match top {
                     Frame::Heading { body, .. } => {
                         body.push(HeadingNodes::Text(text));
@@ -247,10 +267,10 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                 }
             }
             OpKind::End(node) => {
-                let frame = stack.pop().expect("stack should not be empty on End");
+                let frame = stack.pop().ok_or(UnbalancedOpStream)?;
                 match (node, frame) {
                     (Node::Document, Frame::Document { children }) => {
-                        let top = stack.last_mut().expect("stack underflow");
+                        let top = stack.last_mut().ok_or(UnbalancedOpStream)?;
                         match top {
                             Frame::Collapsible { body, .. } => {
                                 *body = children;
@@ -272,7 +292,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                         push_yamd_node(&mut stack, Heading::new(level, body).into());
                     }
                     (Node::Paragraph, Frame::Paragraph { mut body }) => {
-                        let top = stack.last_mut().expect("stack underflow");
+                        let top = stack.last_mut().ok_or(UnbalancedOpStream)?;
                         match top {
                             Frame::Highlight { paragraphs, .. } => {
                                 trim_trailing_newline_from_text(&mut body);
@@ -294,7 +314,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                     }
                     (Node::Italic, Frame::Italic { text }) => {
                         let italic = Italic::new(text);
-                        match stack.last_mut().expect("stack underflow") {
+                        match stack.last_mut().ok_or(UnbalancedOpStream)? {
                             Frame::Paragraph { body } => body.push(italic.into()),
                             Frame::Bold { body } => body.push(italic.into()),
                             // coverage: defensive catchall; Italic's parent is always Paragraph or Bold
@@ -303,7 +323,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                     }
                     (Node::Strikethrough, Frame::Strikethrough { text }) => {
                         let st = Strikethrough::new(text);
-                        match stack.last_mut().expect("stack underflow") {
+                        match stack.last_mut().ok_or(UnbalancedOpStream)? {
                             Frame::Paragraph { body } => body.push(st.into()),
                             Frame::Bold { body } => body.push(st.into()),
                             // coverage: defensive catchall; Strikethrough's parent is always Paragraph or Bold
@@ -317,7 +337,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                         push_into_paragraph(&mut stack, Emphasis::new(text).into());
                     }
                     (Node::Title, Frame::Title { text }) => {
-                        let top = stack.last_mut().expect("stack underflow");
+                        let top = stack.last_mut().ok_or(UnbalancedOpStream)?;
                         match top {
                             Frame::Anchor { text: t, .. } => *t = text,
                             Frame::Image { alt, .. } => *alt = text,
@@ -326,7 +346,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                         }
                     }
                     (Node::Destination, Frame::Destination { text }) => {
-                        let top = stack.last_mut().expect("stack underflow");
+                        let top = stack.last_mut().ok_or(UnbalancedOpStream)?;
                         match top {
                             Frame::Anchor { url, .. } => *url = text,
                             Frame::Image { src, .. } => *src = text,
@@ -336,7 +356,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                     }
                     (Node::Anchor, Frame::Anchor { text, url }) => {
                         let anchor = Anchor::new(text, url);
-                        let top = stack.last_mut().expect("stack underflow");
+                        let top = stack.last_mut().ok_or(UnbalancedOpStream)?;
                         match top {
                             Frame::Paragraph { body } => body.push(anchor.into()),
                             Frame::Heading { body, .. } => body.push(anchor.into()),
@@ -346,7 +366,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                     }
                     (Node::Image, Frame::Image { alt, src }) => {
                         let image = Image::new(alt, src);
-                        let top = stack.last_mut().expect("stack underflow");
+                        let top = stack.last_mut().ok_or(UnbalancedOpStream)?;
                         match top {
                             Frame::Images { images } => images.push(image),
                             _ => push_yamd_node(&mut stack, image.into()),
@@ -360,7 +380,7 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                         push_yamd_node(&mut stack, Code::new(lang, code).into());
                     }
                     (Node::Modifier, Frame::Modifier { text }) => {
-                        let top = stack.last_mut().expect("stack underflow");
+                        let top = stack.last_mut().ok_or(UnbalancedOpStream)?;
                         match top {
                             Frame::Code { lang, .. } => *lang = text,
                             Frame::Highlight { title, .. } => *title = Some(text),
@@ -396,10 +416,10 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
                         push_yamd_node(&mut stack, Collapsible::new(title, body).into());
                     }
                     (Node::UnorderedList, Frame::UnorderedList { level, items }) => {
-                        finish_list(&mut stack, List::new(ListTypes::Unordered, level, items));
+                        finish_list(&mut stack, List::new(ListTypes::Unordered, level, items))?;
                     }
                     (Node::OrderedList, Frame::OrderedList { level, items }) => {
-                        finish_list(&mut stack, List::new(ListTypes::Ordered, level, items));
+                        finish_list(&mut stack, List::new(ListTypes::Ordered, level, items))?;
                     }
                     (Node::ListItem, Frame::ListItem { text, nested_list }) => {
                         let item = ListItem::new(text, nested_list);
@@ -417,10 +437,10 @@ pub fn to_yamd(ops: &[Op], source: &str) -> Yamd {
         }
     }
 
-    match stack.pop().expect("stack should have Yamd root") {
-        Frame::Yamd { metadata, body } => Yamd::new(metadata, body),
+    match stack.pop().ok_or(UnbalancedOpStream)? {
+        Frame::Yamd { metadata, body } => Ok(Yamd::new(metadata, body)),
         // coverage: the root frame is invariantly Yamd; reaching this means stack corruption
-        _ => panic!("expected Yamd frame at bottom of stack"),
+        _ => Err(UnbalancedOpStream),
     }
 }
 
@@ -452,11 +472,12 @@ fn push_into_paragraph(stack: &mut [Frame], node: ParagraphNodes) {
     }
 }
 
-fn finish_list(stack: &mut [Frame], list: List) {
-    match stack.last_mut().expect("stack underflow") {
+fn finish_list(stack: &mut [Frame], list: List) -> Result<(), UnbalancedOpStream> {
+    match stack.last_mut().ok_or(UnbalancedOpStream)? {
         Frame::ListItem { nested_list, .. } => *nested_list = Some(list),
         _ => push_yamd_node(stack, list.into()),
     }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -464,7 +485,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use crate::nodes::*;
-    use crate::op::{parse, to_yamd};
+    use crate::op::{Node, Op, UnbalancedOpStream, parse, to_yamd, try_to_yamd};
 
     #[test]
     fn single_paragraph() {
@@ -1023,5 +1044,19 @@ end"#;
                 ]
             )
         );
+    }
+
+    #[test]
+    fn unbalanced_op_stream_display() {
+        assert_eq!(
+            UnbalancedOpStream.to_string(),
+            "op stream is not well-formed"
+        );
+    }
+
+    #[test]
+    fn unclosed_frame_errors() {
+        let ops = vec![Op::new_start(Node::Heading, &[] as &[crate::lexer::Token])];
+        assert_eq!(try_to_yamd(&ops, ""), Err(UnbalancedOpStream));
     }
 }
