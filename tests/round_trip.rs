@@ -53,6 +53,39 @@ fn paragraph_text_with_double_backslash() {
 }
 
 #[test]
+fn escaped_heading_marker_stays_paragraph() {
+    assert_eq!(
+        Yamd::new(
+            None,
+            vec![Paragraph::new(vec![ParagraphNodes::from("# not heading".to_string())]).into()],
+        ),
+        deserialize("\\# not heading")
+    );
+}
+
+#[test]
+fn escaped_list_marker_stays_paragraph() {
+    assert_eq!(
+        Yamd::new(
+            None,
+            vec![Paragraph::new(vec![ParagraphNodes::from("- not a list".to_string())]).into()],
+        ),
+        deserialize("\\- not a list")
+    );
+}
+
+#[test]
+fn escaped_thematic_break_stays_paragraph() {
+    assert_eq!(
+        Yamd::new(
+            None,
+            vec![Paragraph::new(vec![ParagraphNodes::from("---".to_string())]).into()],
+        ),
+        deserialize("\\---")
+    );
+}
+
+#[test]
 fn paragraph_text_with_special_chars() {
     round_trip_inline(ParagraphNodes::from(
         "**not bold** _not italic_".to_string(),
