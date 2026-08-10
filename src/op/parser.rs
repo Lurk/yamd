@@ -286,9 +286,7 @@ impl Parser<'_> {
         if tokens.iter().any(|t| t.escaped) {
             Content::from_tokens(tokens, self.source)
         } else {
-            let byte_start = tokens.first().unwrap().range.start;
-            let byte_end = tokens.last().unwrap().range.end;
-            Content::Span(byte_start..byte_end)
+            tokens.into()
         }
     }
 
