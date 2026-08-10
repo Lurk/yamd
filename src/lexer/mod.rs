@@ -117,6 +117,14 @@ impl<'input> Lexer<'input> {
         )
     }
 
+    fn escape(&mut self, position: Position) {
+        self.emit_literal_if_started(position.byte_index);
+        if let Some((pos, _)) = self.next_char(true) {
+            self.escaped = true;
+            self.literal_start.get_or_insert(pos);
+        }
+    }
+
     fn take_while(&mut self, c: char, kind: TokenKind, start: Position) {
         while self.next_is(c) {}
         self.emit(Token::new(
@@ -136,13 +144,7 @@ impl<'input> Lexer<'input> {
             '%' if self.next_is('}') => {
                 self.emit(self.to_token(TokenKind::CollapsibleEnd, position, 2))
             }
-            '\\' => {
-                self.emit_literal_if_started(position.byte_index);
-                if let Some((pos, _)) = self.next_char(true) {
-                    self.escaped = true;
-                    self.literal_start.get_or_insert(pos);
-                }
-            }
+            '\\' => self.escape(position),
             '~' => self.take_while('~', TokenKind::Tilde, position),
             '*' => self.take_while('*', TokenKind::Star, position),
             '}' => self.take_while('}', TokenKind::RightCurlyBrace, position),
