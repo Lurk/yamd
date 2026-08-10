@@ -5,7 +5,7 @@ use crate::op::{
 
 pub fn paragraph(p: &mut Parser) {
     p.ops
-        .push(Op::new_start(Node::Paragraph, Content::Span(0..0)));
+        .push(Op::new_start(Node::Paragraph, Content::span(0..0)));
     let mut text_start: Option<usize> = None;
     while !p.at_eof() {
         let pos = p.pos;
@@ -28,7 +28,7 @@ pub fn paragraph(p: &mut Parser) {
         p.ops.push(Op::new_value(content));
     }
     p.ops
-        .push(Op::new_end(Node::Paragraph, Content::Span(0..0)));
+        .push(Op::new_end(Node::Paragraph, Content::span(0..0)));
 }
 
 #[cfg(test)]
@@ -73,9 +73,9 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::Paragraph, Content::Span(0..0)),
-                Op::new_value(Content::Span(0..input.len())),
-                Op::new_end(Node::Paragraph, Content::Span(0..0)),
+                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_value(Content::span(0..input.len())),
+                Op::new_end(Node::Paragraph, Content::span(0..0)),
             ]
         );
     }

@@ -38,7 +38,7 @@ pub fn image(p: &mut Parser) -> bool {
         p.ops.push(Op::new_end(Node::Image, end_content));
         return true;
     } else if p.at_eof() {
-        p.ops.push(Op::new_end(Node::Image, Content::Span(0..0)));
+        p.ops.push(Op::new_end(Node::Image, Content::span(0..0)));
         return true;
     }
 

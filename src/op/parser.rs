@@ -280,7 +280,7 @@ impl Parser<'_> {
     #[inline]
     pub(crate) fn span(&self, range: Range<usize>) -> Content {
         if range.is_empty() {
-            return Content::Span(0..0);
+            return Content::span(0..0);
         }
         let tokens = &self.tokens[range];
         if tokens.iter().any(|t| t.escaped) {

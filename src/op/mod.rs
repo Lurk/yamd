@@ -62,6 +62,11 @@ pub enum Content {
 }
 
 impl Content {
+    /// Convenience constructor for an unescaped span — equivalent to [`Content::Span`] directly.
+    pub fn span(range: Range<usize>) -> Self {
+        Content::Span(range)
+    }
+
     /// Returns the text this content represents, borrowing from `source` for [`Span`](Content::Span) variants.
     pub fn as_str<'a>(&'a self, source: &'a str) -> &'a str {
         match self {
@@ -93,7 +98,7 @@ impl Content {
     /// or [`Materialized`](Content::Materialized) when gaps exist (e.g., escape characters were removed).
     pub fn from_tokens(tokens: &[Token], source: &str) -> Self {
         if tokens.is_empty() {
-            return Content::Span(0..0);
+            return Content::span(0..0);
         }
         let is_contiguous = tokens
             .windows(2)
@@ -101,7 +106,7 @@ impl Content {
         if is_contiguous {
             let start = tokens.first().unwrap().range.start;
             let end = tokens.last().unwrap().range.end;
-            Content::Span(start..end)
+            Content::span(start..end)
         } else {
             let s: String = tokens.iter().map(|t| &source[t.range.clone()]).collect();
             Content::Materialized(s)
@@ -112,11 +117,11 @@ impl Content {
 impl From<&[Token]> for Content {
     fn from(tokens: &[Token]) -> Self {
         if tokens.is_empty() {
-            Content::Span(0..0)
+            Content::span(0..0)
         } else {
             let start = tokens.first().unwrap().range.start;
             let end = tokens.last().unwrap().range.end;
-            Content::Span(start..end)
+            Content::span(start..end)
         }
     }
 }
@@ -446,7 +451,7 @@ end
     #[test]
     fn content_span_as_str() {
         let source = "hello world";
-        let content = Content::Span(0..5);
+        let content = Content::span(0..5);
         assert_eq!(content.as_str(source), "hello");
     }
 
@@ -459,7 +464,7 @@ end
     #[test]
     fn content_span_to_string() {
         let source = "hello world";
-        let content = Content::Span(0..5);
+        let content = Content::span(0..5);
         assert_eq!(content.to_string(source), "hello");
     }
 
@@ -497,19 +502,19 @@ end
         let source = "hello";
         let tokens = vec![Token::new(TokenKind::Literal, 0..5, Position::default())];
         let content = Content::from_tokens(&tokens, source);
-        assert_eq!(content, Content::Span(0..5));
+        assert_eq!(content, Content::span(0..5));
     }
 
     #[test]
     fn content_empty_span_as_str() {
-        let content = Content::Span(0..0);
+        let content = Content::span(0..0);
         assert_eq!(content.as_str("anything"), "");
     }
 
     #[test]
     fn content_is_empty() {
-        assert!(Content::Span(0..0).is_empty());
-        assert!(!Content::Span(0..5).is_empty());
+        assert!(Content::span(0..0).is_empty());
+        assert!(!Content::span(0..5).is_empty());
         assert!(Content::Materialized(String::new()).is_empty());
         assert!(!Content::Materialized(String::from("hi")).is_empty());
     }
@@ -517,35 +522,35 @@ end
     #[test]
     fn content_from_empty_tokens() {
         let content = Content::from_tokens(&[], "source");
-        assert_eq!(content, Content::Span(0..0));
+        assert_eq!(content, Content::span(0..0));
     }
 
     #[test]
     fn content_from_token_slice() {
         let tokens = vec![Token::new(TokenKind::Literal, 0..5, Position::default())];
         let content = Content::from(tokens.as_slice());
-        assert_eq!(content, Content::Span(0..5));
+        assert_eq!(content, Content::span(0..5));
     }
 
     #[test]
     fn content_from_empty_token_slice() {
         let empty: &[Token] = &[];
         let content = Content::from(empty);
-        assert_eq!(content, Content::Span(0..0));
+        assert_eq!(content, Content::span(0..0));
     }
 
     #[test]
     fn content_from_token_array() {
         let tokens = [Token::new(TokenKind::Literal, 0..3, Position::default())];
         let content = Content::from(&tokens);
-        assert_eq!(content, Content::Span(0..3));
+        assert_eq!(content, Content::span(0..3));
     }
 
     #[test]
     fn content_from_token_vec() {
         let tokens = vec![Token::new(TokenKind::Literal, 0..5, Position::default())];
         let content = Content::from(tokens);
-        assert_eq!(content, Content::Span(0..5));
+        assert_eq!(content, Content::span(0..5));
     }
 
     #[test]
@@ -553,11 +558,11 @@ end
         assert_eq!(
             parse("¯\\\\\\_(ツ)\\_/¯"),
             vec![
-                Op::new_start(Node::Document, Content::Span(0..0)),
-                Op::new_start(Node::Paragraph, Content::Span(0..0)),
+                Op::new_start(Node::Document, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::span(0..0)),
                 Op::new_value(Content::Materialized(String::from("¯\\_(ツ)_/¯"))),
-                Op::new_end(Node::Paragraph, Content::Span(0..0)),
-                Op::new_end(Node::Document, Content::Span(0..0))
+                Op::new_end(Node::Paragraph, Content::span(0..0)),
+                Op::new_end(Node::Document, Content::span(0..0))
             ]
         );
     }

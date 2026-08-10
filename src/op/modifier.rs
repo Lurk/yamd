@@ -19,7 +19,7 @@ pub fn modifier(p: &mut Parser) -> bool {
     let body_content = p.span(body_range);
     let end_content = p.span(end_range);
     p.ops
-        .push(Op::new_start(Node::Modifier, Content::Span(0..0)));
+        .push(Op::new_start(Node::Modifier, Content::span(0..0)));
     p.ops.push(Op::new_value(body_content));
     p.ops.push(Op::new_end(Node::Modifier, end_content));
     true

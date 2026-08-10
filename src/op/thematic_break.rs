@@ -12,9 +12,9 @@ pub fn thematic_break(p: &mut Parser) -> bool {
         return false;
     };
     let content = p.span(range);
-    let empty = Content::Span(0..0);
+    let empty = Content::span(0..0);
     p.ops
-        .push(Op::new_start(Node::ThematicBreak, Content::Span(0..0)));
+        .push(Op::new_start(Node::ThematicBreak, Content::span(0..0)));
     p.ops.push(Op::new_value(content));
     p.ops.push(Op::new_end(Node::ThematicBreak, empty));
     true
@@ -31,9 +31,9 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::ThematicBreak, Content::Span(0..0)),
+                Op::new_start(Node::ThematicBreak, Content::span(0..0)),
                 Op::new_value(p.span(0..1)),
-                Op::new_end(Node::ThematicBreak, Content::Span(0..0)),
+                Op::new_end(Node::ThematicBreak, Content::span(0..0)),
             ]
         );
     }

@@ -50,7 +50,7 @@ fn is_terminator(t: &Token) -> bool {
 
 pub fn document(p: &mut Parser) {
     p.ops
-        .push(Op::new_start(Node::Document, Content::Span(0..0)));
+        .push(Op::new_start(Node::Document, Content::span(0..0)));
 
     while !p.at_eof() {
         let before = p.pos;
@@ -72,7 +72,7 @@ pub fn document(p: &mut Parser) {
             "document loop made no progress at token {before}"
         );
     }
-    p.ops.push(Op::new_end(Node::Document, Content::Span(0..0)));
+    p.ops.push(Op::new_end(Node::Document, Content::span(0..0)));
 }
 
 #[cfg(test)]
