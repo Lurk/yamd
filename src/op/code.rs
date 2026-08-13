@@ -11,15 +11,11 @@ fn is_backtick3(t: &Token) -> bool {
     t.kind == TokenKind::Backtick && t.position.column == 0 && t.range.len() == 3
 }
 
-fn is_eol(t: &Token) -> bool {
-    t.kind == TokenKind::Eol
-}
-
 pub fn code(p: &mut Parser) -> bool {
     let start_pos = p.pos;
     let snap = p.ops.len();
 
-    let first_range = eat_seq!(p, is_backtick3, is_eol).or_else(|| p.eat(is_backtick3));
+    let first_range = eat_seq!(p, is_backtick3, eol).or_else(|| p.eat(is_backtick3));
     let Some(first_range) = first_range else {
         return false;
     };
@@ -42,7 +38,7 @@ pub fn code(p: &mut Parser) -> bool {
         return false;
     };
 
-    let end_range = if let Some(eol_range) = p.eat(is_eol) {
+    let end_range = if let Some(eol_range) = p.eat(eol) {
         close_range.start..eol_range.end
     } else if p.at_block_boundary() {
         close_range

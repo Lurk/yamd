@@ -1,6 +1,6 @@
 use crate::{
     lexer::{Token, TokenKind},
-    op::{Node, Op, Parser},
+    op::{Node, Op, Parser, parser::eol},
 };
 
 fn is_left_curly2(t: &Token) -> bool {
@@ -13,10 +13,6 @@ fn is_pipe(t: &Token) -> bool {
 
 fn is_right_curly2(t: &Token) -> bool {
     t.kind == TokenKind::RightCurlyBrace && t.range.len() == 2
-}
-
-fn is_eol(t: &Token) -> bool {
-    t.kind == TokenKind::Eol
 }
 
 pub fn embed(p: &mut Parser) -> bool {
@@ -35,7 +31,7 @@ pub fn embed(p: &mut Parser) -> bool {
         return false;
     };
 
-    let end_range = if let Some(eol_range) = p.eat(is_eol) {
+    let end_range = if let Some(eol_range) = p.eat(eol) {
         close_range.start..eol_range.end
     } else if p.at_block_boundary() {
         close_range

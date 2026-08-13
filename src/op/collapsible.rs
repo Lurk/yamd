@@ -4,7 +4,7 @@ use crate::{
         Node, Op, Parser,
         document::document,
         modifier::modifier,
-        parser::{StopCondition, eat_seq},
+        parser::{StopCondition, eat_seq, eol},
     },
 };
 
@@ -18,10 +18,6 @@ fn is_collapsible_end(t: &Token) -> bool {
 
 fn is_space_or_eol(t: &Token) -> bool {
     t.kind == TokenKind::Space || t.kind == TokenKind::Eol
-}
-
-fn is_eol(t: &Token) -> bool {
-    t.kind == TokenKind::Eol
 }
 
 pub fn collapsible(p: &mut Parser) -> bool {
@@ -48,8 +44,8 @@ pub fn collapsible(p: &mut Parser) -> bool {
         document(p);
     });
 
-    p.eat(|t: &Token| t.kind == TokenKind::Eol);
-    let end_range = eat_seq!(p, is_collapsible_end, is_eol).or_else(|| p.eat(is_collapsible_end));
+    p.eat(eol);
+    let end_range = eat_seq!(p, is_collapsible_end, eol).or_else(|| p.eat(is_collapsible_end));
 
     let Some(end_range) = end_range else {
         p.pos = start;

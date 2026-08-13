@@ -20,10 +20,6 @@ fn is_space(t: &Token) -> bool {
     t.kind == TokenKind::Space && t.range.len() == 1
 }
 
-fn is_eol(t: &Token) -> bool {
-    t.kind == TokenKind::Eol
-}
-
 fn is_terminator(t: &Token) -> bool {
     t.kind == TokenKind::Terminator
 }
@@ -35,7 +31,7 @@ fn icon(p: &mut Parser) -> bool {
         return false;
     };
 
-    let Some((body_range, end_range)) = p.eat_until(is_eol) else {
+    let Some((body_range, end_range)) = p.eat_until(eol) else {
         p.pos = start;
         p.ops.truncate(snap);
         return false;
@@ -54,7 +50,7 @@ pub fn highlight(p: &mut Parser) -> bool {
     let start = p.pos;
     let snap = p.ops.len();
 
-    let Some(start_range) = eat_seq!(p, is_two_bangs, |t: &Token| is_space(t) || is_eol(t)) else {
+    let Some(start_range) = eat_seq!(p, is_two_bangs, |t: &Token| is_space(t) || eol(t)) else {
         return false;
     };
 
@@ -81,7 +77,7 @@ pub fn highlight(p: &mut Parser) -> bool {
         let before = p.pos;
 
         if let Some(close_range) = p.eat(is_two_bangs) {
-            let end_range = if let Some(eol_range) = p.eat(is_eol) {
+            let end_range = if let Some(eol_range) = p.eat(eol) {
                 close_range.start..eol_range.end
             } else {
                 close_range
