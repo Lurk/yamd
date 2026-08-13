@@ -101,18 +101,19 @@ pub struct Token {
     pub range: Range<usize>,
     /// The position of the token in the input string.
     pub position: Position,
-    /// Indicates if the token is escaped.
-    pub escaped: bool,
+    /// How many `\`-escapes are folded into this token's range. `0` means the range can be used
+    /// as-is; otherwise the text needs unescaping (see `Content::as_str`) before use.
+    pub escaped: usize,
 }
 
 impl Token {
-    /// Creates a new non escaped `Token` instance.
+    /// Creates a new `Token` instance with no escapes.
     pub fn new(kind: TokenKind, range: Range<usize>, position: Position) -> Self {
         Self {
             kind,
             range,
             position,
-            escaped: false,
+            escaped: 0,
         }
     }
 }
@@ -158,6 +159,6 @@ mod tests {
         let token = Token::new(TokenKind::Literal, 0..5, Position::default());
         assert_eq!(token.kind, TokenKind::Literal);
         assert_eq!(token.range, 0..5);
-        assert!(!token.escaped);
+        assert_eq!(token.escaped, 0);
     }
 }

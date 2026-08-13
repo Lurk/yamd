@@ -47,7 +47,7 @@ fn list_item(p: &mut Parser, level: usize, kind: Option<ListKind>) -> Option<Lis
         list_inner(p, level + 1);
     }
 
-    p.ops.push(Op::new_end(Node::ListItem, Content::span(0..0)));
+    p.ops.push(Op::new_end(Node::ListItem, Content::empty()));
     Some(marker_kind)
 }
 
@@ -58,13 +58,12 @@ fn list_inner(p: &mut Parser, level: usize) -> Option<ListKind> {
     let list_start_idx = snap;
     p.ops.insert(
         list_start_idx,
-        Op::new_start(list_kind.node(), Content::span(0..0)),
+        Op::new_start(list_kind.node(), Content::empty()),
     );
 
     while list_item(p, level, Some(list_kind)).is_some() {}
 
-    p.ops
-        .push(Op::new_end(list_kind.node(), Content::span(0..0)));
+    p.ops.push(Op::new_end(list_kind.node(), Content::empty()));
     Some(list_kind)
 }
 
@@ -84,18 +83,18 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::UnorderedList, Content::span(0..0)),
+                Op::new_start(Node::UnorderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(0..2)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(2..4)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(4..6)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(6..7)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::UnorderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::UnorderedList, Content::empty()),
             ]
         );
     }
@@ -108,18 +107,18 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::OrderedList, Content::span(0..0)),
+                Op::new_start(Node::OrderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(0..2)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(2..4)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(4..6)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(6..7)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::OrderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::OrderedList, Content::empty()),
             ]
         );
     }
@@ -132,20 +131,20 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::OrderedList, Content::span(0..0)),
+                Op::new_start(Node::OrderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(0..2)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(2..4)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_start(Node::UnorderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_start(Node::UnorderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(4..7)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(7..8)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::UnorderedList, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::OrderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::UnorderedList, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::OrderedList, Content::empty()),
             ]
         );
     }
@@ -158,20 +157,20 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::UnorderedList, Content::span(0..0)),
+                Op::new_start(Node::UnorderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(0..2)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(2..4)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_start(Node::UnorderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_start(Node::UnorderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(4..7)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(7..8)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::UnorderedList, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::UnorderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::UnorderedList, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::UnorderedList, Content::empty()),
             ]
         );
     }
@@ -184,20 +183,20 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::UnorderedList, Content::span(0..0)),
+                Op::new_start(Node::UnorderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(0..2)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(2..4)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_start(Node::UnorderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_start(Node::UnorderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(4..7)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(7..11)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::UnorderedList, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::UnorderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::UnorderedList, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::UnorderedList, Content::empty()),
             ]
         );
     }
@@ -210,13 +209,13 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::OrderedList, Content::span(0..0)),
+                Op::new_start(Node::OrderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(0..2)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(2..7)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::OrderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::OrderedList, Content::empty()),
             ]
         );
     }
@@ -229,13 +228,13 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::UnorderedList, Content::span(0..0)),
+                Op::new_start(Node::UnorderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(0..2)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(2..7)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::UnorderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::UnorderedList, Content::empty()),
             ]
         );
     }
@@ -250,56 +249,56 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::UnorderedList, Content::span(0..0)),
+                Op::new_start(Node::UnorderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(0..2)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(2..4)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_start(Node::UnorderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_start(Node::UnorderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(4..7)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(7..9)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_start(Node::UnorderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_start(Node::UnorderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(9..12)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(12..14)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::UnorderedList, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::UnorderedList, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(14..17)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(17..19)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::UnorderedList, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::UnorderedList, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(19..21)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(21..23)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_start(Node::UnorderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_start(Node::UnorderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(23..26)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(26..28)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_start(Node::UnorderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_start(Node::UnorderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(28..31)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(31..33)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::UnorderedList, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::UnorderedList, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::UnorderedList, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::UnorderedList, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(33..35)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(35..36)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::UnorderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::UnorderedList, Content::empty()),
             ]
         );
     }
@@ -314,56 +313,56 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::OrderedList, Content::span(0..0)),
+                Op::new_start(Node::OrderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(0..2)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(2..4)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_start(Node::OrderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_start(Node::OrderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(4..7)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(7..9)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_start(Node::OrderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_start(Node::OrderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(9..12)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(12..14)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::OrderedList, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::OrderedList, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(14..17)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(17..19)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::OrderedList, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::OrderedList, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(19..21)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(21..23)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_start(Node::OrderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_start(Node::OrderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(23..26)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(26..28)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_start(Node::OrderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_start(Node::OrderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(28..31)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(31..33)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::OrderedList, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::OrderedList, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::OrderedList, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::OrderedList, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(33..35)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(35..36)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::OrderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::OrderedList, Content::empty()),
             ]
         );
     }
@@ -376,12 +375,12 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::UnorderedList, Content::span(0..0)),
+                Op::new_start(Node::UnorderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(0..2)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::UnorderedList, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::UnorderedList, Content::empty()),
             ]
         );
     }
@@ -394,19 +393,19 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::OrderedList, Content::span(0..0)),
+                Op::new_start(Node::OrderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(0..2)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(2..4)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_start(Node::OrderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_start(Node::OrderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(4..7)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::OrderedList, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::OrderedList, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::OrderedList, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::OrderedList, Content::empty()),
             ]
         );
     }
@@ -419,19 +418,19 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::OrderedList, Content::span(0..0)),
+                Op::new_start(Node::OrderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(0..2)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(2..4)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_start(Node::UnorderedList, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_start(Node::UnorderedList, Content::empty()),
                 Op::new_start(Node::ListItem, p.span(4..7)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::UnorderedList, Content::span(0..0)),
-                Op::new_end(Node::ListItem, Content::span(0..0)),
-                Op::new_end(Node::OrderedList, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::UnorderedList, Content::empty()),
+                Op::new_end(Node::ListItem, Content::empty()),
+                Op::new_end(Node::OrderedList, Content::empty()),
             ]
         );
     }

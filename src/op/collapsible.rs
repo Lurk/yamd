@@ -78,23 +78,23 @@ mod tests {
             p.ops,
             vec![
                 Op::new_start(Node::Collapsible, p.span(0..2)),
-                Op::new_start(Node::Modifier, Content::span(0..0)),
+                Op::new_start(Node::Modifier, Content::empty()),
                 Op::new_value(p.span(2..3)),
                 Op::new_end(Node::Modifier, p.span(3..4)),
-                Op::new_start(Node::Document, Content::span(0..0)),
+                Op::new_start(Node::Document, Content::empty()),
                 Op::new_start(Node::Heading, p.span(4..6)),
                 Op::new_value(p.span(6..7)),
-                Op::new_end(Node::Heading, Content::span(0..0)),
+                Op::new_end(Node::Heading, Content::empty()),
                 Op::new_value(p.span(7..8)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(8..9)),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(9..10)),
                 Op::new_start(Node::Collapsible, p.span(10..12)),
-                Op::new_start(Node::Modifier, Content::span(0..0)),
+                Op::new_start(Node::Modifier, Content::empty()),
                 Op::new_value(p.span(12..13)),
                 Op::new_end(Node::Modifier, p.span(13..14)),
-                Op::new_start(Node::Document, Content::span(0..0)),
+                Op::new_start(Node::Document, Content::empty()),
                 Op::new_start(Node::Image, p.span(14..15)),
                 Op::new_start(Node::Title, p.span(15..16)),
                 Op::new_value(p.span(16..17)),
@@ -103,9 +103,9 @@ mod tests {
                 Op::new_value(p.span(19..20)),
                 Op::new_end(Node::Destination, p.span(20..21)),
                 Op::new_end(Node::Image, p.span(21..22)),
-                Op::new_end(Node::Document, Content::span(0..0)),
+                Op::new_end(Node::Document, Content::empty()),
                 Op::new_end(Node::Collapsible, p.span(22..24)),
-                Op::new_end(Node::Document, Content::span(0..0)),
+                Op::new_end(Node::Document, Content::empty()),
                 Op::new_end(Node::Collapsible, p.span(24..25)),
             ]
         );
@@ -147,14 +147,14 @@ mod tests {
             p.ops,
             vec![
                 Op::new_start(Node::Collapsible, p.span(0..2)),
-                Op::new_start(Node::Modifier, Content::span(0..0)),
+                Op::new_start(Node::Modifier, Content::empty()),
                 Op::new_value(p.span(2..3)),
                 Op::new_end(Node::Modifier, p.span(3..4)),
-                Op::new_start(Node::Document, Content::span(0..0)),
+                Op::new_start(Node::Document, Content::empty()),
                 Op::new_start(Node::Heading, p.span(4..6)),
                 Op::new_value(p.span(6..7)),
-                Op::new_end(Node::Heading, Content::span(0..0)),
-                Op::new_end(Node::Document, Content::span(0..0)),
+                Op::new_end(Node::Heading, Content::empty()),
+                Op::new_end(Node::Document, Content::empty()),
                 Op::new_end(Node::Collapsible, p.span(8..9)),
             ]
         );
@@ -181,17 +181,17 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::Collapsible, p.span(0..2)), // {%
-                Op::new_start(Node::Modifier, Content::span(0..0)), //
-                Op::new_value(p.span(2..3)),                    // Title
-                Op::new_end(Node::Modifier, p.span(3..4)),      // \n
-                Op::new_start(Node::Document, Content::span(0..0)), //
-                Op::new_start(Node::Embed, p.span(4..5)),       // {{
-                Op::new_value(p.span(5..6)),                    // foo
-                Op::new_value(p.span(6..7)),                    // |
-                Op::new_value(p.span(7..8)),                    // bar
-                Op::new_end(Node::Embed, p.span(8..10)),        // }}\n
-                Op::new_end(Node::Document, Content::span(0..0)),
+                Op::new_start(Node::Collapsible, p.span(0..2)),  // {%
+                Op::new_start(Node::Modifier, Content::empty()), //
+                Op::new_value(p.span(2..3)),                     // Title
+                Op::new_end(Node::Modifier, p.span(3..4)),       // \n
+                Op::new_start(Node::Document, Content::empty()), //
+                Op::new_start(Node::Embed, p.span(4..5)),        // {{
+                Op::new_value(p.span(5..6)),                     // foo
+                Op::new_value(p.span(6..7)),                     // |
+                Op::new_value(p.span(7..8)),                     // bar
+                Op::new_end(Node::Embed, p.span(8..10)),         // }}\n
+                Op::new_end(Node::Document, Content::empty()),
                 Op::new_end(Node::Collapsible, p.span(10..11)), // %}
             ]
         );

@@ -3,13 +3,13 @@ use crate::op::{Content, Node, Op, Parser, destination::destination, title::titl
 pub fn anchor(p: &mut Parser) -> bool {
     let start = p.pos;
     let snap = p.ops.len();
-    p.ops.push(Op::new_start(Node::Anchor, Content::span(0..0)));
+    p.ops.push(Op::new_start(Node::Anchor, Content::empty()));
     if !title(p) || !destination(p) {
         p.pos = start;
         p.ops.truncate(snap);
         return false;
     }
-    p.ops.push(Op::new_end(Node::Anchor, Content::span(0..0)));
+    p.ops.push(Op::new_end(Node::Anchor, Content::empty()));
     true
 }
 
@@ -27,14 +27,14 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::Anchor, Content::span(0..0)),
+                Op::new_start(Node::Anchor, Content::empty()),
                 Op::new_start(Node::Title, p.span(0..1)),
                 Op::new_value(p.span(1..2)),
                 Op::new_end(Node::Title, p.span(2..3)),
                 Op::new_start(Node::Destination, p.span(3..4)),
                 Op::new_value(p.span(4..5)),
                 Op::new_end(Node::Destination, p.span(5..6)),
-                Op::new_end(Node::Anchor, Content::span(0..0))
+                Op::new_end(Node::Anchor, Content::empty())
             ]
         );
     }
@@ -74,14 +74,14 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::Anchor, Content::span(0..0)),
+                Op::new_start(Node::Anchor, Content::empty()),
                 Op::new_start(Node::Title, p.span(0..1)),
-                Op::new_value(p.span(1..4)),
-                Op::new_end(Node::Title, p.span(4..5)),
-                Op::new_start(Node::Destination, p.span(5..6)),
-                Op::new_value(p.span(6..7)),
-                Op::new_end(Node::Destination, p.span(7..8)),
-                Op::new_end(Node::Anchor, Content::span(0..0))
+                Op::new_value(p.span(1..3)),
+                Op::new_end(Node::Title, p.span(3..4)),
+                Op::new_start(Node::Destination, p.span(4..5)),
+                Op::new_value(p.span(5..6)),
+                Op::new_end(Node::Destination, p.span(6..7)),
+                Op::new_end(Node::Anchor, Content::empty())
             ]
         );
     }
@@ -93,14 +93,14 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::Anchor, Content::span(0..0)),
+                Op::new_start(Node::Anchor, Content::empty()),
                 Op::new_start(Node::Title, p.span(0..1)),
                 Op::new_value(p.span(1..2)),
                 Op::new_end(Node::Title, p.span(2..3)),
                 Op::new_start(Node::Destination, p.span(3..4)),
                 Op::new_value(p.span(4..8)),
                 Op::new_end(Node::Destination, p.span(8..9)),
-                Op::new_end(Node::Anchor, Content::span(0..0))
+                Op::new_end(Node::Anchor, Content::empty())
             ]
         );
     }
@@ -112,14 +112,14 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::Anchor, Content::span(0..0)),
+                Op::new_start(Node::Anchor, Content::empty()),
                 Op::new_start(Node::Title, p.span(0..1)),
                 Op::new_value(p.span(1..2)),
                 Op::new_end(Node::Title, p.span(2..3)),
                 Op::new_start(Node::Destination, p.span(3..4)),
                 Op::new_value(p.span(4..6)),
                 Op::new_end(Node::Destination, p.span(6..7)),
-                Op::new_end(Node::Anchor, Content::span(0..0))
+                Op::new_end(Node::Anchor, Content::empty())
             ]
         );
     }

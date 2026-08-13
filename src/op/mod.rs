@@ -5,13 +5,12 @@
 //! - [`OpKind::Start`]`(`[`Node`]`)` / [`OpKind::End`]`(`[`Node`]`)` bracket a node; everything
 //!   between belongs to it. [`OpKind::Value`] is leaf content belonging to the innermost open
 //!   node.
-//! - [`Content`] borrows from the source ([`Content::Span`]) when possible, and only allocates
-//!   ([`Content::Materialized`]) when text was assembled from non-contiguous tokens (e.g. after
-//!   escape processing).
+//! - [`Content`] is a byte range into the source plus a count of the `\`-escapes it contains.
 //!
 //! [`to_yamd`] consumes an event stream and promotes it to the [`Yamd`](crate::nodes::Yamd) tree
 //! form used by [`deserialize`](crate::deserialize).
 
+use std::borrow::Cow;
 use std::ops::Range;
 
 #[cfg(feature = "serde")]
@@ -45,84 +44,91 @@ mod title;
 mod to_yamd;
 pub use to_yamd::{UnbalancedOpStream, to_yamd, try_to_yamd};
 
-/// Text content extracted from the source input.
-///
-/// `Content` provides zero-copy access to source text when possible. Use [`Span`](Content::Span)
-/// when the text maps to a contiguous byte range in the source. Use
-/// [`Materialized`](Content::Materialized) when the text was assembled from non-contiguous tokens
-/// (e.g., after escape processing removed backslashes).
+/// Text content extracted from the source input: a byte range plus how many `\`-escapes it
+/// contains.
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(tag = "type", content = "value"))]
-pub enum Content {
-    /// A contiguous byte range in the source string. Avoids allocation by referencing the original input directly.
-    Span(Range<usize>),
-    /// An owned string for text assembled from non-contiguous tokens.
-    Materialized(String),
+pub struct Content {
+    span: Range<usize>,
+    escaped: usize,
 }
 
 impl Content {
-    /// Convenience constructor for an unescaped span — equivalent to [`Content::Span`] directly.
-    pub fn span(range: Range<usize>) -> Self {
-        Content::Span(range)
+    /// General constructor
+    pub(crate) fn new(span: Range<usize>, escaped: usize) -> Self {
+        Self { span, escaped }
     }
 
-    /// Returns the text this content represents, borrowing from `source` for [`Span`](Content::Span) variants.
-    pub fn as_str<'a>(&'a self, source: &'a str) -> &'a str {
-        match self {
-            Content::Span(range) => {
-                if range.is_empty() {
-                    ""
-                } else {
-                    &source[range.clone()]
-                }
-            }
-            Content::Materialized(s) => s.as_str(),
+    /// Constructor for an unescaped span (the common case).
+    pub fn span(range: Range<usize>) -> Self {
+        Content::new(range, 0)
+    }
+
+    /// Constructor for empty case
+    pub fn empty() -> Self {
+        Content::new(0..0, 0)
+    }
+
+    /// Returns the text this content represents. Borrows directly from `source` when there's
+    /// nothing to unescape; allocates and strips `\` otherwise.
+    pub fn as_str<'a>(&'a self, source: &'a str) -> Cow<'a, str> {
+        let raw = if self.span.is_empty() {
+            ""
+        } else {
+            &source[self.span.clone()]
+        };
+        if self.escaped == 0 {
+            Cow::Borrowed(raw)
+        } else {
+            Cow::Owned(unescape(raw, self.escaped))
         }
     }
 
     /// Returns an owned copy of the text this content represents.
     pub fn to_string(&self, source: &str) -> String {
-        self.as_str(source).to_owned()
+        self.as_str(source).into_owned()
     }
 
     /// Returns `true` if this content represents an empty string.
     pub fn is_empty(&self) -> bool {
-        match self {
-            Content::Span(range) => range.is_empty(),
-            Content::Materialized(s) => s.is_empty(),
-        }
+        self.span.is_empty()
     }
 
-    /// Builds `Content` from a token slice. Produces a [`Span`](Content::Span) when tokens are contiguous in `source`,
-    /// or [`Materialized`](Content::Materialized) when gaps exist (e.g., escape characters were removed).
-    pub fn from_tokens(tokens: &[Token], source: &str) -> Self {
+    /// Builds `Content` from a token slice.
+    pub fn from_tokens(tokens: &[Token]) -> Self {
         if tokens.is_empty() {
-            return Content::span(0..0);
+            return Content::empty();
         }
-        let is_contiguous = tokens
-            .windows(2)
-            .all(|w| w[0].range.end == w[1].range.start);
-        if is_contiguous {
-            let start = tokens.first().unwrap().range.start;
-            let end = tokens.last().unwrap().range.end;
-            Content::span(start..end)
-        } else {
-            let s: String = tokens.iter().map(|t| &source[t.range.clone()]).collect();
-            Content::Materialized(s)
-        }
+        let start = tokens.first().unwrap().range.start;
+        let end = tokens.last().unwrap().range.end;
+        let escaped = tokens.iter().map(|t| t.escaped).sum();
+        Content::new(start..end, escaped)
     }
+}
+
+fn unescape(raw: &str, escaped_count: usize) -> String {
+    let mut out = String::with_capacity(raw.len().saturating_sub(escaped_count));
+    let mut rest = raw;
+    for _ in 0..escaped_count {
+        let Some(idx) = rest.find('\\') else {
+            break;
+        };
+        out.push_str(&rest[..idx]);
+        rest = &rest[idx + 1..];
+        let Some(c) = rest.chars().next() else {
+            out.push('\\');
+            return out;
+        };
+        out.push(c);
+        rest = &rest[c.len_utf8()..];
+    }
+    out.push_str(rest);
+    out
 }
 
 impl From<&[Token]> for Content {
     fn from(tokens: &[Token]) -> Self {
-        if tokens.is_empty() {
-            Content::span(0..0)
-        } else {
-            let start = tokens.first().unwrap().range.start;
-            let end = tokens.last().unwrap().range.end;
-            Content::span(start..end)
-        }
+        Content::from_tokens(tokens)
     }
 }
 
@@ -318,31 +324,20 @@ end
         let ops = parse(TEST_CASE);
         let mut covered = vec![false; TEST_CASE.len()];
 
-        let esc_start = TEST_CASE
-            .find("\\*escaped\\*")
-            .expect("escape marker must be present");
-        let esc_end = esc_start + "\\*escaped\\*".len();
-        covered[esc_start..esc_end].fill(true);
-
         for op in &ops {
-            match &op.content {
-                Content::Span(range) => {
-                    for i in range.clone() {
-                        assert!(
-                            !covered[i],
-                            "byte {i} covered by multiple ops (char: {:?})",
-                            &TEST_CASE[i..i + 1]
-                        );
-                        covered[i] = true;
-                    }
-                }
-                Content::Materialized(_) => {}
+            for i in op.content.span.clone() {
+                assert!(
+                    !covered[i],
+                    "byte {i} covered by multiple ops (char: {:?})",
+                    &TEST_CASE[i..i + 1]
+                );
+                covered[i] = true;
             }
         }
         let uncovered: Vec<usize> = covered
             .iter()
             .enumerate()
-            .filter(|&(_, b)| !b)
+            .filter(|&(_, is_covered)| !is_covered)
             .map(|(i, _)| i)
             .collect();
         assert!(
@@ -456,9 +451,10 @@ end
     }
 
     #[test]
-    fn content_materialized_as_str() {
-        let content = Content::Materialized(String::from("hello"));
-        assert_eq!(content.as_str("ignored source"), "hello");
+    fn content_escaped_as_str() {
+        let source = "a\\!b";
+        let content = Content::new(0..source.len(), 1);
+        assert_eq!(content.as_str(source), "a!b");
     }
 
     #[test]
@@ -469,60 +465,96 @@ end
     }
 
     #[test]
-    fn content_from_non_contiguous_tokens_materializes() {
-        let source = "a\\!b";
+    fn content_from_tokens_sums_escaped_across_slice() {
+        let source = "a\\!b c\\!d";
         let tokens = vec![
-            Token::new(TokenKind::Literal, 0..1, Position::default()),
             Token {
                 kind: TokenKind::Literal,
-                range: 2..3,
-                position: Position {
-                    byte_index: 2,
-                    column: 1,
-                    row: 0,
-                },
-                escaped: true,
+                range: 0..4,
+                position: Position::default(),
+                escaped: 1,
             },
             Token::new(
-                TokenKind::Literal,
-                3..4,
+                TokenKind::Space,
+                4..5,
                 Position {
-                    byte_index: 3,
-                    column: 2,
+                    byte_index: 4,
+                    column: 4,
                     row: 0,
                 },
             ),
+            Token {
+                kind: TokenKind::Literal,
+                range: 5..9,
+                position: Position {
+                    byte_index: 5,
+                    column: 5,
+                    row: 0,
+                },
+                escaped: 1,
+            },
         ];
-        let content = Content::from_tokens(&tokens, source);
-        assert_eq!(content, Content::Materialized(String::from("a!b")));
+        let content = Content::from_tokens(&tokens);
+        assert_eq!(content, Content::new(0..9, 2));
+        assert_eq!(content.as_str(source), "a!b c!d");
     }
 
     #[test]
-    fn content_from_contiguous_tokens_stays_span() {
-        let source = "hello";
-        let tokens = vec![Token::new(TokenKind::Literal, 0..5, Position::default())];
-        let content = Content::from_tokens(&tokens, source);
-        assert_eq!(content, Content::span(0..5));
+    fn unescape_no_escapes() {
+        assert_eq!(unescape("hello", 0), "hello");
+    }
+
+    #[test]
+    fn unescape_single_escape() {
+        assert_eq!(unescape("a\\!b", 1), "a!b");
+    }
+
+    #[test]
+    fn unescape_double_backslash_is_one() {
+        assert_eq!(unescape("\\\\", 1), "\\");
+    }
+
+    #[test]
+    fn unescape_multibyte_escaped_char() {
+        assert_eq!(unescape("\\ツ", 1), "ツ");
+    }
+
+    #[test]
+    fn unescape_dangling_backslash_after_budget_spent_is_kept() {
+        assert_eq!(unescape("a\\!\\", 1), "a!\\");
+    }
+
+    #[test]
+    fn unescape_count_too_high_with_no_backslash_left_stops_gracefully() {
+        assert_eq!(unescape("ab", 2), "ab");
+    }
+
+    #[test]
+    fn unescape_count_too_high_with_dangling_backslash_stops_gracefully() {
+        assert_eq!(unescape("a\\", 2), "a\\");
+    }
+
+    #[test]
+    fn unescape_count_too_low_leaves_remainder_untouched() {
+        assert_eq!(unescape("a\\!b\\!c", 1), "a!b\\!c");
     }
 
     #[test]
     fn content_empty_span_as_str() {
-        let content = Content::span(0..0);
+        let content = Content::empty();
         assert_eq!(content.as_str("anything"), "");
     }
 
     #[test]
     fn content_is_empty() {
-        assert!(Content::span(0..0).is_empty());
+        assert!(Content::empty().is_empty());
         assert!(!Content::span(0..5).is_empty());
-        assert!(Content::Materialized(String::new()).is_empty());
-        assert!(!Content::Materialized(String::from("hi")).is_empty());
     }
 
     #[test]
     fn content_from_empty_tokens() {
-        let content = Content::from_tokens(&[], "source");
-        assert_eq!(content, Content::span(0..0));
+        let content = Content::from_tokens(&[]);
+        assert_eq!(content, Content::empty());
     }
 
     #[test]
@@ -536,7 +568,7 @@ end
     fn content_from_empty_token_slice() {
         let empty: &[Token] = &[];
         let content = Content::from(empty);
-        assert_eq!(content, Content::span(0..0));
+        assert_eq!(content, Content::empty());
     }
 
     #[test]
@@ -555,14 +587,17 @@ end
 
     #[test]
     fn escape() {
+        let source = "¯\\\\\\_(ツ)\\_/¯";
+        let ops = parse(source);
+        assert_eq!(ops[2].content.as_str(source), "¯\\_(ツ)_/¯");
         assert_eq!(
-            parse("¯\\\\\\_(ツ)\\_/¯"),
+            ops,
             vec![
-                Op::new_start(Node::Document, Content::span(0..0)),
-                Op::new_start(Node::Paragraph, Content::span(0..0)),
-                Op::new_value(Content::Materialized(String::from("¯\\_(ツ)_/¯"))),
-                Op::new_end(Node::Paragraph, Content::span(0..0)),
-                Op::new_end(Node::Document, Content::span(0..0))
+                Op::new_start(Node::Document, Content::empty()),
+                Op::new_start(Node::Paragraph, Content::empty()),
+                Op::new_value(Content::new(0..16, 3)),
+                Op::new_end(Node::Paragraph, Content::empty()),
+                Op::new_end(Node::Document, Content::empty())
             ]
         );
     }

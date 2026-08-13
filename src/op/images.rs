@@ -18,8 +18,8 @@ pub fn images(p: &mut Parser) -> bool {
 
     if count > 1 {
         p.ops
-            .insert(snap, Op::new_start(Node::Images, Content::span(0..0)));
-        p.ops.push(Op::new_end(Node::Images, Content::span(0..0)));
+            .insert(snap, Op::new_start(Node::Images, Content::empty()));
+        p.ops.push(Op::new_end(Node::Images, Content::empty()));
     }
     count > 0
 }
@@ -38,7 +38,7 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::Images, Content::span(0..0)),
+                Op::new_start(Node::Images, Content::empty()),
                 Op::new_start(Node::Image, p.span(0..1)),
                 Op::new_start(Node::Title, p.span(1..2)),
                 Op::new_value(p.span(2..3)),
@@ -54,8 +54,8 @@ mod tests {
                 Op::new_start(Node::Destination, p.span(12..13)),
                 Op::new_value(p.span(13..14)),
                 Op::new_end(Node::Destination, p.span(14..15)),
-                Op::new_end(Node::Image, Content::span(0..0)),
-                Op::new_end(Node::Images, Content::span(0..0)),
+                Op::new_end(Node::Image, Content::empty()),
+                Op::new_end(Node::Images, Content::empty()),
             ]
         );
     }
@@ -97,7 +97,7 @@ mod tests {
         assert_eq!(
             p.ops,
             vec![
-                Op::new_start(Node::Images, Content::span(0..0)),
+                Op::new_start(Node::Images, Content::empty()),
                 Op::new_start(Node::Image, p.span(0..1)),
                 Op::new_start(Node::Title, p.span(1..2)),
                 Op::new_value(p.span(2..3)),
@@ -114,7 +114,7 @@ mod tests {
                 Op::new_value(p.span(13..14)),
                 Op::new_end(Node::Destination, p.span(14..15)),
                 Op::new_end(Node::Image, p.span(15..16)),
-                Op::new_end(Node::Images, Content::span(0..0)),
+                Op::new_end(Node::Images, Content::empty()),
             ]
         );
     }
