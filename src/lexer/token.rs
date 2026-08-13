@@ -103,7 +103,7 @@ pub struct Token {
     pub position: Position,
     /// How many `\`-escapes are folded into this token's range. `0` means the range can be used
     /// as-is; otherwise the text needs unescaping (see `Content::as_str`) before use.
-    pub escaped: usize,
+    pub escaped: u32,
 }
 
 impl Token {

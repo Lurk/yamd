@@ -101,7 +101,7 @@ impl Content {
         }
         let start = tokens.first().unwrap().range.start;
         let end = tokens.last().unwrap().range.end;
-        let escaped = tokens.iter().map(|t| t.escaped).sum();
+        let escaped = tokens.iter().map(|t| t.escaped as usize).sum();
         Content::new(start..end, escaped)
     }
 }

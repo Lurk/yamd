@@ -23,7 +23,7 @@ pub use token::{Position, Token, TokenKind};
 pub struct Lexer<'input> {
     literal_start: Option<Position>,
     len: usize,
-    escaped: usize,
+    escaped: u32,
     position: Position,
     iter: Peekable<CharIndices<'input>>,
     queue: VecDeque<Token>,
