@@ -485,7 +485,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use crate::nodes::*;
-    use crate::op::{Node, Op, UnbalancedOpStream, parse, to_yamd, try_to_yamd};
+    use crate::op::{Content, Node, Op, UnbalancedOpStream, parse, to_yamd, try_to_yamd};
 
     #[test]
     fn single_paragraph() {
@@ -1056,7 +1056,7 @@ end"#;
 
     #[test]
     fn unclosed_frame_errors() {
-        let ops = vec![Op::new_start(Node::Heading, &[] as &[crate::lexer::Token])];
+        let ops = vec![Op::new_start(Node::Heading, Content::empty())];
         assert_eq!(try_to_yamd(&ops, ""), Err(UnbalancedOpStream));
     }
 }

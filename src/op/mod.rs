@@ -126,24 +126,6 @@ fn unescape(raw: &str, escaped_count: usize) -> String {
     out
 }
 
-impl From<&[Token]> for Content {
-    fn from(tokens: &[Token]) -> Self {
-        Content::from_tokens(tokens)
-    }
-}
-
-impl<const N: usize> From<&[Token; N]> for Content {
-    fn from(tokens: &[Token; N]) -> Self {
-        Content::from(tokens.as_slice())
-    }
-}
-
-impl From<Vec<Token>> for Content {
-    fn from(tokens: Vec<Token>) -> Self {
-        Content::from(tokens.as_slice())
-    }
-}
-
 /// Identifies which AST node type an [`Op`] refers to.
 ///
 /// Used in [`OpKind::Start`] and [`OpKind::End`] to mark the boundaries of nested structures
@@ -211,26 +193,26 @@ pub struct Op {
 
 impl Op {
     /// Creates a [`Value`](OpKind::Value) operation with the given content.
-    pub fn new_value<T: Into<Content>>(tokens: T) -> Self {
+    pub fn new_value(content: Content) -> Self {
         Self {
             kind: OpKind::Value,
-            content: tokens.into(),
+            content,
         }
     }
 
     /// Creates a [`Start`](OpKind::Start) operation for the given node type.
-    pub fn new_start<T: Into<Content>>(node: Node, tokens: T) -> Self {
+    pub fn new_start(node: Node, content: Content) -> Self {
         Self {
             kind: OpKind::Start(node),
-            content: tokens.into(),
+            content,
         }
     }
 
     /// Creates an [`End`](OpKind::End) operation for the given node type.
-    pub fn new_end<T: Into<Content>>(node: Node, tokens: T) -> Self {
+    pub fn new_end(node: Node, content: Content) -> Self {
         Self {
             kind: OpKind::End(node),
-            content: tokens.into(),
+            content,
         }
     }
 }
@@ -555,34 +537,6 @@ end
     fn content_from_empty_tokens() {
         let content = Content::from_tokens(&[]);
         assert_eq!(content, Content::empty());
-    }
-
-    #[test]
-    fn content_from_token_slice() {
-        let tokens = vec![Token::new(TokenKind::Literal, 0..5, Position::default())];
-        let content = Content::from(tokens.as_slice());
-        assert_eq!(content, Content::span(0..5));
-    }
-
-    #[test]
-    fn content_from_empty_token_slice() {
-        let empty: &[Token] = &[];
-        let content = Content::from(empty);
-        assert_eq!(content, Content::empty());
-    }
-
-    #[test]
-    fn content_from_token_array() {
-        let tokens = [Token::new(TokenKind::Literal, 0..3, Position::default())];
-        let content = Content::from(&tokens);
-        assert_eq!(content, Content::span(0..3));
-    }
-
-    #[test]
-    fn content_from_token_vec() {
-        let tokens = vec![Token::new(TokenKind::Literal, 0..5, Position::default())];
-        let content = Content::from(tokens);
-        assert_eq!(content, Content::span(0..5));
     }
 
     #[test]

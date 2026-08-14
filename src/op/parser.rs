@@ -275,9 +275,6 @@ impl Parser {
     /// Converts a token index range into [`Content`]
     #[inline]
     pub(crate) fn span(&self, range: Range<usize>) -> Content {
-        if range.is_empty() {
-            return Content::empty();
-        }
         Content::from_tokens(&self.tokens[range])
     }
 
