@@ -155,6 +155,33 @@ fn backslash_at_end_of_text() {
 }
 
 #[test]
+fn dangling_backslash_at_eof_is_kept_literal() {
+    assert_eq!(
+        Yamd::new(
+            None,
+            vec![Paragraph::new(vec![ParagraphNodes::from("\\".to_string())]).into()],
+        ),
+        deserialize("\\")
+    );
+}
+
+#[test]
+fn dangling_backslash_at_eof_after_text_is_kept_literal() {
+    assert_eq!(
+        Yamd::new(
+            None,
+            vec![Paragraph::new(vec![ParagraphNodes::from("plain text\\".to_string())]).into()],
+        ),
+        deserialize("plain text\\")
+    );
+}
+
+#[test]
+fn dangling_backslash_at_eof_round_trips() {
+    round_trip_inline(ParagraphNodes::from("plain text\\".to_string()));
+}
+
+#[test]
 fn consecutive_special_chars() {
     round_trip_inline(ParagraphNodes::from("***___~~~```###!!!".to_string()));
 }
