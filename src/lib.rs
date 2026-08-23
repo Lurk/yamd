@@ -41,8 +41,10 @@
 //!
 //! ## Escaping
 //!
-//! Escaping is handled at the [lexer] level: any character following `\` is treated as a
-//! [literal](lexer::TokenKind::Literal).
+//! Escaping is recognized at the [lexer] level: `\` forces the following character into the
+//! surrounding [literal](lexer::TokenKind::Literal) run instead of its usual meaning. The `\`
+//! itself is stripped later, lazily, when the content is resolved to text (e.g. via
+//! [`Content::as_str`](op::Content::as_str), or transparently as part of [`deserialize`]).
 //!
 //! Example:
 //!

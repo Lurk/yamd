@@ -129,18 +129,16 @@ impl StopCondition {
 /// Node-specific parsing functions (e.g., `heading`, `paragraph`) receive `&mut Parser`, use
 /// [`eat`](Parser::eat)/[`at`](Parser::at) to match tokens, and push results to [`ops`](Parser::ops).
 /// On mismatch they restore [`pos`](Parser::pos) and truncate `ops` to backtrack.
-pub(crate) struct Parser<'a> {
-    pub(crate) source: &'a str,
+pub(crate) struct Parser {
     tokens: Vec<Token>,
     pub(crate) pos: usize,
     eof_stack: Vec<StopCondition>,
     pub(crate) ops: Vec<Op>,
 }
 
-impl<'a> From<&'a str> for Parser<'a> {
-    fn from(input: &'a str) -> Self {
+impl From<&str> for Parser {
+    fn from(input: &str) -> Self {
         Self {
-            source: input,
             tokens: Lexer::new(input).collect(),
             pos: 0,
             eof_stack: Vec::new(),
@@ -149,7 +147,7 @@ impl<'a> From<&'a str> for Parser<'a> {
     }
 }
 
-impl Parser<'_> {
+impl Parser {
     /// Returns the token at `index`, or `None` if out of bounds.
     #[inline]
     pub(crate) fn get(&self, index: usize) -> Option<&Token> {
@@ -274,22 +272,10 @@ impl Parser<'_> {
         None
     }
 
-    /// Converts a token index range into [`Content`] using the tokens' byte ranges.
-    /// Returns [`Content::Materialized`] when any token in the range is escaped (has gaps from
-    /// removed backslashes), otherwise returns [`Content::Span`].
+    /// Converts a token index range into [`Content`]
     #[inline]
     pub(crate) fn span(&self, range: Range<usize>) -> Content {
-        if range.is_empty() {
-            return Content::Span(0..0);
-        }
-        let tokens = &self.tokens[range];
-        if tokens.iter().any(|t| t.escaped) {
-            Content::from_tokens(tokens, self.source)
-        } else {
-            let byte_start = tokens.first().unwrap().range.start;
-            let byte_end = tokens.last().unwrap().range.end;
-            Content::Span(byte_start..byte_end)
-        }
+        Content::from_tokens(&self.tokens[range])
     }
 
     /// Consumes the parser and returns the accumulated operations.
@@ -414,7 +400,7 @@ mod tests {
     #[test]
     fn eat_until_finds_match() {
         let mut p = Parser::from("hello\nworld");
-        let result = p.eat_until(|t: &Token| t.kind == TokenKind::Eol);
+        let result = p.eat_until(eol);
         assert!(result.is_some());
         let (before, matched) = result.unwrap();
         assert_eq!(before, 0..1);

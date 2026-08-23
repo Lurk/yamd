@@ -49,8 +49,10 @@ distinction), and escaping is context-independent.
 
 ### Escaping
 
-Escaping is handled at the [`lexer`](https://docs.rs/yamd/latest/yamd/lexer/) level: any character following `\` is treated as a
-[literal](https://docs.rs/yamd/latest/yamd/lexer/token/enum.TokenKind.html#variant.Literal).
+Escaping is recognized at the [`lexer`](https://docs.rs/yamd/latest/yamd/lexer/) level: `\` forces the following character into the
+surrounding [literal](https://docs.rs/yamd/latest/yamd/lexer/token/enum.TokenKind.html#variant.Literal) run instead of its usual meaning. The `\`
+itself is stripped later, lazily, when the content is resolved to text (e.g. via
+[`Content::as_str`](https://docs.rs/yamd/latest/yamd/op/struct.Content.html#method.as_str), or transparently as part of [`deserialize`](https://docs.rs/yamd/latest/yamd/fn.deserialize.html)).
 
 Example:
 

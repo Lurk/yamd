@@ -53,6 +53,39 @@ fn paragraph_text_with_double_backslash() {
 }
 
 #[test]
+fn escaped_heading_marker_stays_paragraph() {
+    assert_eq!(
+        Yamd::new(
+            None,
+            vec![Paragraph::new(vec![ParagraphNodes::from("# not heading".to_string())]).into()],
+        ),
+        deserialize("\\# not heading")
+    );
+}
+
+#[test]
+fn escaped_list_marker_stays_paragraph() {
+    assert_eq!(
+        Yamd::new(
+            None,
+            vec![Paragraph::new(vec![ParagraphNodes::from("- not a list".to_string())]).into()],
+        ),
+        deserialize("\\- not a list")
+    );
+}
+
+#[test]
+fn escaped_thematic_break_stays_paragraph() {
+    assert_eq!(
+        Yamd::new(
+            None,
+            vec![Paragraph::new(vec![ParagraphNodes::from("---".to_string())]).into()],
+        ),
+        deserialize("\\---")
+    );
+}
+
+#[test]
 fn paragraph_text_with_special_chars() {
     round_trip_inline(ParagraphNodes::from(
         "**not bold** _not italic_".to_string(),
@@ -119,6 +152,33 @@ fn unicode_emoji_in_heading() {
 #[test]
 fn backslash_at_end_of_text() {
     round_trip_inline(ParagraphNodes::from("text ending with \\".to_string()));
+}
+
+#[test]
+fn dangling_backslash_at_eof_is_kept_literal() {
+    assert_eq!(
+        Yamd::new(
+            None,
+            vec![Paragraph::new(vec![ParagraphNodes::from("\\".to_string())]).into()],
+        ),
+        deserialize("\\")
+    );
+}
+
+#[test]
+fn dangling_backslash_at_eof_after_text_is_kept_literal() {
+    assert_eq!(
+        Yamd::new(
+            None,
+            vec![Paragraph::new(vec![ParagraphNodes::from("plain text\\".to_string())]).into()],
+        ),
+        deserialize("plain text\\")
+    );
+}
+
+#[test]
+fn dangling_backslash_at_eof_round_trips() {
+    round_trip_inline(ParagraphNodes::from("plain text\\".to_string()));
 }
 
 #[test]

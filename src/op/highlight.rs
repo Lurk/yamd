@@ -20,10 +20,6 @@ fn is_space(t: &Token) -> bool {
     t.kind == TokenKind::Space && t.range.len() == 1
 }
 
-fn is_eol(t: &Token) -> bool {
-    t.kind == TokenKind::Eol
-}
-
 fn is_terminator(t: &Token) -> bool {
     t.kind == TokenKind::Terminator
 }
@@ -35,7 +31,7 @@ fn icon(p: &mut Parser) -> bool {
         return false;
     };
 
-    let Some((body_range, end_range)) = p.eat_until(is_eol) else {
+    let Some((body_range, end_range)) = p.eat_until(eol) else {
         p.pos = start;
         p.ops.truncate(snap);
         return false;
@@ -54,7 +50,7 @@ pub fn highlight(p: &mut Parser) -> bool {
     let start = p.pos;
     let snap = p.ops.len();
 
-    let Some(start_range) = eat_seq!(p, is_two_bangs, |t: &Token| is_space(t) || is_eol(t)) else {
+    let Some(start_range) = eat_seq!(p, is_two_bangs, |t: &Token| is_space(t) || eol(t)) else {
         return false;
     };
 
@@ -81,7 +77,7 @@ pub fn highlight(p: &mut Parser) -> bool {
         let before = p.pos;
 
         if let Some(close_range) = p.eat(is_two_bangs) {
-            let end_range = if let Some(eol_range) = p.eat(is_eol) {
+            let end_range = if let Some(eol_range) = p.eat(eol) {
                 close_range.start..eol_range.end
             } else {
                 close_range
@@ -126,13 +122,13 @@ mod tests {
             p.ops,
             vec![
                 Op::new_start(Node::Highlight, p.span(0..2)),
-                Op::new_start(Node::Modifier, Content::Span(0..0)),
+                Op::new_start(Node::Modifier, Content::empty()),
                 Op::new_value(p.span(2..3)),
                 Op::new_end(Node::Modifier, p.span(3..4)),
                 Op::new_start(Node::Icon, p.span(4..6)),
                 Op::new_value(p.span(6..7)),
                 Op::new_end(Node::Icon, p.span(7..8)),
-                Op::new_start(Node::Paragraph, Content::Span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_start(Node::Italic, p.span(8..9)),
                 Op::new_value(p.span(9..10)),
                 Op::new_end(Node::Italic, p.span(10..11)),
@@ -140,15 +136,15 @@ mod tests {
                 Op::new_start(Node::Bold, p.span(12..13)),
                 Op::new_value(p.span(13..14)),
                 Op::new_end(Node::Bold, p.span(14..15)),
-                Op::new_end(Node::Paragraph, Content::Span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(15..16)),
-                Op::new_start(Node::Paragraph, Content::Span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(16..17)),
                 Op::new_start(Node::Strikethrough, p.span(17..18)),
                 Op::new_value(p.span(18..19)),
                 Op::new_end(Node::Strikethrough, p.span(19..20)),
                 Op::new_value(p.span(20..22)),
-                Op::new_end(Node::Paragraph, Content::Span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
                 Op::new_end(Node::Highlight, p.span(22..23)),
             ]
         );
@@ -165,7 +161,7 @@ mod tests {
                 Op::new_start(Node::Icon, p.span(2..4)),
                 Op::new_value(p.span(4..5)),
                 Op::new_end(Node::Icon, p.span(5..6)),
-                Op::new_start(Node::Paragraph, Content::Span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_start(Node::Italic, p.span(6..7)),
                 Op::new_value(p.span(7..8)),
                 Op::new_end(Node::Italic, p.span(8..9)),
@@ -173,15 +169,15 @@ mod tests {
                 Op::new_start(Node::Bold, p.span(10..11)),
                 Op::new_value(p.span(11..12)),
                 Op::new_end(Node::Bold, p.span(12..13)),
-                Op::new_end(Node::Paragraph, Content::Span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(13..14)),
-                Op::new_start(Node::Paragraph, Content::Span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(14..15)),
                 Op::new_start(Node::Strikethrough, p.span(15..16)),
                 Op::new_value(p.span(16..17)),
                 Op::new_end(Node::Strikethrough, p.span(17..18)),
                 Op::new_value(p.span(18..20)),
-                Op::new_end(Node::Paragraph, Content::Span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
                 Op::new_end(Node::Highlight, p.span(20..21)),
             ]
         )
@@ -195,10 +191,10 @@ mod tests {
             p.ops,
             vec![
                 Op::new_start(Node::Highlight, p.span(0..2)),
-                Op::new_start(Node::Modifier, Content::Span(0..0)),
+                Op::new_start(Node::Modifier, Content::empty()),
                 Op::new_value(p.span(2..3)),
                 Op::new_end(Node::Modifier, p.span(3..4)),
-                Op::new_start(Node::Paragraph, Content::Span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_start(Node::Italic, p.span(4..5)),
                 Op::new_value(p.span(5..6)),
                 Op::new_end(Node::Italic, p.span(6..7)),
@@ -206,15 +202,15 @@ mod tests {
                 Op::new_start(Node::Bold, p.span(8..9)),
                 Op::new_value(p.span(9..10)),
                 Op::new_end(Node::Bold, p.span(10..11)),
-                Op::new_end(Node::Paragraph, Content::Span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(11..12)),
-                Op::new_start(Node::Paragraph, Content::Span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(12..13)),
                 Op::new_start(Node::Strikethrough, p.span(13..14)),
                 Op::new_value(p.span(14..15)),
                 Op::new_end(Node::Strikethrough, p.span(15..16)),
                 Op::new_value(p.span(16..18)),
-                Op::new_end(Node::Paragraph, Content::Span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
                 Op::new_end(Node::Highlight, p.span(18..19)),
             ]
         )
@@ -263,11 +259,11 @@ mod tests {
             p.ops,
             vec![
                 Op::new_start(Node::Highlight, p.span(0..2)),
-                Op::new_start(Node::Paragraph, Content::Span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(2..5)),
-                Op::new_end(Node::Paragraph, Content::Span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(5..6)),
-                Op::new_start(Node::Paragraph, Content::Span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_start(Node::Italic, p.span(6..7)),
                 Op::new_value(p.span(7..8)),
                 Op::new_end(Node::Italic, p.span(8..9)),
@@ -275,15 +271,15 @@ mod tests {
                 Op::new_start(Node::Bold, p.span(10..11)),
                 Op::new_value(p.span(11..12)),
                 Op::new_end(Node::Bold, p.span(12..13)),
-                Op::new_end(Node::Paragraph, Content::Span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(13..14)),
-                Op::new_start(Node::Paragraph, Content::Span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(14..15)),
                 Op::new_start(Node::Strikethrough, p.span(15..16)),
                 Op::new_value(p.span(16..17)),
                 Op::new_end(Node::Strikethrough, p.span(17..18)),
                 Op::new_value(p.span(18..20)),
-                Op::new_end(Node::Paragraph, Content::Span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
                 Op::new_end(Node::Highlight, p.span(20..21)),
             ]
         );
@@ -297,12 +293,12 @@ mod tests {
             p.ops,
             vec![
                 Op::new_start(Node::Highlight, p.span(0..2)),
-                Op::new_start(Node::Modifier, Content::Span(0..0)),
+                Op::new_start(Node::Modifier, Content::empty()),
                 Op::new_value(p.span(2..3)),
                 Op::new_end(Node::Modifier, p.span(3..4)),
-                Op::new_start(Node::Paragraph, Content::Span(0..0)),
+                Op::new_start(Node::Paragraph, Content::empty()),
                 Op::new_value(p.span(4..7)),
-                Op::new_end(Node::Paragraph, Content::Span(0..0)),
+                Op::new_end(Node::Paragraph, Content::empty()),
                 Op::new_end(Node::Highlight, p.span(7..8)),
             ]
         );

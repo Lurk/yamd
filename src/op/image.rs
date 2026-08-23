@@ -1,14 +1,10 @@
 use crate::{
     lexer::{Token, TokenKind},
-    op::{Content, Node, Op, Parser, destination::destination, title::title},
+    op::{Content, Node, Op, Parser, destination::destination, parser::eol, title::title},
 };
 
 fn is_bang(t: &Token) -> bool {
     t.kind == TokenKind::Bang && t.range.len() == 1
-}
-
-fn is_eol(t: &Token) -> bool {
-    t.kind == TokenKind::Eol
 }
 
 pub fn image(p: &mut Parser) -> bool {
@@ -33,12 +29,12 @@ pub fn image(p: &mut Parser) -> bool {
         return false;
     }
 
-    if let Some(eol_range) = p.eat(is_eol) {
+    if let Some(eol_range) = p.eat(eol) {
         let end_content = p.span(eol_range);
         p.ops.push(Op::new_end(Node::Image, end_content));
         return true;
     } else if p.at_eof() {
-        p.ops.push(Op::new_end(Node::Image, Content::Span(0..0)));
+        p.ops.push(Op::new_end(Node::Image, Content::empty()));
         return true;
     }
 

@@ -23,7 +23,7 @@ pub use token::{Position, Token, TokenKind};
 pub struct Lexer<'input> {
     literal_start: Option<Position>,
     len: usize,
-    escaped: bool,
+    escaped: u32,
     position: Position,
     iter: Peekable<CharIndices<'input>>,
     queue: VecDeque<Token>,
@@ -38,7 +38,7 @@ impl<'input> Lexer<'input> {
             len: input.len(),
             iter: input.char_indices().peekable(),
             literal_start: None,
-            escaped: false,
+            escaped: 0,
             queue: VecDeque::with_capacity(2),
             token: None,
         }
@@ -54,7 +54,7 @@ impl<'input> Lexer<'input> {
             }) {
                 self.queue.push_back(token);
             }
-            self.escaped = false;
+            self.escaped = 0;
         }
     }
 
@@ -91,19 +91,17 @@ impl<'input> Lexer<'input> {
             return false;
         };
         if *next_char == char {
-            self.next_char(false);
+            self.next_char();
             return true;
         }
         false
     }
 
-    fn next_char(&mut self, escaped: bool) -> Option<(Position, char)> {
+    fn next_char(&mut self) -> Option<(Position, char)> {
         if let Some((byte_offset, char)) = self.iter.next() {
             self.position.byte_index = byte_offset;
             let res = Some((self.position.clone(), char));
-            if char != '\\' || escaped {
-                self.position.column += 1;
-            }
+            self.position.column += 1;
             return res;
         }
         None
@@ -115,6 +113,13 @@ impl<'input> Lexer<'input> {
             position.byte_index..position.byte_index + len_in_bytes,
             position,
         )
+    }
+
+    fn escape(&mut self, position: Position) {
+        self.literal_start.get_or_insert(position);
+        if self.next_char().is_some() {
+            self.escaped += 1;
+        }
     }
 
     fn take_while(&mut self, c: char, kind: TokenKind, start: Position) {
@@ -136,13 +141,7 @@ impl<'input> Lexer<'input> {
             '%' if self.next_is('}') => {
                 self.emit(self.to_token(TokenKind::CollapsibleEnd, position, 2))
             }
-            '\\' => {
-                self.emit_literal_if_started(position.byte_index);
-                if let Some((pos, _)) = self.next_char(true) {
-                    self.escaped = true;
-                    self.literal_start.get_or_insert(pos);
-                }
-            }
+            '\\' => self.escape(position),
             '~' => self.take_while('~', TokenKind::Tilde, position),
             '*' => self.take_while('*', TokenKind::Star, position),
             '}' => self.take_while('}', TokenKind::RightCurlyBrace, position),
@@ -168,7 +167,7 @@ impl<'input> Lexer<'input> {
 
     fn advance(&mut self) {
         while self.queue.is_empty() {
-            if let Some((position, char)) = self.next_char(false) {
+            if let Some((position, char)) = self.next_char() {
                 self.parse(position, char);
             } else {
                 self.position.byte_index = self.len;
@@ -254,20 +253,20 @@ mod tests {
             vec![
                 Token {
                     kind: TokenKind::Literal,
-                    range: 1..2,
+                    range: 0..2,
                     position: Position {
-                        byte_index: 1,
+                        byte_index: 0,
                         column: 0,
                         row: 0
                     },
-                    escaped: true
+                    escaped: 1
                 },
                 Token::new(
                     TokenKind::LeftSquareBracket,
                     2..3,
                     Position {
                         byte_index: 2,
-                        column: 1,
+                        column: 2,
                         row: 0
                     }
                 )
@@ -329,13 +328,13 @@ mod tests {
                 Token::new(TokenKind::Hash, 0..3, Position::default()),
                 Token {
                     kind: TokenKind::Literal,
-                    range: 4..7,
+                    range: 3..7,
                     position: Position {
-                        byte_index: 4,
+                        byte_index: 3,
                         column: 3,
                         row: 0,
                     },
-                    escaped: true
+                    escaped: 1
                 },
             ]
         );
@@ -345,28 +344,16 @@ mod tests {
     fn escaped_space_compression() {
         assert_eq!(
             Lexer::new("\\ \\  ").collect::<Vec<_>>(),
-            vec![
-                Token {
-                    kind: TokenKind::Literal,
-                    range: 1..2,
-                    position: Position {
-                        byte_index: 1,
-                        column: 0,
-                        row: 0
-                    },
-                    escaped: true
+            vec![Token {
+                kind: TokenKind::Literal,
+                range: 0..5,
+                position: Position {
+                    byte_index: 0,
+                    column: 0,
+                    row: 0
                 },
-                Token {
-                    kind: TokenKind::Literal,
-                    range: 3..5,
-                    position: Position {
-                        byte_index: 3,
-                        column: 1,
-                        row: 0
-                    },
-                    escaped: true
-                },
-            ]
+                escaped: 2
+            }]
         );
     }
 
@@ -531,13 +518,13 @@ mod tests {
             Lexer::new("\\\\").collect::<Vec<_>>(),
             vec![Token {
                 kind: TokenKind::Literal,
-                range: 1..2,
+                range: 0..2,
                 position: Position {
-                    byte_index: 1,
+                    byte_index: 0,
                     column: 0,
                     row: 0
                 },
-                escaped: true
+                escaped: 1
             },]
         )
     }
@@ -547,23 +534,18 @@ mod tests {
         assert_eq!(
             Lexer::new("literal\\[[").collect::<Vec<_>>(),
             vec![
-                Token::new(TokenKind::Literal, 0..7, Position::default()),
                 Token {
                     kind: TokenKind::Literal,
-                    range: 8..9,
-                    position: Position {
-                        byte_index: 8,
-                        column: 7,
-                        row: 0,
-                    },
-                    escaped: true
+                    range: 0..9,
+                    position: Position::default(),
+                    escaped: 1
                 },
                 Token::new(
                     TokenKind::LeftSquareBracket,
                     9..10,
                     Position {
                         byte_index: 9,
-                        column: 8,
+                        column: 9,
                         row: 0,
                     },
                 ),
@@ -733,6 +715,9 @@ mod tests {
 
     #[test]
     fn dangling_backslash_at_eof() {
-        assert_eq!(Lexer::new("\\").collect::<Vec<_>>(), vec![]);
+        assert_eq!(
+            Lexer::new("\\").collect::<Vec<_>>(),
+            vec![Token::new(TokenKind::Literal, 0..1, Position::default())]
+        );
     }
 }

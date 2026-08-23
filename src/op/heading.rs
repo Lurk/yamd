@@ -40,7 +40,7 @@ pub fn heading(p: &mut Parser) -> bool {
         let content = p.span(s..p.pos);
         p.ops.push(Op::new_value(content));
     }
-    p.ops.push(Op::new_end(Node::Heading, Content::Span(0..0)));
+    p.ops.push(Op::new_end(Node::Heading, Content::empty()));
 
     true
 }
@@ -61,16 +61,16 @@ mod tests {
             vec![
                 Op::new_start(Node::Heading, p.span(0..2)),
                 Op::new_value(p.span(2..3)),
-                Op::new_start(Node::Anchor, Content::Span(0..0)),
+                Op::new_start(Node::Anchor, Content::empty()),
                 Op::new_start(Node::Title, p.span(3..4)),
                 Op::new_value(p.span(4..5)),
                 Op::new_end(Node::Title, p.span(5..6)),
                 Op::new_start(Node::Destination, p.span(6..7)),
                 Op::new_value(p.span(7..8)),
                 Op::new_end(Node::Destination, p.span(8..9)),
-                Op::new_end(Node::Anchor, Content::Span(0..0)),
+                Op::new_end(Node::Anchor, Content::empty()),
                 Op::new_value(p.span(9..11)),
-                Op::new_end(Node::Heading, Content::Span(0..0)),
+                Op::new_end(Node::Heading, Content::empty()),
             ]
         );
     }
@@ -83,16 +83,16 @@ mod tests {
             p.ops,
             vec![
                 Op::new_start(Node::Heading, p.span(0..2)),
-                Op::new_start(Node::Anchor, Content::Span(0..0)),
+                Op::new_start(Node::Anchor, Content::empty()),
                 Op::new_start(Node::Title, p.span(2..3)),
                 Op::new_value(p.span(3..4)),
                 Op::new_end(Node::Title, p.span(4..5)),
                 Op::new_start(Node::Destination, p.span(5..6)),
                 Op::new_value(p.span(6..7)),
                 Op::new_end(Node::Destination, p.span(7..8)),
-                Op::new_end(Node::Anchor, Content::Span(0..0)),
+                Op::new_end(Node::Anchor, Content::empty()),
                 Op::new_value(p.span(8..10)),
-                Op::new_end(Node::Heading, Content::Span(0..0)),
+                Op::new_end(Node::Heading, Content::empty()),
             ]
         );
     }
@@ -106,7 +106,7 @@ mod tests {
             vec![
                 Op::new_start(Node::Heading, p.span(0..2)),
                 Op::new_value(p.span(2..8)),
-                Op::new_end(Node::Heading, Content::Span(0..0)),
+                Op::new_end(Node::Heading, Content::empty()),
             ]
         );
     }
@@ -121,7 +121,7 @@ mod tests {
                 vec![
                     Op::new_start(Node::Heading, p.span(0..2)),
                     Op::new_value(p.span(2..3)),
-                    Op::new_end(Node::Heading, Content::Span(0..0)),
+                    Op::new_end(Node::Heading, Content::empty()),
                 ]
             );
         });
@@ -146,7 +146,7 @@ mod tests {
             p.ops,
             vec![
                 Op::new_start(Node::Heading, p.span(0..2)),
-                Op::new_end(Node::Heading, Content::Span(0..0)),
+                Op::new_end(Node::Heading, Content::empty()),
             ]
         );
     }
@@ -160,16 +160,16 @@ mod tests {
             vec![
                 Op::new_start(Node::Heading, p.span(0..2)),
                 Op::new_value(p.span(2..3)),
-                Op::new_start(Node::Anchor, Content::Span(0..0)),
+                Op::new_start(Node::Anchor, Content::empty()),
                 Op::new_start(Node::Title, p.span(3..4)),
                 Op::new_value(p.span(4..5)),
                 Op::new_end(Node::Title, p.span(5..6)),
                 Op::new_start(Node::Destination, p.span(6..7)),
                 Op::new_value(p.span(7..8)),
                 Op::new_end(Node::Destination, p.span(8..9)),
-                Op::new_end(Node::Anchor, Content::Span(0..0)),
+                Op::new_end(Node::Anchor, Content::empty()),
                 Op::new_value(p.span(9..13)),
-                Op::new_end(Node::Heading, Content::Span(0..0)),
+                Op::new_end(Node::Heading, Content::empty()),
             ]
         );
     }
