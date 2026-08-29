@@ -60,8 +60,7 @@ impl<'input> Lexer<'input> {
 
     fn eol(&mut self, position: Position, len_in_bytes: usize) {
         self.emit_literal_if_started(position.byte_index);
-        self.position.row += 1;
-        self.position.column = 0;
+        self.position.is_line_start = true;
         let Some(t) = self
             .token
             .replace(self.to_token(TokenKind::Eol, position, len_in_bytes))
@@ -101,7 +100,7 @@ impl<'input> Lexer<'input> {
         if let Some((byte_offset, char)) = self.iter.next() {
             self.position.byte_index = byte_offset;
             let res = Some((self.position.clone(), char));
-            self.position.column += 1;
+            self.position.is_line_start = false;
             return res;
         }
         None
@@ -219,8 +218,7 @@ mod tests {
                     2..3,
                     Position {
                         byte_index: 2,
-                        column: 2,
-                        row: 0,
+                        is_line_start: false,
                     }
                 )
             ]
@@ -238,8 +236,7 @@ mod tests {
                     2..3,
                     Position {
                         byte_index: 2,
-                        column: 2,
-                        row: 0,
+                        is_line_start: false,
                     }
                 )
             ]
@@ -256,8 +253,7 @@ mod tests {
                     range: 0..2,
                     position: Position {
                         byte_index: 0,
-                        column: 0,
-                        row: 0
+                        is_line_start: true,
                     },
                     escaped: 1
                 },
@@ -266,8 +262,7 @@ mod tests {
                     2..3,
                     Position {
                         byte_index: 2,
-                        column: 2,
-                        row: 0
+                        is_line_start: false,
                     }
                 )
             ]
@@ -285,8 +280,7 @@ mod tests {
                     1..2,
                     Position {
                         byte_index: 1,
-                        column: 1,
-                        row: 0
+                        is_line_start: false,
                     }
                 )
             ]
@@ -312,8 +306,7 @@ mod tests {
                     1..6,
                     Position {
                         byte_index: 1,
-                        column: 1,
-                        row: 0
+                        is_line_start: false,
                     }
                 )
             ]
@@ -331,8 +324,7 @@ mod tests {
                     range: 3..7,
                     position: Position {
                         byte_index: 3,
-                        column: 3,
-                        row: 0,
+                        is_line_start: false,
                     },
                     escaped: 1
                 },
@@ -349,8 +341,7 @@ mod tests {
                 range: 0..5,
                 position: Position {
                     byte_index: 0,
-                    column: 0,
-                    row: 0
+                    is_line_start: true,
                 },
                 escaped: 2
             }]
@@ -384,8 +375,7 @@ mod tests {
                     2..3,
                     Position {
                         byte_index: 2,
-                        column: 0,
-                        row: 2
+                        is_line_start: true,
                     }
                 )
             ]
@@ -427,8 +417,7 @@ mod tests {
                     8..9,
                     Position {
                         byte_index: 8,
-                        column: 5,
-                        row: 0
+                        is_line_start: false,
                     }
                 )
             ]
@@ -521,8 +510,7 @@ mod tests {
                 range: 0..2,
                 position: Position {
                     byte_index: 0,
-                    column: 0,
-                    row: 0
+                    is_line_start: true,
                 },
                 escaped: 1
             },]
@@ -545,8 +533,7 @@ mod tests {
                     9..10,
                     Position {
                         byte_index: 9,
-                        column: 9,
-                        row: 0,
+                        is_line_start: false,
                     },
                 ),
             ]
@@ -612,8 +599,7 @@ mod tests {
                     3..4,
                     Position {
                         byte_index: 3,
-                        column: 3,
-                        row: 0,
+                        is_line_start: false,
                     }
                 ),
                 Token::new(
@@ -621,8 +607,7 @@ mod tests {
                     4..6,
                     Position {
                         byte_index: 4,
-                        column: 4,
-                        row: 0,
+                        is_line_start: false,
                     }
                 ),
                 Token::new(
@@ -630,8 +615,7 @@ mod tests {
                     6..7,
                     Position {
                         byte_index: 6,
-                        column: 6,
-                        row: 0,
+                        is_line_start: false,
                     }
                 ),
                 Token::new(
@@ -639,8 +623,7 @@ mod tests {
                     7..8,
                     Position {
                         byte_index: 7,
-                        column: 0,
-                        row: 1
+                        is_line_start: true,
                     }
                 )
             ]
@@ -674,8 +657,7 @@ mod tests {
                     3..5,
                     Position {
                         byte_index: 3,
-                        column: 3,
-                        row: 0
+                        is_line_start: false,
                     }
                 )
             ]
@@ -705,8 +687,7 @@ mod tests {
                     1..2,
                     Position {
                         byte_index: 1,
-                        column: 1,
-                        row: 0
+                        is_line_start: false,
                     }
                 )
             ]

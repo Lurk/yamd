@@ -9,11 +9,11 @@ use crate::{
 };
 
 fn is_two_bangs(t: &Token) -> bool {
-    t.kind == TokenKind::Bang && t.position.column == 0 && t.range.len() == 2
+    t.kind == TokenKind::Bang && t.position.is_line_start && t.range.len() == 2
 }
 
 fn is_one_bang(t: &Token) -> bool {
-    t.kind == TokenKind::Bang && t.position.column == 0 && t.range.len() == 1
+    t.kind == TokenKind::Bang && t.position.is_line_start && t.range.len() == 1
 }
 
 fn is_space(t: &Token) -> bool {
@@ -67,7 +67,7 @@ pub fn highlight(p: &mut Parser) -> bool {
         icon(p);
     });
 
-    if !p.at(|t: &Token| t.position.column == 0) {
+    if !p.at(|t: &Token| t.position.is_line_start) {
         p.pos = start;
         p.ops.truncate(snap);
         return false;

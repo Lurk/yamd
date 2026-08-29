@@ -461,8 +461,7 @@ end
                 4..5,
                 Position {
                     byte_index: 4,
-                    column: 4,
-                    row: 0,
+                    is_line_start: false,
                 },
             ),
             Token {
@@ -470,8 +469,7 @@ end
                 range: 5..9,
                 position: Position {
                     byte_index: 5,
-                    column: 5,
-                    row: 0,
+                    is_line_start: false,
                 },
                 escaped: 1,
             },

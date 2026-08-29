@@ -9,11 +9,11 @@ use crate::{
 };
 
 fn is_collapsible_start(t: &Token) -> bool {
-    t.kind == TokenKind::CollapsibleStart && t.position.column == 0
+    t.kind == TokenKind::CollapsibleStart && t.position.is_line_start
 }
 
 fn is_collapsible_end(t: &Token) -> bool {
-    t.kind == TokenKind::CollapsibleEnd && t.position.column == 0
+    t.kind == TokenKind::CollapsibleEnd && t.position.is_line_start
 }
 
 fn is_space_or_eol(t: &Token) -> bool {
@@ -33,7 +33,7 @@ pub fn collapsible(p: &mut Parser) -> bool {
 
     modifier(p);
 
-    if !p.at(|t: &Token| t.position.column == 0) {
+    if !p.at(|t: &Token| t.position.is_line_start) {
         p.pos = start;
         p.ops.truncate(snap);
         p.flip_to_literal(start);

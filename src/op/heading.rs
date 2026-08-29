@@ -4,7 +4,7 @@ use crate::{
 };
 
 fn is_hash(t: &Token) -> bool {
-    t.kind == TokenKind::Hash && t.position.column == 0 && t.range.len() <= 6
+    t.kind == TokenKind::Hash && t.position.is_line_start && t.range.len() <= 6
 }
 
 fn is_space(t: &Token) -> bool {

@@ -4,7 +4,7 @@ use crate::{
 };
 
 fn is_three_dashes(t: &Token) -> bool {
-    t.kind == TokenKind::Minus && t.position.column == 0 && t.range.len() == 3
+    t.kind == TokenKind::Minus && t.position.is_line_start && t.range.len() == 3
 }
 
 pub fn metadata(p: &mut Parser) -> bool {

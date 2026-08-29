@@ -8,7 +8,7 @@ use crate::{
 };
 
 fn is_backtick3(t: &Token) -> bool {
-    t.kind == TokenKind::Backtick && t.position.column == 0 && t.range.len() == 3
+    t.kind == TokenKind::Backtick && t.position.is_line_start && t.range.len() == 3
 }
 
 pub fn code(p: &mut Parser) -> bool {

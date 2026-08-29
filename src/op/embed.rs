@@ -4,7 +4,7 @@ use crate::{
 };
 
 fn is_left_curly2(t: &Token) -> bool {
-    t.kind == TokenKind::LeftCurlyBrace && t.position.column == 0 && t.range.len() == 2
+    t.kind == TokenKind::LeftCurlyBrace && t.position.is_line_start && t.range.len() == 2
 }
 
 fn is_pipe(t: &Token) -> bool {

@@ -82,14 +82,21 @@ impl Display for TokenKind {
 }
 
 /// The `Position` struct represents the position of a token in the input.
-#[derive(Clone, Debug, PartialEq, Default)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Position {
     /// The byte index of the token in the input string.
     pub byte_index: usize,
-    /// The column number of the token in the input string.
-    pub column: usize,
-    /// The line number of the token in the input string.
-    pub row: usize,
+    /// Whether this token is the first one on its line.
+    pub is_line_start: bool,
+}
+
+impl Default for Position {
+    fn default() -> Self {
+        Self {
+            byte_index: 0,
+            is_line_start: true,
+        }
+    }
 }
 
 /// The `Token` struct represents a token in the input string.
