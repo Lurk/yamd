@@ -4,7 +4,7 @@
 
 mod token;
 
-use std::{char, collections::VecDeque, iter::Peekable, str::CharIndices};
+use std::collections::VecDeque;
 
 pub use token::{Token, TokenKind};
 
@@ -22,11 +22,10 @@ pub use token::{Token, TokenKind};
 /// ```
 pub struct Lexer<'input> {
     literal_start: Option<(usize, bool)>,
-    len: usize,
+    input: &'input [u8],
     escaped: u32,
-    byte_index: usize,
+    pos: usize,
     at_line_start: bool,
-    iter: Peekable<CharIndices<'input>>,
     queue: VecDeque<Token>,
     token: Option<Token>,
 }
@@ -35,10 +34,9 @@ impl<'input> Lexer<'input> {
     /// Creates a new lexer instance.
     pub fn new(input: &'input str) -> Self {
         Self {
-            byte_index: 0,
+            pos: 0,
             at_line_start: true,
-            len: input.len(),
-            iter: input.char_indices().peekable(),
+            input: input.as_bytes(),
             literal_start: None,
             escaped: 0,
             queue: VecDeque::with_capacity(2),
@@ -88,104 +86,100 @@ impl<'input> Lexer<'input> {
         }
     }
 
-    fn next_is(&mut self, char: char) -> bool {
-        let Some((_, next_char)) = self.iter.peek() else {
-            return false;
-        };
-        if *next_char == char {
-            self.next_char();
+    fn next_is(&mut self, byte: u8) -> bool {
+        if self.input.get(self.pos) == Some(&byte) {
+            self.next_byte();
             return true;
         }
         false
     }
 
-    fn next_char(&mut self) -> Option<(usize, bool, char)> {
-        if let Some((byte_offset, char)) = self.iter.next() {
-            self.byte_index = byte_offset;
-            let res = Some((self.byte_index, self.at_line_start, char));
-            self.at_line_start = false;
-            return res;
-        }
-        None
+    fn next_byte(&mut self) -> Option<(usize, bool, u8)> {
+        let byte_index = self.pos;
+        let byte = *self.input.get(byte_index)?;
+        self.pos = byte_index + 1;
+        let res = Some((byte_index, self.at_line_start, byte));
+        self.at_line_start = false;
+        res
     }
 
     fn escape(&mut self, byte_index: usize, is_line_start: bool) {
         self.literal_start
             .get_or_insert((byte_index, is_line_start));
-        if self.next_char().is_some() {
+        if self.next_byte().is_some() {
             self.escaped += 1;
         }
     }
 
     fn take_while(
         &mut self,
-        c: char,
+        byte: u8,
         kind: TokenKind,
         start_byte_index: usize,
         start_is_line_start: bool,
     ) {
-        while self.next_is(c) {}
+        while self.next_is(byte) {}
         self.emit(Token::new(
             kind,
-            start_byte_index..self.byte_index + 1,
+            start_byte_index..self.pos,
             start_is_line_start,
         ))
     }
 
-    fn parse(&mut self, byte_index: usize, is_line_start: bool, char: char) {
-        match char {
-            '\n' => self.eol(byte_index, is_line_start, 1),
-            '\r' if self.next_is('\n') => self.eol(byte_index, is_line_start, 2),
-            '{' if self.next_is('%') => self.emit(Token::new(
+    fn parse(&mut self, byte_index: usize, is_line_start: bool, byte: u8) {
+        match byte {
+            b'\n' => self.eol(byte_index, is_line_start, 1),
+            b'\r' if self.next_is(b'\n') => self.eol(byte_index, is_line_start, 2),
+            b'{' if self.next_is(b'%') => self.emit(Token::new(
                 TokenKind::CollapsibleStart,
                 byte_index..byte_index + 2,
                 is_line_start,
             )),
-            '%' if self.next_is('}') => self.emit(Token::new(
+            b'%' if self.next_is(b'}') => self.emit(Token::new(
                 TokenKind::CollapsibleEnd,
                 byte_index..byte_index + 2,
                 is_line_start,
             )),
-            '\\' => self.escape(byte_index, is_line_start),
-            '~' => self.take_while('~', TokenKind::Tilde, byte_index, is_line_start),
-            '*' => self.take_while('*', TokenKind::Star, byte_index, is_line_start),
-            '}' => self.take_while('}', TokenKind::RightCurlyBrace, byte_index, is_line_start),
-            '{' => self.take_while('{', TokenKind::LeftCurlyBrace, byte_index, is_line_start),
-            ' ' if self.literal_start.is_none() => {
-                self.take_while(' ', TokenKind::Space, byte_index, is_line_start)
+            b'\\' => self.escape(byte_index, is_line_start),
+            b'~' => self.take_while(b'~', TokenKind::Tilde, byte_index, is_line_start),
+            b'*' => self.take_while(b'*', TokenKind::Star, byte_index, is_line_start),
+            b'}' => self.take_while(b'}', TokenKind::RightCurlyBrace, byte_index, is_line_start),
+            b'{' => self.take_while(b'{', TokenKind::LeftCurlyBrace, byte_index, is_line_start),
+            b' ' if self.literal_start.is_none() => {
+                self.take_while(b' ', TokenKind::Space, byte_index, is_line_start)
             }
-            '-' => self.take_while('-', TokenKind::Minus, byte_index, is_line_start),
-            '#' => self.take_while('#', TokenKind::Hash, byte_index, is_line_start),
-            '>' => self.take_while('>', TokenKind::GreaterThan, byte_index, is_line_start),
-            '!' => self.take_while('!', TokenKind::Bang, byte_index, is_line_start),
-            '`' => self.take_while('`', TokenKind::Backtick, byte_index, is_line_start),
-            '+' => self.take_while('+', TokenKind::Plus, byte_index, is_line_start),
-            '[' => self.emit(Token::new(
+            b'-' => self.take_while(b'-', TokenKind::Minus, byte_index, is_line_start),
+            b'#' => self.take_while(b'#', TokenKind::Hash, byte_index, is_line_start),
+            b'>' => self.take_while(b'>', TokenKind::GreaterThan, byte_index, is_line_start),
+            b'!' => self.take_while(b'!', TokenKind::Bang, byte_index, is_line_start),
+            b'`' => self.take_while(b'`', TokenKind::Backtick, byte_index, is_line_start),
+            b'+' => self.take_while(b'+', TokenKind::Plus, byte_index, is_line_start),
+            b'[' => self.emit(Token::new(
                 TokenKind::LeftSquareBracket,
                 byte_index..byte_index + 1,
                 is_line_start,
             )),
-            ']' => self.emit(Token::new(
+            b']' => self.emit(Token::new(
                 TokenKind::RightSquareBracket,
                 byte_index..byte_index + 1,
                 is_line_start,
             )),
-            '(' => self.emit(Token::new(
+            b'(' => self.emit(Token::new(
                 TokenKind::LeftParenthesis,
                 byte_index..byte_index + 1,
                 is_line_start,
             )),
-            ')' => self.emit(Token::new(
+            b')' => self.emit(Token::new(
                 TokenKind::RightParenthesis,
                 byte_index..byte_index + 1,
                 is_line_start,
             )),
-            '_' => self.emit(Token::new(
+            b'_' => self.emit(Token::new(
                 TokenKind::Underscore,
                 byte_index..byte_index + 1,
                 is_line_start,
             )),
-            '|' => self.emit(Token::new(
+            b'|' => self.emit(Token::new(
                 TokenKind::Pipe,
                 byte_index..byte_index + 1,
                 is_line_start,
@@ -199,11 +193,10 @@ impl<'input> Lexer<'input> {
 
     fn advance(&mut self) {
         while self.queue.is_empty() {
-            if let Some((byte_index, is_line_start, char)) = self.next_char() {
-                self.parse(byte_index, is_line_start, char);
+            if let Some((byte_index, is_line_start, byte)) = self.next_byte() {
+                self.parse(byte_index, is_line_start, byte);
             } else {
-                self.byte_index = self.len;
-                self.emit_literal_if_started(self.byte_index);
+                self.emit_literal_if_started(self.pos);
                 if let Some(token) = self.token.take() {
                     self.queue.push_back(token)
                 }
