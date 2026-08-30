@@ -28,7 +28,7 @@ pub fn code_span(p: &mut Parser) -> bool {
 #[cfg(test)]
 mod tests {
     use crate::{
-        lexer::{Position, Token, TokenKind},
+        lexer::{Token, TokenKind},
         op::{Node, Op, Parser, code_span::code_span, parser::StopCondition},
     };
 
@@ -54,10 +54,7 @@ mod tests {
             assert!(p.ops.is_empty());
             assert_eq!(
                 p.peek(),
-                Some((
-                    0,
-                    &Token::new(TokenKind::Backtick, 0..1, Position::default())
-                ))
+                Some((0, &Token::new(TokenKind::Backtick, 0..1, true)))
             );
         });
     }
@@ -69,10 +66,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((
-                0,
-                &Token::new(TokenKind::Backtick, 0..1, Position::default())
-            ))
+            Some((0, &Token::new(TokenKind::Backtick, 0..1, true)))
         )
     }
 }

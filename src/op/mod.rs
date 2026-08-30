@@ -237,7 +237,7 @@ pub fn parse(input: &str) -> Vec<Op> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lexer::{Position, TokenKind};
+    use crate::lexer::TokenKind;
 
     const TEST_CASE: &str = r#"---
 title: test
@@ -453,24 +453,14 @@ end
             Token {
                 kind: TokenKind::Literal,
                 range: 0..4,
-                position: Position::default(),
+                is_line_start: true,
                 escaped: 1,
             },
-            Token::new(
-                TokenKind::Space,
-                4..5,
-                Position {
-                    byte_index: 4,
-                    is_line_start: false,
-                },
-            ),
+            Token::new(TokenKind::Space, 4..5, false),
             Token {
                 kind: TokenKind::Literal,
                 range: 5..9,
-                position: Position {
-                    byte_index: 5,
-                    is_line_start: false,
-                },
+                is_line_start: false,
                 escaped: 1,
             },
         ];

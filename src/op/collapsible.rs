@@ -9,11 +9,11 @@ use crate::{
 };
 
 fn is_collapsible_start(t: &Token) -> bool {
-    t.kind == TokenKind::CollapsibleStart && t.position.is_line_start
+    t.kind == TokenKind::CollapsibleStart && t.is_line_start
 }
 
 fn is_collapsible_end(t: &Token) -> bool {
-    t.kind == TokenKind::CollapsibleEnd && t.position.is_line_start
+    t.kind == TokenKind::CollapsibleEnd && t.is_line_start
 }
 
 fn is_space_or_eol(t: &Token) -> bool {
@@ -33,7 +33,7 @@ pub fn collapsible(p: &mut Parser) -> bool {
 
     modifier(p);
 
-    if !p.at(|t: &Token| t.position.is_line_start) {
+    if !p.at(|t: &Token| t.is_line_start) {
         p.pos = start;
         p.ops.truncate(snap);
         p.flip_to_literal(start);
@@ -62,7 +62,7 @@ pub fn collapsible(p: &mut Parser) -> bool {
 #[cfg(test)]
 mod tests {
     use crate::{
-        lexer::{Position, Token, TokenKind},
+        lexer::{Token, TokenKind},
         op::{Content, Node, Op, collapsible::collapsible},
     };
 
@@ -114,10 +114,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((
-                0,
-                &Token::new(TokenKind::Literal, 0..2, Position::default()),
-            ))
+            Some((0, &Token::new(TokenKind::Literal, 0..2, true),))
         );
     }
 
@@ -128,10 +125,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((
-                0,
-                &Token::new(TokenKind::Literal, 0..2, Position::default()),
-            ))
+            Some((0, &Token::new(TokenKind::Literal, 0..2, true),))
         );
     }
 
@@ -163,10 +157,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((
-                0,
-                &Token::new(TokenKind::Literal, 0..2, Position::default()),
-            ))
+            Some((0, &Token::new(TokenKind::Literal, 0..2, true),))
         );
     }
 

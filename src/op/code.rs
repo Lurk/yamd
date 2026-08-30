@@ -8,7 +8,7 @@ use crate::{
 };
 
 fn is_backtick3(t: &Token) -> bool {
-    t.kind == TokenKind::Backtick && t.position.is_line_start && t.range.len() == 3
+    t.kind == TokenKind::Backtick && t.is_line_start && t.range.len() == 3
 }
 
 pub fn code(p: &mut Parser) -> bool {
@@ -59,7 +59,7 @@ pub fn code(p: &mut Parser) -> bool {
 #[cfg(test)]
 mod tests {
     use crate::{
-        lexer::{Position, Token, TokenKind},
+        lexer::{Token, TokenKind},
         op::{Node, Op, Parser, code::code, parser::StopCondition},
     };
 
@@ -110,10 +110,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((
-                0,
-                &Token::new(TokenKind::Backtick, 0..3, Position::default()),
-            ))
+            Some((0, &Token::new(TokenKind::Backtick, 0..3, true),))
         );
     }
 
@@ -147,10 +144,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((
-                0,
-                &Token::new(TokenKind::Backtick, 0..3, Position::default()),
-            ))
+            Some((0, &Token::new(TokenKind::Backtick, 0..3, true),))
         );
     }
 }

@@ -69,31 +69,25 @@ fn at_list_boundary(p: &Parser, current_level: usize, max_level: usize, kind: Li
         };
         let mut offset = p.pos;
         let matched = if level == 0 {
-            p.tokens
-                .get(offset)
-                .is_some_and(|t| t.position.is_line_start)
-                && {
-                    p.tokens.get(offset).is_some_and(|t| is_list_marker(t, k)) && {
-                        offset += 1;
-                        p.tokens.get(offset).is_some_and(is_space_1)
-                    }
+            p.tokens.get(offset).is_some_and(|t| t.is_line_start) && {
+                p.tokens.get(offset).is_some_and(|t| is_list_marker(t, k)) && {
+                    offset += 1;
+                    p.tokens.get(offset).is_some_and(is_space_1)
                 }
+            }
         } else {
-            p.tokens
-                .get(offset)
-                .is_some_and(|t| t.position.is_line_start)
-                && {
-                    p.tokens
-                        .get(offset)
-                        .is_some_and(|t| t.kind == TokenKind::Space && t.range.len() == level)
-                        && {
+            p.tokens.get(offset).is_some_and(|t| t.is_line_start) && {
+                p.tokens
+                    .get(offset)
+                    .is_some_and(|t| t.kind == TokenKind::Space && t.range.len() == level)
+                    && {
+                        offset += 1;
+                        p.tokens.get(offset).is_some_and(|t| is_list_marker(t, k)) && {
                             offset += 1;
-                            p.tokens.get(offset).is_some_and(|t| is_list_marker(t, k)) && {
-                                offset += 1;
-                                p.tokens.get(offset).is_some_and(is_space_1)
-                            }
+                            p.tokens.get(offset).is_some_and(is_space_1)
                         }
-                }
+                    }
+            }
         };
         if matched {
             return true;
@@ -107,19 +101,17 @@ impl StopCondition {
         match self {
             Self::Terminator => token.kind == TokenKind::Terminator,
             Self::CollapsibleEnd => {
-                (token.kind == TokenKind::CollapsibleEnd && token.position.is_line_start)
+                (token.kind == TokenKind::CollapsibleEnd && token.is_line_start)
                     || (token.kind == TokenKind::Eol
                         && parser.tokens.get(parser.pos + 1).is_some_and(|t| {
-                            t.kind == TokenKind::CollapsibleEnd && t.position.is_line_start
+                            t.kind == TokenKind::CollapsibleEnd && t.is_line_start
                         }))
             }
             Self::HighlightEnd => {
-                token.kind == TokenKind::Bang
-                    && token.position.is_line_start
-                    && token.range.len() == 2
+                token.kind == TokenKind::Bang && token.is_line_start && token.range.len() == 2
             }
             Self::ListBoundary { level, kind } => {
-                token.position.is_line_start && at_list_boundary(parser, *level, *level + 1, *kind)
+                token.is_line_start && at_list_boundary(parser, *level, *level + 1, *kind)
             }
         }
     }

@@ -8,7 +8,7 @@ fn is_eol_or_terminator(t: &Token) -> bool {
 }
 
 pub fn modifier(p: &mut Parser) -> bool {
-    if p.peek().is_some_and(|(_, t)| t.position.is_line_start) {
+    if p.peek().is_some_and(|(_, t)| t.is_line_start) {
         return false;
     }
 
