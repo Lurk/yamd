@@ -4,9 +4,20 @@
 
 mod token;
 
-use std::collections::VecDeque;
-
 pub use token::{Token, TokenKind};
+
+const fn build_reserved_table() -> [bool; 256] {
+    let mut table = [false; 256];
+    let mut i = 0;
+    let reserved: &[u8] = b"\n\r{%}~*-#>!`+[]()_|\\";
+    while i < reserved.len() {
+        table[reserved[i] as usize] = true;
+        i += 1;
+    }
+    table
+}
+
+const RESERVED: [bool; 256] = build_reserved_table();
 
 /// # Lexer for YAMD.
 ///
@@ -21,13 +32,10 @@ pub use token::{Token, TokenKind};
 /// }
 /// ```
 pub struct Lexer<'input> {
-    literal_start: Option<(usize, bool)>,
     input: &'input [u8],
     escaped: u32,
     pos: usize,
     at_line_start: bool,
-    queue: VecDeque<Token>,
-    token: Option<Token>,
 }
 
 impl<'input> Lexer<'input> {
@@ -37,53 +45,29 @@ impl<'input> Lexer<'input> {
             pos: 0,
             at_line_start: true,
             input: input.as_bytes(),
-            literal_start: None,
             escaped: 0,
-            queue: VecDeque::with_capacity(2),
-            token: None,
         }
     }
 
-    fn emit_literal_if_started(&mut self, end_byte_index: usize) {
-        if let Some((start_byte_index, is_line_start)) = self.literal_start.take() {
-            if let Some(token) = self.token.replace(Token {
-                kind: TokenKind::Literal,
-                range: start_byte_index..end_byte_index,
-                is_line_start,
-                escaped: self.escaped,
-            }) {
-                self.queue.push_back(token);
-            }
-            self.escaped = 0;
+    /// Length in bytes of the Eol sequence starting at `at`, if there is one.
+    fn eol_len_at(&self, at: usize) -> Option<usize> {
+        match *self.input.get(at)? {
+            b'\n' => Some(1),
+            b'\r' if self.input.get(at + 1) == Some(&b'\n') => Some(2),
+            _ => None,
         }
     }
 
-    fn eol(&mut self, byte_index: usize, is_line_start: bool, len_in_bytes: usize) {
-        self.emit_literal_if_started(byte_index);
+    fn eol(&mut self, byte_index: usize, is_line_start: bool, len_in_bytes: usize) -> Token {
         self.at_line_start = true;
-        let Some(t) = self.token.replace(Token::new(
-            TokenKind::Eol,
-            byte_index..byte_index + len_in_bytes,
-            is_line_start,
-        )) else {
-            return;
-        };
-        if t.kind == TokenKind::Eol {
-            self.token.replace(Token::new(
-                TokenKind::Terminator,
-                t.range.start..t.range.start + t.range.len() + len_in_bytes,
-                t.is_line_start,
-            ));
-            return;
+        let mut end = byte_index + len_in_bytes;
+        let mut kind = TokenKind::Eol;
+        if let Some(next_len) = self.eol_len_at(end) {
+            end += next_len;
+            kind = TokenKind::Terminator;
         }
-        self.queue.push_back(t);
-    }
-
-    fn emit(&mut self, token: Token) {
-        self.emit_literal_if_started(token.range.start);
-        if let Some(l) = self.token.replace(token) {
-            self.queue.push_back(l);
-        }
+        self.pos = end;
+        Token::new(kind, byte_index..end, is_line_start)
     }
 
     fn next_is(&mut self, byte: u8) -> bool {
@@ -94,21 +78,49 @@ impl<'input> Lexer<'input> {
         false
     }
 
-    fn next_byte(&mut self) -> Option<(usize, bool, u8)> {
+    fn next_byte(&mut self) -> Option<(usize, u8)> {
         let byte_index = self.pos;
         let byte = *self.input.get(byte_index)?;
         self.pos = byte_index + 1;
-        let res = Some((byte_index, self.at_line_start, byte));
         self.at_line_start = false;
-        res
+        Some((byte_index, byte))
     }
 
-    fn escape(&mut self, byte_index: usize, is_line_start: bool) {
-        self.literal_start
-            .get_or_insert((byte_index, is_line_start));
-        if self.next_byte().is_some() {
+    fn consume_literal_run(&mut self) {
+        while self.pos < self.input.len() && !RESERVED[self.input[self.pos] as usize] {
+            self.pos += 1;
+        }
+    }
+
+    fn consume_escaped_byte(&mut self) {
+        if self.pos < self.input.len() {
+            self.pos += 1;
             self.escaped += 1;
         }
+    }
+
+    fn consume_literal(&mut self, start_byte_index: usize, is_line_start: bool) -> Token {
+        loop {
+            self.consume_literal_run();
+            if self.input.get(self.pos) != Some(&b'\\') {
+                break;
+            }
+            self.pos += 1;
+            self.consume_escaped_byte();
+        }
+        let token = Token {
+            kind: TokenKind::Literal,
+            range: start_byte_index..self.pos,
+            is_line_start,
+            escaped: self.escaped,
+        };
+        self.escaped = 0;
+        token
+    }
+
+    fn escape(&mut self, byte_index: usize, is_line_start: bool) -> Token {
+        self.consume_escaped_byte();
+        self.consume_literal(byte_index, is_line_start)
     }
 
     fn take_while(
@@ -117,91 +129,64 @@ impl<'input> Lexer<'input> {
         kind: TokenKind,
         start_byte_index: usize,
         start_is_line_start: bool,
-    ) {
+    ) -> Token {
         while self.next_is(byte) {}
-        self.emit(Token::new(
-            kind,
-            start_byte_index..self.pos,
-            start_is_line_start,
-        ))
+        Token::new(kind, start_byte_index..self.pos, start_is_line_start)
     }
 
-    fn parse(&mut self, byte_index: usize, is_line_start: bool, byte: u8) {
+    fn parse(&mut self, byte_index: usize, is_line_start: bool, byte: u8) -> Token {
         match byte {
             b'\n' => self.eol(byte_index, is_line_start, 1),
             b'\r' if self.next_is(b'\n') => self.eol(byte_index, is_line_start, 2),
-            b'{' if self.next_is(b'%') => self.emit(Token::new(
+            b'{' if self.next_is(b'%') => Token::new(
                 TokenKind::CollapsibleStart,
                 byte_index..byte_index + 2,
                 is_line_start,
-            )),
-            b'%' if self.next_is(b'}') => self.emit(Token::new(
+            ),
+            b'%' if self.next_is(b'}') => Token::new(
                 TokenKind::CollapsibleEnd,
                 byte_index..byte_index + 2,
                 is_line_start,
-            )),
+            ),
             b'\\' => self.escape(byte_index, is_line_start),
             b'~' => self.take_while(b'~', TokenKind::Tilde, byte_index, is_line_start),
             b'*' => self.take_while(b'*', TokenKind::Star, byte_index, is_line_start),
             b'}' => self.take_while(b'}', TokenKind::RightCurlyBrace, byte_index, is_line_start),
             b'{' => self.take_while(b'{', TokenKind::LeftCurlyBrace, byte_index, is_line_start),
-            b' ' if self.literal_start.is_none() => {
-                self.take_while(b' ', TokenKind::Space, byte_index, is_line_start)
-            }
+            b' ' => self.take_while(b' ', TokenKind::Space, byte_index, is_line_start),
             b'-' => self.take_while(b'-', TokenKind::Minus, byte_index, is_line_start),
             b'#' => self.take_while(b'#', TokenKind::Hash, byte_index, is_line_start),
             b'>' => self.take_while(b'>', TokenKind::GreaterThan, byte_index, is_line_start),
             b'!' => self.take_while(b'!', TokenKind::Bang, byte_index, is_line_start),
             b'`' => self.take_while(b'`', TokenKind::Backtick, byte_index, is_line_start),
             b'+' => self.take_while(b'+', TokenKind::Plus, byte_index, is_line_start),
-            b'[' => self.emit(Token::new(
+            b'[' => Token::new(
                 TokenKind::LeftSquareBracket,
                 byte_index..byte_index + 1,
                 is_line_start,
-            )),
-            b']' => self.emit(Token::new(
+            ),
+            b']' => Token::new(
                 TokenKind::RightSquareBracket,
                 byte_index..byte_index + 1,
                 is_line_start,
-            )),
-            b'(' => self.emit(Token::new(
+            ),
+            b'(' => Token::new(
                 TokenKind::LeftParenthesis,
                 byte_index..byte_index + 1,
                 is_line_start,
-            )),
-            b')' => self.emit(Token::new(
+            ),
+            b')' => Token::new(
                 TokenKind::RightParenthesis,
                 byte_index..byte_index + 1,
                 is_line_start,
-            )),
-            b'_' => self.emit(Token::new(
+            ),
+            b'_' => Token::new(
                 TokenKind::Underscore,
                 byte_index..byte_index + 1,
                 is_line_start,
-            )),
-            b'|' => self.emit(Token::new(
-                TokenKind::Pipe,
-                byte_index..byte_index + 1,
-                is_line_start,
-            )),
-            _ => {
-                self.literal_start
-                    .get_or_insert((byte_index, is_line_start));
-            }
-        }
-    }
-
-    fn advance(&mut self) {
-        while self.queue.is_empty() {
-            if let Some((byte_index, is_line_start, byte)) = self.next_byte() {
-                self.parse(byte_index, is_line_start, byte);
-            } else {
-                self.emit_literal_if_started(self.pos);
-                if let Some(token) = self.token.take() {
-                    self.queue.push_back(token)
-                }
-                return;
-            }
+            ),
+            b'|' => Token::new(TokenKind::Pipe, byte_index..byte_index + 1, is_line_start),
+            _ => self.consume_literal(byte_index, is_line_start),
         }
     }
 }
@@ -210,8 +195,9 @@ impl<'input> Iterator for Lexer<'input> {
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.advance();
-        self.queue.pop_front()
+        let is_line_start = self.at_line_start;
+        let (byte_index, byte) = self.next_byte()?;
+        Some(self.parse(byte_index, is_line_start, byte))
     }
 }
 
@@ -568,6 +554,17 @@ mod tests {
     }
 
     #[test]
+    fn windows_eol_after_literal() {
+        assert_eq!(
+            Lexer::new("r\r\n").collect::<Vec<_>>(),
+            vec![
+                Token::new(TokenKind::Literal, 0..1, true),
+                Token::new(TokenKind::Eol, 1..3, false)
+            ]
+        )
+    }
+
+    #[test]
     fn eol_after_literal() {
         assert_eq!(
             Lexer::new("r\n").collect::<Vec<_>>(),
@@ -584,5 +581,32 @@ mod tests {
             Lexer::new("\\").collect::<Vec<_>>(),
             vec![Token::new(TokenKind::Literal, 0..1, true)]
         );
+    }
+
+    #[test]
+    fn reserved_table_covers_every_byte_parse_splits_a_literal_on() {
+        for byte in 0u8..=127 {
+            let input = format!("a{}a", byte as char);
+            let tokens: Vec<_> = Lexer::new(&input).collect();
+            let literal_stayed_whole =
+                matches!(tokens.as_slice(), [t] if t.kind == TokenKind::Literal);
+            if !literal_stayed_whole {
+                assert!(
+                    super::RESERVED[byte as usize],
+                    "byte {byte:#x} ({:?}) splits a literal it appears inside of but is missing from RESERVED",
+                    byte as char
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn reserved_table_excludes_every_non_ascii_byte() {
+        for byte in 128u8..=255 {
+            assert!(
+                !super::RESERVED[byte as usize],
+                "byte {byte:#x} is non-ASCII but marked reserved"
+            );
+        }
     }
 }
