@@ -207,7 +207,7 @@ impl<'input> Iterator for Lexer<'input> {
 mod tests {
     use pretty_assertions::assert_eq;
 
-    use crate::lexer::{Lexer, Token, TokenKind};
+    use crate::lexer::{Lexer, Token, TokenKind, build_reserved_table};
 
     #[test]
     fn left_square_bracket() {
@@ -587,6 +587,7 @@ mod tests {
 
     #[test]
     fn reserved_table_covers_every_byte_parse_splits_a_literal_on() {
+        let table = build_reserved_table();
         for byte in 0u8..=127 {
             let input = format!("a{}a", byte as char);
             let tokens: Vec<_> = Lexer::new(&input).collect();
@@ -594,7 +595,7 @@ mod tests {
                 matches!(tokens.as_slice(), [t] if t.kind == TokenKind::Literal);
             if !literal_stayed_whole {
                 assert!(
-                    super::RESERVED[byte as usize],
+                    table[byte as usize],
                     "byte {byte:#x} ({:?}) splits a literal it appears inside of but is missing from RESERVED",
                     byte as char
                 );
