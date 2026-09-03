@@ -49,7 +49,6 @@ impl<'input> Lexer<'input> {
         }
     }
 
-    /// Length in bytes of the Eol sequence starting at `at`, if there is one.
     fn eol_len_at(&self, at: usize) -> Option<usize> {
         match *self.input.get(at)? {
             b'\n' => Some(1),
@@ -86,10 +85,12 @@ impl<'input> Lexer<'input> {
         Some((byte_index, byte))
     }
 
-    fn consume_literal_run(&mut self) {
-        while self.pos < self.input.len() && !RESERVED[self.input[self.pos] as usize] {
-            self.pos += 1;
+    fn consume_literal_run(&self, pos: usize) -> usize {
+        let mut pos = pos;
+        while pos < self.input.len() && !RESERVED[self.input[pos] as usize] {
+            pos += 1;
         }
+        pos
     }
 
     fn consume_escaped_byte(&mut self) {
@@ -101,7 +102,7 @@ impl<'input> Lexer<'input> {
 
     fn consume_literal(&mut self, start_byte_index: usize, is_line_start: bool) -> Token {
         loop {
-            self.consume_literal_run();
+            self.pos = self.consume_literal_run(self.pos);
             if self.input.get(self.pos) != Some(&b'\\') {
                 break;
             }
