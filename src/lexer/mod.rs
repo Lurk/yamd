@@ -135,8 +135,11 @@ impl<'input> Lexer<'input> {
         Token::new(kind, start_byte_index..self.pos, start_is_line_start)
     }
 
-    fn parse(&mut self, byte_index: usize, is_line_start: bool, byte: u8) -> Token {
-        match byte {
+    fn advance(&mut self) -> Option<Token> {
+        let is_line_start = self.at_line_start;
+        let (byte_index, byte) = self.next_byte()?;
+
+        Some(match byte {
             b'\n' => self.eol(byte_index, is_line_start, 1),
             b'\r' if self.next_is(b'\n') => self.eol(byte_index, is_line_start, 2),
             b'{' if self.next_is(b'%') => Token::new(
@@ -188,7 +191,7 @@ impl<'input> Lexer<'input> {
             ),
             b'|' => Token::new(TokenKind::Pipe, byte_index..byte_index + 1, is_line_start),
             _ => self.consume_literal(byte_index, is_line_start),
-        }
+        })
     }
 }
 
@@ -196,9 +199,7 @@ impl<'input> Iterator for Lexer<'input> {
     type Item = Token;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let is_line_start = self.at_line_start;
-        let (byte_index, byte) = self.next_byte()?;
-        Some(self.parse(byte_index, is_line_start, byte))
+        self.advance()
     }
 }
 
