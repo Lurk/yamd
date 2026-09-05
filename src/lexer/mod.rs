@@ -131,8 +131,13 @@ impl<'input> Lexer<'input> {
         start_byte_index: usize,
         start_is_line_start: bool,
     ) -> Token {
-        while self.next_is(byte) {}
-        Token::new(kind, start_byte_index..self.pos, start_is_line_start)
+        let mut pos = self.pos;
+        while self.input.get(pos) == Some(&byte) {
+            pos += 1;
+        }
+        self.pos = pos;
+        self.at_line_start = false;
+        Token::new(kind, start_byte_index..pos, start_is_line_start)
     }
 
     fn advance(&mut self) -> Option<Token> {
