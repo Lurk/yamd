@@ -102,6 +102,15 @@ impl Content {
         self.as_str(source).into_owned()
     }
 
+    /// Returns a reference to the byte range into source for [`Span`](Content::Span), `None`
+    /// for [`Detached`](Content::Detached).
+    pub fn range(&self) -> Option<&Range<usize>> {
+        match self {
+            Content::Span { range, .. } => Some(range),
+            Content::Detached(_) => None,
+        }
+    }
+
     /// Returns `true` if this content represents an empty string.
     pub fn is_empty(&self) -> bool {
         match self {
@@ -562,6 +571,17 @@ end
     fn content_detached_is_empty() {
         assert!(Content::detached("").is_empty());
         assert!(!Content::detached("hello").is_empty());
+    }
+
+    #[test]
+    fn content_span_range() {
+        let content = Content::span(2..5);
+        assert_eq!(content.range(), Some(&(2..5)));
+    }
+
+    #[test]
+    fn content_detached_range_is_none() {
+        assert_eq!(Content::detached("hello").range(), None);
     }
 
     #[test]
