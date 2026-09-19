@@ -12,7 +12,7 @@ fn is_space(t: &Token) -> bool {
 }
 
 fn list_item(p: &mut Parser, level: usize, kind: Option<ListKind>) -> Option<ListKind> {
-    if !p.at(|t: &Token| t.position.column == 0) {
+    if !p.at(|t: &Token| t.is_line_start) {
         return None;
     }
 

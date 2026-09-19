@@ -59,7 +59,7 @@ pub fn bold(p: &mut Parser) -> bool {
 #[cfg(test)]
 mod tests {
     use crate::{
-        lexer::{Position, Token, TokenKind},
+        lexer::{Token, TokenKind},
         op::{Node, Op, Parser, bold::bold, parser::StopCondition},
     };
 
@@ -91,7 +91,7 @@ mod tests {
             assert!(p.ops.is_empty());
             assert_eq!(
                 p.peek(),
-                Some((0, &Token::new(TokenKind::Star, 0..2, Position::default())))
+                Some((0, &Token::new(TokenKind::Star, 0..2, true)))
             );
         });
     }
@@ -103,7 +103,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Star, 0..2, Position::default())))
+            Some((0, &Token::new(TokenKind::Star, 0..2, true)))
         )
     }
 
@@ -114,7 +114,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Star, 0..2, Position::default())))
+            Some((0, &Token::new(TokenKind::Star, 0..2, true)))
         );
     }
 

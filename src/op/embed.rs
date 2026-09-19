@@ -4,7 +4,7 @@ use crate::{
 };
 
 fn is_left_curly2(t: &Token) -> bool {
-    t.kind == TokenKind::LeftCurlyBrace && t.position.column == 0 && t.range.len() == 2
+    t.kind == TokenKind::LeftCurlyBrace && t.is_line_start && t.range.len() == 2
 }
 
 fn is_pipe(t: &Token) -> bool {
@@ -56,7 +56,7 @@ pub fn embed(p: &mut Parser) -> bool {
 #[cfg(test)]
 mod tests {
     use crate::{
-        lexer::{Position, Token, TokenKind},
+        lexer::{Token, TokenKind},
         op::{Node, Op, Parser, embed::embed, parser::StopCondition},
     };
 
@@ -84,10 +84,7 @@ mod tests {
             assert!(p.ops.is_empty());
             assert_eq!(
                 p.peek(),
-                Some((
-                    0,
-                    &Token::new(TokenKind::LeftCurlyBrace, 0..2, Position::default()),
-                ))
+                Some((0, &Token::new(TokenKind::LeftCurlyBrace, 0..2, true),))
             );
         });
     }
@@ -99,10 +96,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((
-                0,
-                &Token::new(TokenKind::LeftCurlyBrace, 0..2, Position::default()),
-            ))
+            Some((0, &Token::new(TokenKind::LeftCurlyBrace, 0..2, true),))
         );
     }
 
@@ -138,10 +132,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((
-                0,
-                &Token::new(TokenKind::LeftCurlyBrace, 0..2, Position::default()),
-            ))
+            Some((0, &Token::new(TokenKind::LeftCurlyBrace, 0..2, true),))
         )
     }
 }

@@ -81,17 +81,6 @@ impl Display for TokenKind {
     }
 }
 
-/// The `Position` struct represents the position of a token in the input.
-#[derive(Clone, Debug, PartialEq, Default)]
-pub struct Position {
-    /// The byte index of the token in the input string.
-    pub byte_index: usize,
-    /// The column number of the token in the input string.
-    pub column: usize,
-    /// The line number of the token in the input string.
-    pub row: usize,
-}
-
 /// The `Token` struct represents a token in the input string.
 #[derive(Debug, PartialEq, Clone)]
 pub struct Token {
@@ -99,8 +88,8 @@ pub struct Token {
     pub kind: TokenKind,
     /// The range in the input string that corresponds to this token.
     pub range: Range<usize>,
-    /// The position of the token in the input string.
-    pub position: Position,
+    /// Whether this token is the first one on its line.
+    pub is_line_start: bool,
     /// How many `\`-escapes are folded into this token's range. `0` means the range can be used
     /// as-is; otherwise the text needs unescaping (see `Content::as_str`) before use.
     pub escaped: u32,
@@ -108,11 +97,11 @@ pub struct Token {
 
 impl Token {
     /// Creates a new `Token` instance with no escapes.
-    pub fn new(kind: TokenKind, range: Range<usize>, position: Position) -> Self {
+    pub fn new(kind: TokenKind, range: Range<usize>, is_line_start: bool) -> Self {
         Self {
             kind,
             range,
-            position,
+            is_line_start,
             escaped: 0,
         }
     }
@@ -156,7 +145,7 @@ mod tests {
 
     #[test]
     fn token_new() {
-        let token = Token::new(TokenKind::Literal, 0..5, Position::default());
+        let token = Token::new(TokenKind::Literal, 0..5, true);
         assert_eq!(token.kind, TokenKind::Literal);
         assert_eq!(token.range, 0..5);
         assert_eq!(token.escaped, 0);

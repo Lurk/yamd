@@ -4,7 +4,7 @@ use crate::{
 };
 
 fn is_hash(t: &Token) -> bool {
-    t.kind == TokenKind::Hash && t.position.column == 0 && t.range.len() <= 6
+    t.kind == TokenKind::Hash && t.is_line_start && t.range.len() <= 6
 }
 
 fn is_space(t: &Token) -> bool {
@@ -48,7 +48,7 @@ pub fn heading(p: &mut Parser) -> bool {
 #[cfg(test)]
 mod tests {
     use crate::{
-        lexer::{Position, Token, TokenKind},
+        lexer::{Token, TokenKind},
         op::{Content, Node, Op, Parser, heading::heading, parser::StopCondition},
     };
 
@@ -134,7 +134,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Hash, 0..2, Position::default())))
+            Some((0, &Token::new(TokenKind::Hash, 0..2, true)))
         );
     }
 
@@ -181,7 +181,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Hash, 0..2, Position::default())))
+            Some((0, &Token::new(TokenKind::Hash, 0..2, true)))
         );
     }
 }

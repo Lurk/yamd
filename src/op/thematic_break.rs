@@ -4,7 +4,7 @@ use crate::{
 };
 
 fn is_dash(t: &Token) -> bool {
-    t.kind == TokenKind::Minus && t.position.column == 0 && t.range.len() == 5
+    t.kind == TokenKind::Minus && t.is_line_start && t.range.len() == 5
 }
 
 pub fn thematic_break(p: &mut Parser) -> bool {

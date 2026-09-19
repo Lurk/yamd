@@ -5,7 +5,8 @@
 //! - [`OpKind::Start`]`(`[`Node`]`)` / [`OpKind::End`]`(`[`Node`]`)` bracket a node; everything
 //!   between belongs to it. [`OpKind::Value`] is leaf content belonging to the innermost open
 //!   node.
-//! - [`Content`] is a byte range into the source plus a count of the `\`-escapes it contains.
+//! - [`Content`] is either a byte range into the source (plus a count of `\`-escapes it
+//!   contains) or text detached from the source entirely.
 //!
 //! [`to_yamd`] consumes an event stream and promotes it to the [`Yamd`](crate::nodes::Yamd) tree
 //! form used by [`deserialize`](crate::deserialize).
@@ -44,19 +45,19 @@ mod title;
 mod to_yamd;
 pub use to_yamd::{UnbalancedOpStream, to_yamd, try_to_yamd};
 
-/// Text content extracted from the source input: a byte range plus how many `\`-escapes it
-/// contains.
+/// Text content belonging to an [`Op`]: either a byte range into the source (plus how many
+/// `\`-escapes it contains), or text detached from the source entirely.
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Content {
-    span: Range<usize>,
-    escaped: usize,
+pub enum Content {
+    Span { range: Range<usize>, escaped: usize },
+    Detached(Cow<'static, str>),
 }
 
 impl Content {
-    /// General constructor
-    pub(crate) fn new(span: Range<usize>, escaped: usize) -> Self {
-        Self { span, escaped }
+    /// General constructor for the [`Span`](Content::Span) case.
+    pub(crate) fn new(range: Range<usize>, escaped: usize) -> Self {
+        Content::Span { range, escaped }
     }
 
     /// Constructor for an unescaped span (the common case).
@@ -69,18 +70,30 @@ impl Content {
         Content::new(0..0, 0)
     }
 
-    /// Returns the text this content represents. Borrows directly from `source` when there's
-    /// nothing to unescape; allocates and strips `\` otherwise.
+    /// Constructor for text that isn't a range into the source, e.g. text assembled by a
+    /// consumer of [`parse`] rather than produced by the lexer/parser.
+    pub fn detached(s: impl Into<Cow<'static, str>>) -> Self {
+        Content::Detached(s.into())
+    }
+
+    /// Returns the text this content represents. For [`Span`](Content::Span), borrows directly
+    /// from `source` when there's nothing to unescape, allocates and strips `\` otherwise.
+    /// For [`Detached`](Content::Detached), returns the held text as-is.
     pub fn as_str<'a>(&'a self, source: &'a str) -> Cow<'a, str> {
-        let raw = if self.span.is_empty() {
-            ""
-        } else {
-            &source[self.span.clone()]
-        };
-        if self.escaped == 0 {
-            Cow::Borrowed(raw)
-        } else {
-            Cow::Owned(unescape(raw, self.escaped))
+        match self {
+            Content::Span { range, escaped } => {
+                let raw = if range.is_empty() {
+                    ""
+                } else {
+                    &source[range.clone()]
+                };
+                if *escaped == 0 {
+                    Cow::Borrowed(raw)
+                } else {
+                    Cow::Owned(unescape(raw, *escaped))
+                }
+            }
+            Content::Detached(s) => Cow::Borrowed(s.as_ref()),
         }
     }
 
@@ -89,9 +102,21 @@ impl Content {
         self.as_str(source).into_owned()
     }
 
+    /// Returns a reference to the byte range into source for [`Span`](Content::Span), `None`
+    /// for [`Detached`](Content::Detached).
+    pub fn range(&self) -> Option<&Range<usize>> {
+        match self {
+            Content::Span { range, .. } => Some(range),
+            Content::Detached(_) => None,
+        }
+    }
+
     /// Returns `true` if this content represents an empty string.
     pub fn is_empty(&self) -> bool {
-        self.span.is_empty()
+        match self {
+            Content::Span { range, .. } => range.is_empty(),
+            Content::Detached(s) => s.is_empty(),
+        }
     }
 
     /// Builds `Content` from a token slice.
@@ -237,7 +262,7 @@ pub fn parse(input: &str) -> Vec<Op> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lexer::{Position, TokenKind};
+    use crate::lexer::TokenKind;
 
     const TEST_CASE: &str = r#"---
 title: test
@@ -307,7 +332,10 @@ end
         let mut covered = vec![false; TEST_CASE.len()];
 
         for op in &ops {
-            for i in op.content.span.clone() {
+            let Content::Span { range, .. } = &op.content else {
+                continue;
+            };
+            for i in range.clone() {
                 assert!(
                     !covered[i],
                     "byte {i} covered by multiple ops (char: {:?})",
@@ -453,26 +481,14 @@ end
             Token {
                 kind: TokenKind::Literal,
                 range: 0..4,
-                position: Position::default(),
+                is_line_start: true,
                 escaped: 1,
             },
-            Token::new(
-                TokenKind::Space,
-                4..5,
-                Position {
-                    byte_index: 4,
-                    column: 4,
-                    row: 0,
-                },
-            ),
+            Token::new(TokenKind::Space, 4..5, false),
             Token {
                 kind: TokenKind::Literal,
                 range: 5..9,
-                position: Position {
-                    byte_index: 5,
-                    column: 5,
-                    row: 0,
-                },
+                is_line_start: false,
                 escaped: 1,
             },
         ];
@@ -537,6 +553,35 @@ end
     fn content_from_empty_tokens() {
         let content = Content::from_tokens(&[]);
         assert_eq!(content, Content::empty());
+    }
+
+    #[test]
+    fn content_detached_as_str_ignores_source() {
+        let content = Content::detached("hello");
+        assert_eq!(content.as_str("anything"), "hello");
+    }
+
+    #[test]
+    fn content_detached_from_owned_string() {
+        let content = Content::detached(String::from("hello"));
+        assert_eq!(content.as_str(""), "hello");
+    }
+
+    #[test]
+    fn content_detached_is_empty() {
+        assert!(Content::detached("").is_empty());
+        assert!(!Content::detached("hello").is_empty());
+    }
+
+    #[test]
+    fn content_span_range() {
+        let content = Content::span(2..5);
+        assert_eq!(content.range(), Some(&(2..5)));
+    }
+
+    #[test]
+    fn content_detached_range_is_none() {
+        assert_eq!(Content::detached("hello").range(), None);
     }
 
     #[test]

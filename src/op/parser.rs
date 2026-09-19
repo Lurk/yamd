@@ -44,9 +44,9 @@ impl TryFrom<&Token> for ListKind {
 pub(crate) enum StopCondition {
     /// Double newline — separates block-level elements.
     Terminator,
-    /// `%}` at column 0 — ends a collapsible block.
+    /// `%}` at line start — ends a collapsible block.
     CollapsibleEnd,
-    /// `!!` (two bangs) at column 0 — ends a highlight block.
+    /// `!!` (two bangs) at line start — ends a highlight block.
     HighlightEnd,
     /// A list marker at or below the given nesting level — signals a sibling or parent item.
     ListBoundary { level: usize, kind: ListKind },
@@ -69,16 +69,14 @@ fn at_list_boundary(p: &Parser, current_level: usize, max_level: usize, kind: Li
         };
         let mut offset = p.pos;
         let matched = if level == 0 {
-            p.tokens.get(offset).is_some_and(|t| t.position.column == 0) && {
-                // check: list_marker, space_1
+            p.tokens.get(offset).is_some_and(|t| t.is_line_start) && {
                 p.tokens.get(offset).is_some_and(|t| is_list_marker(t, k)) && {
                     offset += 1;
                     p.tokens.get(offset).is_some_and(is_space_1)
                 }
             }
         } else {
-            p.tokens.get(offset).is_some_and(|t| t.position.column == 0) && {
-                // check: space of len==level, list_marker, space_1
+            p.tokens.get(offset).is_some_and(|t| t.is_line_start) && {
                 p.tokens
                     .get(offset)
                     .is_some_and(|t| t.kind == TokenKind::Space && t.range.len() == level)
@@ -103,19 +101,17 @@ impl StopCondition {
         match self {
             Self::Terminator => token.kind == TokenKind::Terminator,
             Self::CollapsibleEnd => {
-                (token.kind == TokenKind::CollapsibleEnd && token.position.column == 0)
+                (token.kind == TokenKind::CollapsibleEnd && token.is_line_start)
                     || (token.kind == TokenKind::Eol
                         && parser.tokens.get(parser.pos + 1).is_some_and(|t| {
-                            t.kind == TokenKind::CollapsibleEnd && t.position.column == 0
+                            t.kind == TokenKind::CollapsibleEnd && t.is_line_start
                         }))
             }
             Self::HighlightEnd => {
-                token.kind == TokenKind::Bang
-                    && token.position.column == 0
-                    && token.range.len() == 2
+                token.kind == TokenKind::Bang && token.is_line_start && token.range.len() == 2
             }
             Self::ListBoundary { level, kind } => {
-                token.position.column == 0 && at_list_boundary(parser, *level, *level + 1, *kind)
+                token.is_line_start && at_list_boundary(parser, *level, *level + 1, *kind)
             }
         }
     }

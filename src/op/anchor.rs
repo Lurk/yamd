@@ -16,7 +16,7 @@ pub fn anchor(p: &mut Parser) -> bool {
 #[cfg(test)]
 mod tests {
     use crate::{
-        lexer::{Position, Token, TokenKind},
+        lexer::{Token, TokenKind},
         op::{Content, Node, Op, Parser, anchor::anchor, parser::StopCondition},
     };
 
@@ -46,10 +46,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((
-                0,
-                &Token::new(TokenKind::LeftSquareBracket, 0..1, Position::default())
-            ))
+            Some((0, &Token::new(TokenKind::LeftSquareBracket, 0..1, true)))
         )
     }
 
@@ -60,10 +57,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((
-                0,
-                &Token::new(TokenKind::LeftSquareBracket, 0..1, Position::default())
-            ))
+            Some((0, &Token::new(TokenKind::LeftSquareBracket, 0..1, true)))
         )
     }
 
@@ -132,10 +126,7 @@ mod tests {
             assert!(p.ops.is_empty());
             assert_eq!(
                 p.peek(),
-                Some((
-                    0,
-                    &Token::new(TokenKind::LeftSquareBracket, 0..1, Position::default())
-                ))
+                Some((0, &Token::new(TokenKind::LeftSquareBracket, 0..1, true)))
             );
         });
     }
@@ -147,10 +138,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((
-                0,
-                &Token::new(TokenKind::LeftSquareBracket, 0..1, Position::default())
-            ))
+            Some((0, &Token::new(TokenKind::LeftSquareBracket, 0..1, true)))
         )
     }
 
@@ -161,10 +149,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((
-                0,
-                &Token::new(TokenKind::LeftSquareBracket, 0..1, Position::default())
-            ))
+            Some((0, &Token::new(TokenKind::LeftSquareBracket, 0..1, true)))
         )
     }
 }

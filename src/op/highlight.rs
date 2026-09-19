@@ -9,11 +9,11 @@ use crate::{
 };
 
 fn is_two_bangs(t: &Token) -> bool {
-    t.kind == TokenKind::Bang && t.position.column == 0 && t.range.len() == 2
+    t.kind == TokenKind::Bang && t.is_line_start && t.range.len() == 2
 }
 
 fn is_one_bang(t: &Token) -> bool {
-    t.kind == TokenKind::Bang && t.position.column == 0 && t.range.len() == 1
+    t.kind == TokenKind::Bang && t.is_line_start && t.range.len() == 1
 }
 
 fn is_space(t: &Token) -> bool {
@@ -67,7 +67,7 @@ pub fn highlight(p: &mut Parser) -> bool {
         icon(p);
     });
 
-    if !p.at(|t: &Token| t.position.column == 0) {
+    if !p.at(|t: &Token| t.is_line_start) {
         p.pos = start;
         p.ops.truncate(snap);
         return false;
@@ -110,7 +110,7 @@ pub fn highlight(p: &mut Parser) -> bool {
 #[cfg(test)]
 mod tests {
     use crate::{
-        lexer::{Position, Token, TokenKind},
+        lexer::{Token, TokenKind},
         op::{Content, Node, Op, Parser, highlight::highlight, parser::StopCondition},
     };
 
@@ -223,7 +223,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Bang, 0..2, Position::default())))
+            Some((0, &Token::new(TokenKind::Bang, 0..2, true)))
         );
     }
 
@@ -234,7 +234,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Bang, 0..2, Position::default())))
+            Some((0, &Token::new(TokenKind::Bang, 0..2, true)))
         );
     }
 
@@ -246,7 +246,7 @@ mod tests {
             assert!(p.ops.is_empty());
             assert_eq!(
                 p.peek(),
-                Some((0, &Token::new(TokenKind::Bang, 0..2, Position::default())))
+                Some((0, &Token::new(TokenKind::Bang, 0..2, true)))
             );
         });
     }
@@ -311,7 +311,7 @@ mod tests {
         assert!(p.ops.is_empty());
         assert_eq!(
             p.peek(),
-            Some((0, &Token::new(TokenKind::Bang, 0..2, Position::default())))
+            Some((0, &Token::new(TokenKind::Bang, 0..2, true)))
         );
     }
 }

@@ -15,13 +15,16 @@ const RANDOM_LOW_DENSITY: &str = include_str!("./random_token_low_density.yamd")
 const RANDOM_HIGH_DENSITY: &str = include_str!("./random_token_high_density.yamd");
 /// small, hand-written document covering common node types
 const SMALL_YAMD: &str = include_str!("./small.yamd");
+/// pathological input: nothing but `\`, so escape handling dominates the run
+const BACKSLASHES: &str = include_str!("./backslashes.yamd");
 
-fn datasets() -> [(&'static str, &'static str); 4] {
+fn datasets() -> [(&'static str, &'static str); 5] {
     [
         ("~344kb of YAMD written by humman", LONG_VALID_YAMD),
         ("~346kb with low density of tokens", RANDOM_LOW_DENSITY),
         ("~344kb with high density of tokens", RANDOM_HIGH_DENSITY),
         ("small yamd document", SMALL_YAMD),
+        ("~344kb of only backslashes", BACKSLASHES),
     ]
 }
 
